@@ -57,14 +57,25 @@ function initializeAdminSDK(): { adminApp: App; adminAuth: Auth; adminDb: Firest
   // 1. 移除首尾引號（如果有的話）
   let cleanedPrivateKey = privateKey.replace(/^["']|["']$/g, '');
   // 2. 將 \n 轉換為實際的換行符（處理多種格式）
-  cleanedPrivateKey = cleanedPrivateKey.replace(/\\n/g, '\n');
+  // 先處理雙重轉義
   cleanedPrivateKey = cleanedPrivateKey.replace(/\\\\n/g, '\n');
+  // 再處理單一轉義
+  cleanedPrivateKey = cleanedPrivateKey.replace(/\\n/g, '\n');
+  // 移除多餘的空格
+  cleanedPrivateKey = cleanedPrivateKey.trim();
   // 3. 確保以正確的格式開始和結束
   if (!cleanedPrivateKey.includes('BEGIN PRIVATE KEY')) {
     throw new Error("Firebase Admin SDK private key 格式不正確：缺少 BEGIN PRIVATE KEY");
   }
   if (!cleanedPrivateKey.includes('END PRIVATE KEY')) {
     throw new Error("Firebase Admin SDK private key 格式不正確：缺少 END PRIVATE KEY");
+  }
+  
+  // 4. 驗證 private key 格式（確保 BEGIN 和 END 之間有內容）
+  const beginIndex = cleanedPrivateKey.indexOf('BEGIN PRIVATE KEY');
+  const endIndex = cleanedPrivateKey.indexOf('END PRIVATE KEY');
+  if (beginIndex === -1 || endIndex === -1 || endIndex <= beginIndex) {
+    throw new Error("Firebase Admin SDK private key 格式不正確：BEGIN 和 END 位置錯誤");
   }
 
   if (!process.env.FIREBASE_ADMIN_PROJECT_ID || !process.env.FIREBASE_ADMIN_CLIENT_EMAIL) {

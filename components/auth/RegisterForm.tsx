@@ -123,14 +123,26 @@ export function RegisterForm() {
       setLoading(true);
 
       // 處理其他技能和對象
-      const skillsArray = [...(data.skills || [])];
+      // 過濾掉 "Other"，只保留實際技能
+      const skillsArray = (data.skills || []).filter((s) => s !== "Other");
+      // 處理多個其他技能（用逗號分隔）
       if (otherSkill.trim()) {
-        skillsArray.push(otherSkill.trim());
+        const otherSkills = otherSkill
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+        skillsArray.push(...otherSkills);
       }
 
-      const audienceArray = [...(data.targetAudience || [])];
+      // 過濾掉 "Other"，只保留實際對象
+      const audienceArray = (data.targetAudience || []).filter((a) => a !== "Other");
+      // 處理多個其他對象（用逗號分隔）
       if (otherAudience.trim()) {
-        audienceArray.push(otherAudience.trim());
+        const otherAudiences = otherAudience
+          .split(",")
+          .map((a) => a.trim())
+          .filter((a) => a.length > 0);
+        audienceArray.push(...otherAudiences);
       }
 
       await registerUser(data.email, data.password, {
@@ -311,7 +323,7 @@ export function RegisterForm() {
               <Input
                 value={otherSkill}
                 onChange={(e) => setOtherSkill(e.target.value)}
-                placeholder="請輸入其他技能"
+                placeholder="請輸入其他技能（多個技能請用逗號分隔）"
                 className="bg-background flex-1"
               />
             )}
@@ -379,7 +391,7 @@ export function RegisterForm() {
               <Input
                 value={otherAudience}
                 onChange={(e) => setOtherAudience(e.target.value)}
-                placeholder="請輸入其他對象"
+                placeholder="請輸入其他對象（多個對象請用逗號分隔）"
                 className="bg-background flex-1"
               />
             )}

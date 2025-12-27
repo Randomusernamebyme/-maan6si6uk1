@@ -134,14 +134,26 @@ export default function ProfilePage() {
       setError("");
       setSuccess(false);
 
-      const skillsArray = [...formData.skills];
+      // 過濾掉 "Other"，只保留實際技能
+      const skillsArray = formData.skills.filter((s) => s !== "Other");
+      // 處理多個其他技能（用逗號分隔）
       if (formData.otherSkill.trim()) {
-        skillsArray.push(formData.otherSkill.trim());
+        const otherSkills = formData.otherSkill
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+        skillsArray.push(...otherSkills);
       }
 
-      const audienceArray = [...formData.targetAudience];
+      // 過濾掉 "Other"，只保留實際對象
+      const audienceArray = formData.targetAudience.filter((a) => a !== "Other");
+      // 處理多個其他對象（用逗號分隔）
       if (formData.otherAudience.trim()) {
-        audienceArray.push(formData.otherAudience.trim());
+        const otherAudiences = formData.otherAudience
+          .split(",")
+          .map((a) => a.trim())
+          .filter((a) => a.length > 0);
+        audienceArray.push(...otherAudiences);
       }
 
       // 準備更新數據，只包含有值的欄位
@@ -333,7 +345,7 @@ export default function ProfilePage() {
                     <Input
                       value={formData.otherSkill}
                       onChange={(e) => setFormData({ ...formData, otherSkill: e.target.value })}
-                      placeholder="請輸入其他技能"
+                      placeholder="請輸入其他技能（多個技能請用逗號分隔）"
                       className="bg-background flex-1"
                     />
                   )}
@@ -397,7 +409,7 @@ export default function ProfilePage() {
                     <Input
                       value={formData.otherAudience}
                       onChange={(e) => setFormData({ ...formData, otherAudience: e.target.value })}
-                      placeholder="請輸入其他對象"
+                      placeholder="請輸入其他對象（多個對象請用逗號分隔）"
                       className="bg-background flex-1"
                     />
                   )}
