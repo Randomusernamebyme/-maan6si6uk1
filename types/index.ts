@@ -8,7 +8,7 @@ export type ServiceField = '生活助手' | '社區拍檔' | '街坊樹窿';
 export type UserStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
 
 // 委托狀態類型
-export type RequestStatus = 'pending' | 'open' | 'published' | 'matched' | 'completed' | 'cancelled';
+export type RequestStatus = 'pending' | 'open' | 'published' | 'matched' | 'in-progress' | 'completed' | 'cancelled';
 
 // 緊急程度類型
 export type UrgencyLevel = 'urgent' | 'normal';
@@ -77,6 +77,14 @@ export interface Request {
   matchedAt?: Date; // 配對時間
   completedAt?: Date; // 完成時間
   adminNotes?: string; // 管理員備註
+  mergedWith?: string; // 合併到的委托ID
+  isMerged?: boolean; // 是否已被合併
+  followUps?: Array<{
+    date: Date;
+    method: string; // 聯絡方式
+    content: string; // 記錄內容
+    adminId: string; // 操作的管理員ID
+  }>;
 
   // 系統欄位
   createdAt: Date;
