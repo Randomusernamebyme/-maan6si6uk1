@@ -294,7 +294,7 @@ export default function ProfilePage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!user || !firebaseUser) return;
+    if (!user) return;
 
     try {
       setDeleting(true);
@@ -303,12 +303,10 @@ export default function ProfilePage() {
       // 刪除 Firestore 用戶資料
       await deleteDocument("users", user.uid);
 
-      // 刪除 Firebase Auth 用戶
-      await deleteUser(firebaseUser);
-
       // 登出並重定向到首頁
+      await logout();
       router.push("/");
-      router.refresh();
+      alert("帳號資料已成功刪除。");
     } catch (err: any) {
       setError(err.message || "刪除帳號失敗，請稍後再試");
       setDeleting(false);
