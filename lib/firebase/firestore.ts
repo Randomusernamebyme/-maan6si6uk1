@@ -98,6 +98,17 @@ export async function createDocument<T extends DocumentData>(
   }
 }
 
+// 過濾掉 undefined 值
+function removeUndefined<T extends Record<string, any>>(obj: T): Partial<T> {
+  const cleaned: Partial<T> = {};
+  for (const key in obj) {
+    if (obj[key] !== undefined) {
+      cleaned[key] = obj[key];
+    }
+  }
+  return cleaned;
+}
+
 // 通用：更新文檔
 export async function updateDocument<T extends DocumentData>(
   collectionName: string,
@@ -106,8 +117,10 @@ export async function updateDocument<T extends DocumentData>(
 ): Promise<void> {
   try {
     const docRef = doc(db, collectionName, documentId);
+    // 過濾掉 undefined 值，因為 Firestore 不允許 undefined
+    const cleanedData = removeUndefined(data);
     await updateDoc(docRef, {
-      ...data,
+      ...cleanedData,
       updatedAt: Timestamp.now(),
     });
   } catch (error) {

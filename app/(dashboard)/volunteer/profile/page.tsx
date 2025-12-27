@@ -144,7 +144,8 @@ export default function ProfilePage() {
         audienceArray.push(formData.otherAudience.trim());
       }
 
-      await updateDocument("users", user.uid, {
+      // 準備更新數據，只包含有值的欄位
+      const updateData: any = {
         displayName: formData.displayName,
         phone: formData.phone,
         age: formData.age,
@@ -152,8 +153,14 @@ export default function ProfilePage() {
         skills: skillsArray,
         availability: formData.availability,
         targetAudience: audienceArray,
-        goals: formData.goals || undefined,
-      });
+      };
+
+      // 只有當 goals 有值時才添加
+      if (formData.goals && formData.goals.trim()) {
+        updateData.goals = formData.goals.trim();
+      }
+
+      await updateDocument("users", user.uid, updateData);
 
       setSuccess(true);
       router.refresh();
