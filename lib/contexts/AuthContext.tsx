@@ -95,7 +95,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         goals: userData.goals,
         status: "pending",
         completedTasks: 0,
-        rating: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

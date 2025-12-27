@@ -39,7 +39,6 @@ export interface User {
 
   // 統計
   completedTasks?: number; // 完成的委托數
-  rating?: number; // 評分(未來功能)
 
   // 系統欄位
   createdAt: Date;

@@ -7,7 +7,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-muted/30 p-4">
       <div className="w-full max-w-4xl space-y-8 text-center">
         <div className="space-y-4">
-          <h1 className="text-5xl font-bold">萬事屋平台</h1>
+          <h1 className="text-5xl font-bold">堅城萬事屋</h1>
           <p className="text-xl text-muted-foreground">
             社區服務平台，連接需要幫助的委托者與願意提供服務的義工
           </p>
