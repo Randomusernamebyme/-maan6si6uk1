@@ -6,8 +6,7 @@ import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error";
 import { useState } from "react";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { createDocument } from "@/lib/firebase/firestore";
-import { Application } from "@/types";
+import { getAuthToken } from "@/lib/utils/auth";
 import { useRouter } from "next/navigation";
 
 export default function VolunteerDashboardPage() {
@@ -24,11 +23,29 @@ export default function VolunteerDashboardPage() {
 
     try {
       setApplying(requestId);
-      await createDocument<Application>("applications", {
-        requestId,
-        volunteerId: user.uid,
-        status: "pending",
+      
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("請先登入");
+      }
+
+      const response = await fetch("/api/applications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          requestId,
+          volunteerId: user.uid,
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "報名失敗");
+      }
+
       router.refresh();
       alert("報名成功！");
     } catch (err: any) {

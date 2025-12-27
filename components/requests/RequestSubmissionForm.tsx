@@ -11,8 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ErrorDisplay } from "@/components/ui/error";
 import { Loading } from "@/components/ui/loading";
-import { createDocument } from "@/lib/firebase/firestore";
-import { Request, ServiceField } from "@/types";
+import { ServiceField } from "@/types";
 
 const requestSchema = z.object({
   requesterName: z.string().min(1, "請輸入您的稱呼"),
@@ -63,7 +62,7 @@ export function RequestSubmissionForm() {
       setLoading(true);
       setSuccess(false);
 
-      const requestData: Omit<Request, "id" | "createdAt" | "updatedAt"> = {
+      const requestData = {
         requester: {
           name: data.requesterName,
           phone: data.requesterPhone,
@@ -73,10 +72,20 @@ export function RequestSubmissionForm() {
         description: data.description,
         fields: data.fields,
         appreciation: data.appreciation,
-        status: "pending",
       };
 
-      await createDocument<Request>("requests", requestData);
+      const response = await fetch("/api/requests/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "提交失敗");
+      }
 
       setSuccess(true);
       setTimeout(() => {
