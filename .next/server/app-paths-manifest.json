@@ -1,0 +1,23 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/admin/logs/route": "app/api/admin/logs/route.js",
+  "/api/admin/requests/[id]/route": "app/api/admin/requests/[id]/route.js",
+  "/api/requests/submit/route": "app/api/requests/submit/route.js",
+  "/page": "app/page.js",
+  "/api/admin/requests/merge/route": "app/api/admin/requests/merge/route.js",
+  "/api/admin/volunteers/[id]/route": "app/api/admin/volunteers/[id]/route.js",
+  "/api/applications/[id]/route": "app/api/applications/[id]/route.js",
+  "/request/page": "app/request/page.js",
+  "/api/applications/route": "app/api/applications/route.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/(auth)/register/page": "app/(auth)/register/page.js",
+  "/(dashboard)/admin/applications/page": "app/(dashboard)/admin/applications/page.js",
+  "/(dashboard)/admin/page": "app/(dashboard)/admin/page.js",
+  "/(dashboard)/volunteer/dashboard/page": "app/(dashboard)/volunteer/dashboard/page.js",
+  "/(dashboard)/admin/requests/[id]/page": "app/(dashboard)/admin/requests/[id]/page.js",
+  "/(dashboard)/admin/volunteers/page": "app/(dashboard)/admin/volunteers/page.js",
+  "/(dashboard)/admin/requests/page": "app/(dashboard)/admin/requests/page.js",
+  "/(dashboard)/volunteer/page": "app/(dashboard)/volunteer/page.js",
+  "/(dashboard)/volunteer/profile/page": "app/(dashboard)/volunteer/profile/page.js",
+  "/(dashboard)/volunteer/applications/page": "app/(dashboard)/volunteer/applications/page.js"
+}

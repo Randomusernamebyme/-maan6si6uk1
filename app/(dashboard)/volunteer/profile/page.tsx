@@ -21,8 +21,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { deleteUser } from "firebase/auth";
-import { auth } from "@/lib/firebase/config";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -157,7 +155,7 @@ const TARGET_AUDIENCE = [
 ] as const;
 
 export default function ProfilePage() {
-  const { user, firebaseUser } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");

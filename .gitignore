@@ -1,9 +1,13 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# firebase admin sdk keys
+*-firebase-adminsdk-*.json
+
 # dependencies
 /node_modules
 /.pnp
 .pnp.js
+.yarn/install-state.gz
 
 # testing
 /coverage
@@ -34,7 +38,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Firebase Admin SDK (敏感資訊，不要提交)
-*-firebase-adminsdk-*.json
 

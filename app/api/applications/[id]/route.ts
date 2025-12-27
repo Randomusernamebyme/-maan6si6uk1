@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase/admin";
 
-// 驗證用戶 token
+// 驗證用戶 token（義工或管理員）
 async function verifyAuth(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) {
@@ -16,6 +16,20 @@ async function verifyAuth(request: NextRequest) {
   } catch (error) {
     return null;
   }
+}
+
+// 驗證管理員權限
+async function verifyAdmin(request: NextRequest) {
+  const decodedToken = await verifyAuth(request);
+  if (!decodedToken) return null;
+
+  const adminDb = getAdminDb();
+  const userDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
+  if (!userDoc.exists || userDoc.data()?.role !== "admin") {
+    return null;
+  }
+  
+  return decodedToken;
 }
 
 // DELETE: 撤回報名
@@ -45,8 +59,9 @@ export async function DELETE(
 
     const applicationData = applicationDoc.data();
     
-    // 驗證用戶 ID 匹配
-    if (applicationData?.volunteerId !== decodedToken.uid) {
+    // 驗證用戶 ID 匹配（義工只能撤回自己的報名）
+    const isAdmin = await verifyAdmin(request);
+    if (!isAdmin && applicationData?.volunteerId !== decodedToken.uid) {
       return NextResponse.json(
         { error: "無權限" },
         { status: 403 }
@@ -54,7 +69,7 @@ export async function DELETE(
     }
 
     // 只能撤回待處理狀態的報名
-    if (applicationData?.status !== "pending") {
+    if (applicationData?.status !== "pending" && !isAdmin) {
       return NextResponse.json(
         { error: "只能撤回待處理狀態的報名" },
         { status: 400 }
@@ -77,3 +92,35 @@ export async function DELETE(
   }
 }
 
+// PATCH: 更新報名狀態（管理員）
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const decodedToken = await verifyAdmin(request);
+    if (!decodedToken) {
+      return NextResponse.json(
+        { error: "未授權，需要管理員權限" },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const adminDb = getAdminDb();
+    const applicationRef = adminDb.collection("applications").doc(params.id);
+
+    await applicationRef.update({
+      ...body,
+      updatedAt: new Date(),
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("Error updating application:", error);
+    return NextResponse.json(
+      { error: error.message || "更新失敗，請稍後再試" },
+      { status: 500 }
+    );
+  }
+}

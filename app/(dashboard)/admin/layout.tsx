@@ -19,12 +19,12 @@ export default function AdminLayout({
   }
 
   const navItems = [
-    { href: "/admin", label: "儀表板", icon: "📊" },
-    { href: "/admin/requests", label: "委托管理", icon: "📋" },
-    { href: "/admin/volunteers", label: "義工管理", icon: "👥" },
-    { href: "/admin/applications", label: "報名管理", icon: "📝" },
-    { href: "/admin/logs", label: "操作日誌", icon: "📜" },
-    { href: "/admin/export", label: "數據匯出", icon: "📤" },
+    { href: "/admin", label: "儀表板" },
+    { href: "/admin/requests", label: "委托管理" },
+    { href: "/admin/volunteers", label: "義工管理" },
+    { href: "/admin/applications", label: "報名管理" },
+    { href: "/admin/logs", label: "操作日誌" },
+    { href: "/admin/export", label: "數據匯出" },
   ];
 
   return (
@@ -49,13 +49,12 @@ export default function AdminLayout({
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors",
+                    "block px-4 py-2 rounded-md text-sm font-medium transition-colors",
                     isActive
                       ? "bg-primary text-primary-foreground"
                       : "text-foreground/60 hover:bg-accent hover:text-accent-foreground"
                   )}
                 >
-                  <span>{item.icon}</span>
                   {item.label}
                 </Link>
               );

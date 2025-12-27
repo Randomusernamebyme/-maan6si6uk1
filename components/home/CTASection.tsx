@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 export function CTASection() {
+  const { user } = useAuth();
   return (
     <section className="py-16 md:py-24 bg-muted/30">
       <div className="container mx-auto px-4">
