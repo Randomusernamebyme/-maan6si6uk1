@@ -43,8 +43,11 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
     });
 
+    // 生成追蹤編號（使用文檔ID的前8位字符）
+    const trackingNumber = docRef.id.substring(0, 8).toUpperCase();
+
     return NextResponse.json(
-      { success: true, id: docRef.id },
+      { success: true, id: docRef.id, trackingNumber },
       { status: 201 }
     );
   } catch (error: any) {
