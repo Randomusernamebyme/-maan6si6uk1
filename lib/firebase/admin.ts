@@ -55,27 +55,56 @@ function initializeAdminSDK(): { adminApp: App; adminAuth: Auth; adminDb: Firest
 
   // 處理 private key 格式
   // 1. 移除首尾引號（如果有的話）
-  let cleanedPrivateKey = privateKey.replace(/^["']|["']$/g, '');
-  // 2. 將 \n 轉換為實際的換行符（處理多種格式）
-  // 先處理雙重轉義
+  let cleanedPrivateKey = privateKey.trim();
+  cleanedPrivateKey = cleanedPrivateKey.replace(/^["']|["']$/g, '');
+  
+  // 2. 處理各種換行符格式
+  // 先處理雙重轉義（JSON 字符串中的 \\n）
   cleanedPrivateKey = cleanedPrivateKey.replace(/\\\\n/g, '\n');
-  // 再處理單一轉義
+  // 再處理單一轉義（字符串中的 \n）
   cleanedPrivateKey = cleanedPrivateKey.replace(/\\n/g, '\n');
-  // 移除多餘的空格
-  cleanedPrivateKey = cleanedPrivateKey.trim();
-  // 3. 確保以正確的格式開始和結束
-  if (!cleanedPrivateKey.includes('BEGIN PRIVATE KEY')) {
-    throw new Error("Firebase Admin SDK private key 格式不正確：缺少 BEGIN PRIVATE KEY");
-  }
-  if (!cleanedPrivateKey.includes('END PRIVATE KEY')) {
-    throw new Error("Firebase Admin SDK private key 格式不正確：缺少 END PRIVATE KEY");
+  // 處理 Windows 風格的換行符
+  cleanedPrivateKey = cleanedPrivateKey.replace(/\r\n/g, '\n');
+  cleanedPrivateKey = cleanedPrivateKey.replace(/\r/g, '\n');
+  
+  // 3. 確保每行都有正確的格式（移除行首行尾空格）
+  const lines = cleanedPrivateKey.split('\n');
+  cleanedPrivateKey = lines
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .join('\n');
+  
+  // 4. 驗證 private key 格式
+  if (!cleanedPrivateKey.includes('BEGIN PRIVATE KEY') && !cleanedPrivateKey.includes('BEGIN RSA PRIVATE KEY')) {
+    throw new Error("Firebase Admin SDK private key 格式不正確：缺少 BEGIN PRIVATE KEY 或 BEGIN RSA PRIVATE KEY");
   }
   
-  // 4. 驗證 private key 格式（確保 BEGIN 和 END 之間有內容）
-  const beginIndex = cleanedPrivateKey.indexOf('BEGIN PRIVATE KEY');
-  const endIndex = cleanedPrivateKey.indexOf('END PRIVATE KEY');
-  if (beginIndex === -1 || endIndex === -1 || endIndex <= beginIndex) {
-    throw new Error("Firebase Admin SDK private key 格式不正確：BEGIN 和 END 位置錯誤");
+  const hasBegin = cleanedPrivateKey.includes('BEGIN PRIVATE KEY') || cleanedPrivateKey.includes('BEGIN RSA PRIVATE KEY');
+  const hasEnd = cleanedPrivateKey.includes('END PRIVATE KEY') || cleanedPrivateKey.includes('END RSA PRIVATE KEY');
+  
+  if (!hasBegin || !hasEnd) {
+    throw new Error("Firebase Admin SDK private key 格式不正確：缺少 BEGIN 或 END 標記");
+  }
+  
+  // 5. 確保 BEGIN 和 END 之間有內容
+  const beginMatch = cleanedPrivateKey.match(/(BEGIN (?:RSA )?PRIVATE KEY)/);
+  const endMatch = cleanedPrivateKey.match(/(END (?:RSA )?PRIVATE KEY)/);
+  
+  if (!beginMatch || !endMatch) {
+    throw new Error("Firebase Admin SDK private key 格式不正確：無法找到 BEGIN 或 END 標記");
+  }
+  
+  const beginIndex = beginMatch.index! + beginMatch[0].length;
+  const endIndex = endMatch.index!;
+  
+  if (endIndex <= beginIndex) {
+    throw new Error("Firebase Admin SDK private key 格式不正確：BEGIN 和 END 之間沒有內容");
+  }
+  
+  // 6. 確保 private key 內容不為空
+  const keyContent = cleanedPrivateKey.substring(beginIndex, endIndex).trim();
+  if (keyContent.length === 0) {
+    throw new Error("Firebase Admin SDK private key 格式不正確：私鑰內容為空");
   }
 
   if (!process.env.FIREBASE_ADMIN_PROJECT_ID || !process.env.FIREBASE_ADMIN_CLIENT_EMAIL) {
