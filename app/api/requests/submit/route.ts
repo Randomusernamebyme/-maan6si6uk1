@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase/admin";
+import { getAdminDb } from "@/lib/firebase/admin";
 import { Request } from "@/types";
 
 export async function POST(request: NextRequest) {
@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
       status: "pending",
     };
 
+    const adminDb = getAdminDb();
     const docRef = await adminDb.collection("requests").add({
       ...requestData,
       createdAt: new Date(),

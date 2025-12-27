@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase/admin";
-import { adminAuth } from "@/lib/firebase/admin";
+import { getAdminDb, getAdminAuth } from "@/lib/firebase/admin";
 import { Application } from "@/types";
 
 // 驗證用戶 token
@@ -12,6 +11,7 @@ async function verifyAuth(request: NextRequest) {
 
   const token = authHeader.split("Bearer ")[1];
   try {
+    const adminAuth = getAdminAuth();
     const decodedToken = await adminAuth.verifyIdToken(token);
     return decodedToken;
   } catch (error) {
@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 檢查是否已經報名過
+    const adminDb = getAdminDb();
     const existingApps = await adminDb
       .collection("applications")
       .where("requestId", "==", body.requestId)
