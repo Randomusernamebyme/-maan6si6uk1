@@ -8,7 +8,10 @@ export type ServiceField = '生活助手' | '社區拍檔' | '街坊樹窿';
 export type UserStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
 
 // 委托狀態類型
-export type RequestStatus = 'pending' | 'open' | 'matched' | 'completed' | 'cancelled';
+export type RequestStatus = 'pending' | 'open' | 'published' | 'matched' | 'completed' | 'cancelled';
+
+// 緊急程度類型
+export type UrgencyLevel = 'urgent' | 'normal';
 
 // 報名狀態類型
 export type ApplicationStatus = 'pending' | 'approved' | 'rejected' | 'completed';
@@ -63,6 +66,10 @@ export interface Request {
   description: string; // 有咩煩惱或者需求啊?
   fields: ServiceField[]; // 幫助範疇
   appreciation?: string; // 回報方式(例: 心意卡、煮餐飯)
+  urgency?: UrgencyLevel; // 緊急程度
+  requiredSkills?: string[]; // 需要的技能
+  serviceType?: string; // 服務形式
+  estimatedDuration?: string; // 預計時長
 
   // 後台管理
   status: RequestStatus;
@@ -86,6 +93,7 @@ export interface Application {
 
   // 報名資訊
   message?: string; // 義工的留言
+  availableTime?: string; // 可服務時間
   status: ApplicationStatus;
 
   // 配對資訊

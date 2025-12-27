@@ -23,6 +23,117 @@ import {
 } from "@/components/ui/dialog";
 import { deleteUser } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const passwordChangeSchema = z
+  .object({
+    currentPassword: z.string().min(1, "請輸入當前密碼"),
+    newPassword: z
+      .string()
+      .min(8, "密碼至少需要 8 個字元")
+      .regex(/[a-zA-Z]/, "密碼必須包含至少一個字母")
+      .regex(/[0-9]/, "密碼必須包含至少一個數字"),
+    confirmPassword: z.string().min(8, "請確認新密碼"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "新密碼不一致",
+    path: ["confirmPassword"],
+  });
+
+type PasswordChangeFormData = z.infer<typeof passwordChangeSchema>;
+
+function PasswordChangeForm() {
+  const { changePassword } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<PasswordChangeFormData>({
+    resolver: zodResolver(passwordChangeSchema),
+  });
+
+  const onSubmit = async (data: PasswordChangeFormData) => {
+    try {
+      setLoading(true);
+      setError("");
+      setSuccess(false);
+
+      await changePassword(data.currentPassword, data.newPassword);
+
+      setSuccess(true);
+      reset();
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err: any) {
+      setError(err.message || "修改密碼失敗，請稍後再試");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {error && <ErrorDisplay message={error} />}
+      {success && (
+        <div className="rounded-md bg-green-50 dark:bg-green-900/20 p-4 text-sm text-green-800 dark:text-green-200">
+          密碼修改成功！
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <Label htmlFor="currentPassword">當前密碼</Label>
+        <Input
+          id="currentPassword"
+          type="password"
+          {...register("currentPassword")}
+          className="bg-background"
+        />
+        {errors.currentPassword && (
+          <p className="text-sm text-destructive">{errors.currentPassword.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="newPassword">新密碼</Label>
+        <Input
+          id="newPassword"
+          type="password"
+          {...register("newPassword")}
+          className="bg-background"
+        />
+        {errors.newPassword && (
+          <p className="text-sm text-destructive">{errors.newPassword.message}</p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          至少 8 個字元，包含字母和數字
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword">確認新密碼</Label>
+        <Input
+          id="confirmPassword"
+          type="password"
+          {...register("confirmPassword")}
+          className="bg-background"
+        />
+        {errors.confirmPassword && (
+          <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+        )}
+      </div>
+
+      <Button type="submit" disabled={loading}>
+        {loading ? <Loading size="sm" /> : "修改密碼"}
+      </Button>
+    </form>
+  );
+}
 
 const SERVICE_FIELDS: ServiceField[] = ["生活助手", "社區拍檔", "街坊樹窿"];
 const AGE_RANGES = ["12-17", "18-24"] as const;
@@ -462,6 +573,15 @@ export default function ProfilePage() {
             <span className="text-muted-foreground">完成的委托數：</span>
             <span>{user.completedTasks || 0}</span>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>修改密碼</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PasswordChangeForm />
         </CardContent>
       </Card>
 

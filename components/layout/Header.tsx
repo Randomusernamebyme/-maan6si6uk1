@@ -43,10 +43,10 @@ export function Header() {
                 {user.role === "volunteer" && (
                   <>
                     <Link
-                      href="/volunteer"
+                      href="/volunteer/dashboard"
                       className="text-sm font-medium transition-colors hover:text-foreground/80 text-foreground/60"
                     >
-                      委托列表
+                      看板
                     </Link>
                     <Link
                       href="/volunteer/applications"

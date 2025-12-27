@@ -21,9 +21,13 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, sendPasswordReset } = useAuth();
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   const {
     register,
@@ -38,7 +42,8 @@ export function LoginForm() {
       setError("");
       setLoading(true);
       await login(data.email, data.password);
-      router.push("/");
+      // 根據用戶角色重定向
+      router.push("/volunteer/dashboard");
       router.refresh();
     } catch (err: any) {
       setError(err.message || "登入失敗，請檢查您的帳號密碼");
@@ -66,7 +71,16 @@ export function LoginForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">密碼</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="password">密碼</Label>
+          <button
+            type="button"
+            onClick={() => setShowForgotPassword(true)}
+            className="text-sm text-muted-foreground hover:text-foreground underline"
+          >
+            忘記密碼？
+          </button>
+        </div>
         <Input
           id="password"
           type="password"
@@ -82,6 +96,64 @@ export function LoginForm() {
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? <Loading size="sm" /> : "登入"}
       </Button>
+
+      {showForgotPassword && (
+        <div className="mt-4 p-4 border rounded-md space-y-3">
+          <h3 className="font-semibold">忘記密碼</h3>
+          {resetSuccess ? (
+            <div className="text-sm text-green-600 dark:text-green-400">
+              密碼重置郵件已發送到您的郵箱，請檢查您的收件箱。
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="resetEmail">電子郵件</Label>
+                <Input
+                  id="resetEmail"
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="bg-background"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setResetEmail("");
+                    setResetSuccess(false);
+                  }}
+                  className="flex-1"
+                >
+                  取消
+                </Button>
+                <Button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      setResetLoading(true);
+                      setError("");
+                      await sendPasswordReset(resetEmail);
+                      setResetSuccess(true);
+                    } catch (err: any) {
+                      setError(err.message || "發送失敗，請稍後再試");
+                    } finally {
+                      setResetLoading(false);
+                    }
+                  }}
+                  disabled={resetLoading || !resetEmail}
+                  className="flex-1"
+                >
+                  {resetLoading ? <Loading size="sm" /> : "發送重置郵件"}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </form>
   );
 }

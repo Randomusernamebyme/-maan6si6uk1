@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
       requestId: body.requestId,
       volunteerId: body.volunteerId,
       message: body.message,
+      availableTime: body.availableTime,
       status: "pending",
     };
 

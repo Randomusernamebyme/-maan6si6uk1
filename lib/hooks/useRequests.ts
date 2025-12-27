@@ -13,7 +13,7 @@ import { db } from "@/lib/firebase/config";
 import { Request, RequestStatus } from "@/types";
 import { convertTimestamp } from "@/lib/firebase/firestore";
 
-export function useRequests(status?: RequestStatus) {
+export function useRequests(status?: RequestStatus | RequestStatus[]) {
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -25,7 +25,12 @@ export function useRequests(status?: RequestStatus) {
     );
 
     if (status) {
-      q = query(q, where("status", "==", status));
+      if (Array.isArray(status)) {
+        // 如果傳入陣列，使用 in 查詢
+        q = query(q, where("status", "in", status));
+      } else {
+        q = query(q, where("status", "==", status));
+      }
     }
 
     const unsubscribe = onSnapshot(

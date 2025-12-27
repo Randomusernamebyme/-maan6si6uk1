@@ -7,6 +7,11 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase/config";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -19,6 +24,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, userData: Partial<User>) => Promise<void>;
   logout: () => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -106,6 +113,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updatedAt: new Date(),
       });
 
+      // 發送驗證郵件
+      if (userCredential.user && !userCredential.user.emailVerified) {
+        await sendEmailVerification(userCredential.user);
+      }
+
       setUser(newUser);
     } catch (error: any) {
       throw new Error(error.message || "註冊失敗");
@@ -122,8 +134,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // 發送密碼重置郵件
+  const sendPasswordReset = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error: any) {
+      throw new Error(error.message || "發送密碼重置郵件失敗");
+    }
+  };
+
+  // 修改密碼
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    try {
+      if (!firebaseUser || !firebaseUser.email) {
+        throw new Error("請先登入");
+      }
+
+      // 重新認證
+      const credential = EmailAuthProvider.credential(
+        firebaseUser.email,
+        currentPassword
+      );
+      await reauthenticateWithCredential(firebaseUser, credential);
+
+      // 更新密碼
+      await updatePassword(firebaseUser, newPassword);
+    } catch (error: any) {
+      throw new Error(error.message || "修改密碼失敗");
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, firebaseUser, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, firebaseUser, loading, login, register, logout, sendPasswordReset, changePassword }}>
       {children}
     </AuthContext.Provider>
   );

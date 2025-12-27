@@ -12,14 +12,22 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ErrorDisplay } from "@/components/ui/error";
 import { Loading } from "@/components/ui/loading";
+import { WelcomeAnimation } from "@/components/ui/welcome-animation";
 import { ServiceField } from "@/types";
 
 const registerSchema = z.object({
   email: z.string().email("請輸入有效的電子郵件"),
-  password: z.string().min(6, "密碼至少需要 6 個字元"),
-  confirmPassword: z.string().min(6, "請確認密碼"),
+  password: z
+    .string()
+    .min(8, "密碼至少需要 8 個字元")
+    .regex(/[a-zA-Z]/, "密碼必須包含至少一個字母")
+    .regex(/[0-9]/, "密碼必須包含至少一個數字"),
+  confirmPassword: z.string().min(8, "請確認密碼"),
   displayName: z.string().min(1, "請輸入您的稱呼"),
-  phone: z.string().min(1, "請輸入電話號碼"),
+  phone: z
+    .string()
+    .min(1, "請輸入電話號碼")
+    .regex(/^[0-9+\-\s()]+$/, "請輸入有效的電話號碼格式"),
   age: z.enum(["12-17", "18-24"], {
     required_error: "請選擇年齡範圍",
   }),
@@ -63,6 +71,7 @@ export function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [otherSkill, setOtherSkill] = useState("");
   const [otherAudience, setOtherAudience] = useState("");
+  const [showWelcome, setShowWelcome] = useState(false);
 
   const {
     register,
@@ -156,8 +165,8 @@ export function RegisterForm() {
         goals: data.goals,
       });
 
-      router.push("/");
-      router.refresh();
+      // 顯示歡迎動畫
+      setShowWelcome(true);
     } catch (err: any) {
       setError(err.message || "註冊失敗，請稍後再試");
     } finally {
@@ -412,6 +421,15 @@ export function RegisterForm() {
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? <Loading size="sm" /> : "註冊"}
       </Button>
+      
+      {showWelcome && (
+        <WelcomeAnimation
+          onComplete={() => {
+            router.push("/");
+            router.refresh();
+          }}
+        />
+      )}
     </form>
   );
 }
