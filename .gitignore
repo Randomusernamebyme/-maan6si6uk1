@@ -35,6 +35,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Firebase Admin SDK (敏感文件)
+# Firebase Admin SDK (敏感資訊，不要提交)
 *-firebase-adminsdk-*.json
 
