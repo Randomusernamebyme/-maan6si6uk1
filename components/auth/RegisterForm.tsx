@@ -20,7 +20,7 @@ const registerSchema = z.object({
   confirmPassword: z.string().min(6, "請確認密碼"),
   displayName: z.string().min(1, "請輸入您的稱呼"),
   phone: z.string().min(1, "請輸入電話號碼"),
-  age: z.enum(["12-17", "18-24", "25-34", "35-44", "45-54", "55+"], {
+  age: z.enum(["12-17", "18-24"], {
     required_error: "請選擇年齡範圍",
   }),
   fields: z.array(z.enum(["生活助手", "社區拍檔", "街坊樹窿"])).min(1, "請至少選擇一個服務範疇"),
@@ -36,7 +36,7 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 const SERVICE_FIELDS: ServiceField[] = ["生活助手", "社區拍檔", "街坊樹窿"];
-const AGE_RANGES = ["12-17", "18-24", "25-34", "35-44", "45-54", "55+"] as const;
+const AGE_RANGES = ["12-17", "18-24"] as const;
 const WEEKDAYS = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"] as const;
 const SKILLS = [
   "唱歌",

@@ -7,9 +7,43 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
-import { updateDocument } from "@/lib/firebase/firestore";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useState, useEffect } from "react";
+import { updateDocument, deleteDocument } from "@/lib/firebase/firestore";
 import { useRouter } from "next/navigation";
+import { ServiceField } from "@/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { deleteUser } from "firebase/auth";
+import { auth } from "@/lib/firebase/config";
+
+const SERVICE_FIELDS: ServiceField[] = ["生活助手", "社區拍檔", "街坊樹窿"];
+const AGE_RANGES = ["12-17", "18-24"] as const;
+const WEEKDAYS = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"] as const;
+const SKILLS = [
+  "唱歌",
+  "跳舞",
+  "煮嘢食",
+  "玩音樂",
+  "清潔",
+  "傾偈",
+  "情緒支援",
+  "維修物件",
+] as const;
+const TARGET_AUDIENCE = [
+  "兒童",
+  "年輕人",
+  "成年人",
+  "長者",
+  "少數族裔",
+] as const;
 
 export default function ProfilePage() {
   const { user, firebaseUser } = useAuth();
@@ -17,16 +51,38 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [formData, setFormData] = useState({
-    displayName: user?.displayName || "",
-    phone: user?.phone || "",
-    age: user?.age || "",
-    skills: user?.skills?.join(", ") || "",
-    availability: user?.availability?.join(", ") || "",
-    targetAudience: user?.targetAudience?.join(", ") || "",
-    goals: user?.goals || "",
+    displayName: "",
+    phone: "",
+    age: "" as "12-17" | "18-24" | "",
+    fields: [] as ServiceField[],
+    skills: [] as string[],
+    availability: [] as string[],
+    targetAudience: [] as string[],
+    goals: "",
+    otherSkill: "",
+    otherAudience: "",
   });
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        displayName: user.displayName || "",
+        phone: user.phone || "",
+        age: (user.age as "12-17" | "18-24") || "",
+        fields: user.fields || [],
+        skills: user.skills || [],
+        availability: user.availability || [],
+        targetAudience: user.targetAudience || [],
+        goals: user.goals || "",
+        otherSkill: "",
+        otherAudience: "",
+      });
+    }
+  }, [user]);
 
   if (!user) {
     return (
@@ -36,28 +92,66 @@ export default function ProfilePage() {
     );
   }
 
+  const toggleField = (field: ServiceField) => {
+    const newFields = formData.fields.includes(field)
+      ? formData.fields.filter((f) => f !== field)
+      : [...formData.fields, field];
+    setFormData({ ...formData, fields: newFields });
+  };
+
+  const toggleSkill = (skill: string) => {
+    const newSkills = formData.skills.includes(skill)
+      ? formData.skills.filter((s) => s !== skill)
+      : [...formData.skills, skill];
+    setFormData({ ...formData, skills: newSkills });
+  };
+
+  const toggleAvailability = (day: string) => {
+    const newAvailability = formData.availability.includes(day)
+      ? formData.availability.filter((d) => d !== day)
+      : [...formData.availability, day];
+    setFormData({ ...formData, availability: newAvailability });
+  };
+
+  const toggleAudience = (audience: string) => {
+    const newAudience = formData.targetAudience.includes(audience)
+      ? formData.targetAudience.filter((a) => a !== audience)
+      : [...formData.targetAudience, audience];
+    setFormData({ ...formData, targetAudience: newAudience });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    if (formData.fields.length === 0) {
+      setError("請至少選擇一個服務範疇");
+      return;
+    }
 
     try {
       setLoading(true);
       setError("");
       setSuccess(false);
 
+      const skillsArray = [...formData.skills];
+      if (formData.otherSkill.trim()) {
+        skillsArray.push(formData.otherSkill.trim());
+      }
+
+      const audienceArray = [...formData.targetAudience];
+      if (formData.otherAudience.trim()) {
+        audienceArray.push(formData.otherAudience.trim());
+      }
+
       await updateDocument("users", user.uid, {
         displayName: formData.displayName,
         phone: formData.phone,
         age: formData.age,
-        skills: formData.skills
-          ? formData.skills.split(",").map((s) => s.trim()).filter(Boolean)
-          : [],
-        availability: formData.availability
-          ? formData.availability.split(",").map((a) => a.trim()).filter(Boolean)
-          : [],
-        targetAudience: formData.targetAudience
-          ? formData.targetAudience.split(",").map((t) => t.trim()).filter(Boolean)
-          : [],
+        fields: formData.fields,
+        skills: skillsArray,
+        availability: formData.availability,
+        targetAudience: audienceArray,
         goals: formData.goals || undefined,
       });
 
@@ -68,6 +162,28 @@ export default function ProfilePage() {
       setError(err.message || "更新失敗，請稍後再試");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user || !firebaseUser) return;
+
+    try {
+      setDeleting(true);
+      setError("");
+
+      // 刪除 Firestore 用戶資料
+      await deleteDocument("users", user.uid);
+
+      // 刪除 Firebase Auth 用戶
+      await deleteUser(firebaseUser);
+
+      // 登出並重定向到首頁
+      router.push("/");
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message || "刪除帳號失敗，請稍後再試");
+      setDeleting(false);
     }
   };
 
@@ -83,7 +199,7 @@ export default function ProfilePage() {
           <CardTitle>基本資料</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && <ErrorDisplay message={error} />}
             {success && (
               <div className="rounded-md bg-green-50 dark:bg-green-900/20 p-4 text-sm text-green-800 dark:text-green-200">
@@ -130,81 +246,167 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="age">年齡 *</Label>
-              <Input
-                id="age"
-                value={formData.age}
-                onChange={(e) =>
-                  setFormData({ ...formData, age: e.target.value })
-                }
-                required
-                className="bg-background"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="fields">服務範疇</Label>
-              <div className="flex flex-wrap gap-2">
-                {user.fields?.map((field) => (
-                  <span
-                    key={field}
-                    className="px-3 py-1 rounded-md bg-secondary text-secondary-foreground text-sm"
-                  >
-                    {field}
-                  </span>
+              <Label>年齡 *</Label>
+              <div className="space-y-2">
+                {AGE_RANGES.map((age) => (
+                  <div key={age} className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id={`age-${age}`}
+                      name="age"
+                      value={age}
+                      checked={formData.age === age}
+                      onChange={() => setFormData({ ...formData, age: age as "12-17" | "18-24" })}
+                      className="h-4 w-4"
+                    />
+                    <Label htmlFor={`age-${age}`} className="font-normal cursor-pointer">
+                      {age}
+                    </Label>
+                  </div>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground">服務範疇無法修改</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="skills">技能（用逗號分隔）</Label>
-              <Input
-                id="skills"
-                value={formData.skills}
-                onChange={(e) =>
-                  setFormData({ ...formData, skills: e.target.value })
-                }
-                placeholder="例如：電腦維修, 搬運, 傾聽"
-                className="bg-background"
-              />
+              <Label>服務範疇 *</Label>
+              <p className="text-sm text-muted-foreground mb-2">
+                我哋有社區拍檔、街坊樹窿、同埋生活助手，你認為自己適合加入邊一/幾個範疇？
+              </p>
+              <div className="space-y-2">
+                {SERVICE_FIELDS.map((field) => (
+                  <div key={field} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`field-${field}`}
+                      checked={formData.fields.includes(field)}
+                      onCheckedChange={() => toggleField(field)}
+                    />
+                    <Label htmlFor={`field-${field}`} className="font-normal cursor-pointer">
+                      {field}
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="availability">空閒日子（用逗號分隔）</Label>
-              <Input
-                id="availability"
-                value={formData.availability}
-                onChange={(e) =>
-                  setFormData({ ...formData, availability: e.target.value })
-                }
-                placeholder="例如：星期一, 星期六"
-                className="bg-background"
-              />
+              <Label>你想提供的技能？</Label>
+              <div className="space-y-2">
+                {SKILLS.map((skill) => (
+                  <div key={skill} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`skill-${skill}`}
+                      checked={formData.skills.includes(skill)}
+                      onCheckedChange={() => toggleSkill(skill)}
+                    />
+                    <Label htmlFor={`skill-${skill}`} className="font-normal cursor-pointer">
+                      {skill}
+                    </Label>
+                  </div>
+                ))}
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="skill-other"
+                    checked={formData.skills.includes("Other")}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        toggleSkill("Other");
+                      } else {
+                        setFormData({
+                          ...formData,
+                          skills: formData.skills.filter((s) => s !== "Other"),
+                          otherSkill: "",
+                        });
+                      }
+                    }}
+                  />
+                  <Label htmlFor="skill-other" className="font-normal cursor-pointer">
+                    Other:
+                  </Label>
+                  {formData.skills.includes("Other") && (
+                    <Input
+                      value={formData.otherSkill}
+                      onChange={(e) => setFormData({ ...formData, otherSkill: e.target.value })}
+                      placeholder="請輸入其他技能"
+                      className="bg-background flex-1"
+                    />
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="targetAudience">服務對象（用逗號分隔）</Label>
-              <Input
-                id="targetAudience"
-                value={formData.targetAudience}
-                onChange={(e) =>
-                  setFormData({ ...formData, targetAudience: e.target.value })
-                }
-                placeholder="例如：長者, 兒童"
-                className="bg-background"
-              />
+              <Label>一星期內你比較空閒的日子 *</Label>
+              <div className="space-y-2">
+                {WEEKDAYS.map((day) => (
+                  <div key={day} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`availability-${day}`}
+                      checked={formData.availability.includes(day)}
+                      onCheckedChange={() => toggleAvailability(day)}
+                    />
+                    <Label htmlFor={`availability-${day}`} className="font-normal cursor-pointer">
+                      {day}
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="goals">目標</Label>
+              <Label>你想服務的對象？</Label>
+              <div className="space-y-2">
+                {TARGET_AUDIENCE.map((audience) => (
+                  <div key={audience} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`audience-${audience}`}
+                      checked={formData.targetAudience.includes(audience)}
+                      onCheckedChange={() => toggleAudience(audience)}
+                    />
+                    <Label htmlFor={`audience-${audience}`} className="font-normal cursor-pointer">
+                      {audience}
+                    </Label>
+                  </div>
+                ))}
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="audience-other"
+                    checked={formData.targetAudience.includes("Other")}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        toggleAudience("Other");
+                      } else {
+                        setFormData({
+                          ...formData,
+                          targetAudience: formData.targetAudience.filter((a) => a !== "Other"),
+                          otherAudience: "",
+                        });
+                      }
+                    }}
+                  />
+                  <Label htmlFor="audience-other" className="font-normal cursor-pointer">
+                    Other:
+                  </Label>
+                  {formData.targetAudience.includes("Other") && (
+                    <Input
+                      value={formData.otherAudience}
+                      onChange={(e) => setFormData({ ...formData, otherAudience: e.target.value })}
+                      placeholder="請輸入其他對象"
+                      className="bg-background flex-1"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="goals">(如有) 你想喺「堅城萬事屋」完成的目標？</Label>
               <textarea
                 id="goals"
                 value={formData.goals}
                 onChange={(e) =>
                   setFormData({ ...formData, goals: e.target.value })
                 }
-                placeholder="您想透過萬事屋完成的目標"
+                placeholder="請輸入您的目標"
                 className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
@@ -243,7 +445,52 @@ export default function ProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      <Card className="border-destructive">
+        <CardHeader>
+          <CardTitle className="text-destructive">危險區域</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            刪除帳號將永久移除您的所有資料，此操作無法復原。
+          </p>
+          <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="destructive">刪除帳號</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>確認刪除帳號</DialogTitle>
+                <DialogDescription>
+                  您確定要刪除帳號嗎？此操作將永久刪除您的所有資料，包括：
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>個人資料</li>
+                    <li>報名記錄</li>
+                    <li>所有相關數據</li>
+                  </ul>
+                  此操作無法復原。
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteDialogOpen(false)}
+                  disabled={deleting}
+                >
+                  取消
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                >
+                  {deleting ? <Loading size="sm" /> : "確認刪除"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </CardContent>
+      </Card>
     </div>
   );
 }
-

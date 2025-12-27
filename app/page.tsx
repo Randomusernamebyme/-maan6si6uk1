@@ -51,8 +51,11 @@ export default function Home() {
           </Card>
         </div>
 
-        <div className="flex gap-4 justify-center">
+        <div className="flex flex-wrap gap-4 justify-center">
           <Button asChild size="lg" className="bg-foreground text-background hover:bg-foreground/90">
+            <Link href="/submit-request">提交委托請求</Link>
+          </Button>
+          <Button asChild size="lg" variant="outline" className="border-2">
             <Link href="/login">登入</Link>
           </Button>
           <Button asChild size="lg" variant="outline" className="border-2">
