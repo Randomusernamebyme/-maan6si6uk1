@@ -40,6 +40,7 @@ export default function ApplicationsPage() {
     if (user) {
       loadApplications()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading, router])
 
   const loadApplications = async () => {

@@ -30,7 +30,10 @@ export default function CreateRequestPage() {
   ) => {
     setSubmitting(true)
     try {
-      await createRequest(data)
+      await createRequest({
+        ...data,
+        status: "pending",
+      })
       router.push("/admin/requests")
       router.refresh()
     } catch (error) {
