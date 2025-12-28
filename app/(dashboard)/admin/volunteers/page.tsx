@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { User, UserStatus, ServiceField } from "@/types";
 import { convertTimestamp } from "@/lib/firebase/firestore";
@@ -44,38 +44,54 @@ export default function AdminVolunteersPage() {
   const [selectedVolunteers, setSelectedVolunteers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const q = query(
-      collection(db, "users"),
-      where("role", "==", "volunteer"),
-      orderBy("createdAt", "desc")
-    );
+    const fetchVolunteers = async () => {
+      try {
+        const q = query(
+          collection(db, "users"),
+          where("role", "==", "volunteer")
+        );
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const data = snapshot.docs.map((doc) => {
-          const docData = doc.data();
-          return {
-            uid: doc.id,
-            ...docData,
-            createdAt: convertTimestamp(docData.createdAt),
-            updatedAt: convertTimestamp(docData.updatedAt),
-            interviewDate: docData.interviewDate ? convertTimestamp(docData.interviewDate) : undefined,
-            lastLoginAt: docData.lastLoginAt ? convertTimestamp(docData.lastLoginAt) : undefined,
-          } as User;
-        });
-        setVolunteers(data);
-        setLoading(false);
-        setError(null);
-      },
-      (err) => {
-        console.error("Error fetching volunteers:", err);
+        const unsubscribe = onSnapshot(
+          q,
+          (snapshot) => {
+            const data = snapshot.docs.map((doc) => {
+              const docData = doc.data();
+              return {
+                uid: doc.id,
+                ...docData,
+                createdAt: convertTimestamp(docData.createdAt),
+                updatedAt: convertTimestamp(docData.updatedAt),
+                interviewDate: docData.interviewDate ? convertTimestamp(docData.interviewDate) : undefined,
+                lastLoginAt: docData.lastLoginAt ? convertTimestamp(docData.lastLoginAt) : undefined,
+              } as User;
+            });
+            
+            // 手動排序
+            data.sort((a, b) => {
+              if (!a.createdAt || !b.createdAt) return 0;
+              return b.createdAt.getTime() - a.createdAt.getTime();
+            });
+            
+            setVolunteers(data);
+            setLoading(false);
+            setError(null);
+          },
+          (err) => {
+            console.error("Error fetching volunteers:", err);
+            setError(err as Error);
+            setLoading(false);
+          }
+        );
+
+        return () => unsubscribe();
+      } catch (err) {
+        console.error("Error setting up volunteers listener:", err);
         setError(err as Error);
         setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
+    fetchVolunteers();
   }, []);
 
   const filteredVolunteers = useMemo(() => {

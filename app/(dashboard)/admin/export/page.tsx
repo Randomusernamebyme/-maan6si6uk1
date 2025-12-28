@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Loading } from "@/components/ui/loading";
 import { getAuthToken } from "@/lib/utils/auth";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { convertTimestamp } from "@/lib/firebase/firestore";
 
@@ -41,10 +41,10 @@ export default function AdminExportPage() {
 
       // 根據類型獲取數據
       if (exportType === "requests") {
-        let q = query(collection(db, "requests"), orderBy("createdAt", "desc"));
+        let q = query(collection(db, "requests"));
         
         if (statusFilter !== "all") {
-          q = query(q, where("status", "==", statusFilter));
+          q = query(collection(db, "requests"), where("status", "==", statusFilter));
         }
 
         const snapshot = await getDocs(q);
@@ -56,6 +56,12 @@ export default function AdminExportPage() {
             createdAt: convertTimestamp(docData.createdAt),
             updatedAt: convertTimestamp(docData.updatedAt),
           };
+        });
+        
+        // 手動排序
+        data.sort((a, b) => {
+          if (!a.createdAt || !b.createdAt) return 0;
+          return b.createdAt.getTime() - a.createdAt.getTime();
         });
 
         // 日期篩選
@@ -99,10 +105,10 @@ export default function AdminExportPage() {
           item.createdAt ? item.createdAt.toLocaleString("zh-TW") : "",
         ]);
       } else if (exportType === "volunteers") {
-        let q = query(collection(db, "users"), where("role", "==", "volunteer"), orderBy("createdAt", "desc"));
+        let q = query(collection(db, "users"), where("role", "==", "volunteer"));
         
         if (statusFilter !== "all") {
-          q = query(q, where("status", "==", statusFilter));
+          q = query(collection(db, "users"), where("role", "==", "volunteer"), where("status", "==", statusFilter));
         }
 
         const snapshot = await getDocs(q);
@@ -113,6 +119,12 @@ export default function AdminExportPage() {
             ...docData,
             createdAt: convertTimestamp(docData.createdAt),
           };
+        });
+        
+        // 手動排序
+        data.sort((a, b) => {
+          if (!a.createdAt || !b.createdAt) return 0;
+          return b.createdAt.getTime() - a.createdAt.getTime();
         });
 
         // 日期篩選
@@ -156,10 +168,10 @@ export default function AdminExportPage() {
           item.createdAt ? item.createdAt.toLocaleString("zh-TW") : "",
         ]);
       } else if (exportType === "applications") {
-        let q = query(collection(db, "applications"), orderBy("createdAt", "desc"));
+        let q = query(collection(db, "applications"));
         
         if (statusFilter !== "all") {
-          q = query(q, where("status", "==", statusFilter));
+          q = query(collection(db, "applications"), where("status", "==", statusFilter));
         }
 
         const snapshot = await getDocs(q);
@@ -170,6 +182,12 @@ export default function AdminExportPage() {
             ...docData,
             createdAt: convertTimestamp(docData.createdAt),
           };
+        });
+        
+        // 手動排序
+        data.sort((a, b) => {
+          if (!a.createdAt || !b.createdAt) return 0;
+          return b.createdAt.getTime() - a.createdAt.getTime();
         });
 
         // 日期篩選

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { collection, query, where, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
+import { collection, query, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { Request, RequestStatus, ServiceField } from "@/types";
 import { convertTimestamp } from "@/lib/firebase/firestore";
@@ -45,8 +45,7 @@ export default function AdminRequestsPage() {
 
   useEffect(() => {
     const q = query(
-      collection(db, "requests"),
-      orderBy("createdAt", "desc")
+      collection(db, "requests")
     );
 
     const unsubscribe = onSnapshot(
@@ -63,6 +62,13 @@ export default function AdminRequestsPage() {
             completedAt: docData.completedAt ? convertTimestamp(docData.completedAt) : undefined,
           } as Request;
         });
+        
+        // 手動排序
+        data.sort((a, b) => {
+          if (!a.createdAt || !b.createdAt) return 0;
+          return b.createdAt.getTime() - a.createdAt.getTime();
+        });
+        
         setRequests(data);
         setLoading(false);
         setError(null);

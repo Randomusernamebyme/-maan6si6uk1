@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { Application, ApplicationStatus } from "@/types";
 import { convertTimestamp } from "@/lib/firebase/firestore";
@@ -41,8 +41,7 @@ export default function AdminApplicationsPage() {
 
   useEffect(() => {
     const q = query(
-      collection(db, "applications"),
-      orderBy("createdAt", "desc")
+      collection(db, "applications")
     );
 
     const unsubscribe = onSnapshot(
@@ -61,6 +60,13 @@ export default function AdminApplicationsPage() {
             volunteerName: `義工 ${docData.volunteerId?.substring(0, 8) || "未知"}`,
           } as Application & { requestTitle?: string; volunteerName?: string };
         });
+        
+        // 手動排序
+        data.sort((a, b) => {
+          if (!a.createdAt || !b.createdAt) return 0;
+          return b.createdAt.getTime() - a.createdAt.getTime();
+        });
+        
         setApplications(data);
         setLoading(false);
         setError(null);
