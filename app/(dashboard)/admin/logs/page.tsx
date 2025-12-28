@@ -260,7 +260,9 @@ export default function AdminLogsPage() {
                   className="grid grid-cols-12 gap-4 p-4 border rounded-md hover:bg-muted/30 transition-colors text-sm"
                 >
                   <div className="col-span-2 flex items-center text-muted-foreground">
-                    {format(log.createdAt, "yyyy-MM-dd HH:mm:ss", { locale: zhTW })}
+                    {log.createdAt && log.createdAt instanceof Date && !isNaN(log.createdAt.getTime())
+                      ? format(log.createdAt, "yyyy-MM-dd HH:mm:ss", { locale: zhTW })
+                      : "無效日期"}
                   </div>
                   <div className="col-span-1 flex items-center">
                     <span className="font-medium">{log.adminName || "未知"}</span>

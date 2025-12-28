@@ -104,7 +104,10 @@ export default function AdminRequestsPage() {
     });
   }, [requests, statusFilter, fieldFilter, searchQuery]);
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | undefined | null) => {
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+      return "無效日期";
+    }
     return format(date, "yyyy年MM月dd日 HH:mm", { locale: zhTW });
   };
 

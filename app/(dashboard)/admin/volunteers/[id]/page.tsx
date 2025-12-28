@@ -28,6 +28,14 @@ import { zhTW } from "date-fns/locale";
 import { getAuthToken } from "@/lib/utils/auth";
 import Link from "next/link";
 
+// 安全的日期格式化函數
+const formatDate = (date: Date | undefined | null, formatStr: string = "yyyy年MM月dd日 HH:mm") => {
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+    return "無效日期";
+  }
+  return format(date, formatStr, { locale: zhTW });
+};
+
 const STATUS_LABELS = {
   pending: "待審核",
   approved: "已批准",
@@ -383,7 +391,7 @@ export default function AdminVolunteerDetailPage() {
                 <CardTitle>面試記錄</CardTitle>
                 <CardDescription>
                   {volunteer.interviewDate &&
-                    format(volunteer.interviewDate, "yyyy年MM月dd日", { locale: zhTW })}
+                    formatDate(volunteer.interviewDate, "yyyy年MM月dd日")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -447,9 +455,7 @@ export default function AdminVolunteerDetailPage() {
                       </div>
                       <CardDescription>
                         報名時間：
-                        {format(application.createdAt, "yyyy年MM月dd日 HH:mm", {
-                          locale: zhTW,
-                        })}
+                        {formatDate(application.createdAt)}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-2 text-sm">
@@ -488,7 +494,7 @@ export default function AdminVolunteerDetailPage() {
                       </div>
                       <CardDescription>
                         操作人：{log.userName} •{" "}
-                        {format(log.createdAt, "yyyy年MM月dd日 HH:mm", { locale: zhTW })}
+                        {formatDate(log.createdAt)}
                       </CardDescription>
                     </CardHeader>
                     {log.changes && Object.keys(log.changes).length > 0 && (
@@ -649,22 +655,20 @@ export default function AdminVolunteerDetailPage() {
               <div>
                 <Label className="text-muted-foreground">註冊時間</Label>
                 <p>
-                  {format(volunteer.createdAt, "yyyy年MM月dd日 HH:mm", { locale: zhTW })}
+                  {formatDate(volunteer.createdAt)}
                 </p>
               </div>
               <div>
                 <Label className="text-muted-foreground">最後更新</Label>
                 <p>
-                  {format(volunteer.updatedAt, "yyyy年MM月dd日 HH:mm", { locale: zhTW })}
+                  {formatDate(volunteer.updatedAt)}
                 </p>
               </div>
               {volunteer.lastLoginAt && (
                 <div>
                   <Label className="text-muted-foreground">最後登入</Label>
                   <p>
-                    {format(volunteer.lastLoginAt, "yyyy年MM月dd日 HH:mm", {
-                      locale: zhTW,
-                    })}
+                    {formatDate(volunteer.lastLoginAt)}
                   </p>
                 </div>
               )}
