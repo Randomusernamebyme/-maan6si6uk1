@@ -216,11 +216,15 @@ export default function RequestDetailPage() {
               <div>
                 <Label>領域</Label>
                 <div className="flex flex-wrap gap-2 mt-1">
-                  {request.fields.map((field) => (
-                    <Badge key={field} variant="secondary">
-                      {field}
-                    </Badge>
-                  ))}
+                  {Array.isArray(request.fields) && request.fields.length > 0 ? (
+                    request.fields.map((field) => (
+                      <Badge key={field} variant="secondary">
+                        {field}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">無</span>
+                  )}
                 </div>
               </div>
               {request.urgency && (
@@ -300,7 +304,7 @@ export default function RequestDetailPage() {
           </Card>
 
           {/* 跟進記錄 */}
-          {request.followUps && request.followUps.length > 0 && (
+          {Array.isArray(request.followUps) && request.followUps.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>跟進記錄</CardTitle>
@@ -456,4 +460,5 @@ export default function RequestDetailPage() {
     </div>
   );
 }
+
 

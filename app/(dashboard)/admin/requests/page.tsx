@@ -86,7 +86,7 @@ export default function AdminRequestsPage() {
       if (request.status !== statusFilter) return false;
 
       // 領域篩選
-      if (fieldFilter !== "all" && !request.fields.includes(fieldFilter as ServiceField)) {
+      if (fieldFilter !== "all" && Array.isArray(request.fields) && !request.fields.includes(fieldFilter as ServiceField)) {
         return false;
       }
 
@@ -96,7 +96,7 @@ export default function AdminRequestsPage() {
         const matchesSearch =
           request.description.toLowerCase().includes(query) ||
           request.requester.name.toLowerCase().includes(query) ||
-          request.fields.some((f) => f.toLowerCase().includes(query));
+          (Array.isArray(request.fields) && request.fields.some((f) => f.toLowerCase().includes(query)));
         if (!matchesSearch) return false;
       }
 
@@ -239,11 +239,15 @@ export default function AdminRequestsPage() {
                   </div>
                   <div className="col-span-2 flex items-center">
                     <div className="flex flex-wrap gap-1">
-                      {request.fields.map((field) => (
-                        <Badge key={field} variant="secondary" className="text-xs">
-                          {field}
-                        </Badge>
-                      ))}
+                      {Array.isArray(request.fields) && request.fields.length > 0 ? (
+                        request.fields.map((field) => (
+                          <Badge key={field} variant="secondary" className="text-xs">
+                            {field}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-muted-foreground">無</span>
+                      )}
                     </div>
                   </div>
                   <div className="col-span-2 flex items-center text-sm text-muted-foreground">
@@ -278,4 +282,5 @@ export default function AdminRequestsPage() {
     </div>
   );
 }
+
 

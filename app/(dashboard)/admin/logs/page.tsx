@@ -85,7 +85,13 @@ export default function AdminLogsPage() {
       }
 
       const data = await response.json();
-      setLogs(data);
+      // 確保 logs 是陣列並轉換日期
+      const logsArray = Array.isArray(data) ? data : (data.logs || []);
+      const logsWithDates = logsArray.map((log: any) => ({
+        ...log,
+        createdAt: log.createdAt ? new Date(log.createdAt) : new Date(),
+      }));
+      setLogs(logsWithDates);
       setError(null);
     } catch (err: any) {
       console.error("Error fetching logs:", err);

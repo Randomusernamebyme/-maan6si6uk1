@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ logs: filteredLogs });
+    return NextResponse.json(filteredLogs);
   } catch (error: any) {
     console.error("Error fetching logs:", error);
     return NextResponse.json(

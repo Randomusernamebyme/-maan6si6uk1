@@ -251,11 +251,15 @@ export default function AdminVolunteersPage() {
                   </div>
                   <div className="col-span-2 flex items-center">
                     <div className="flex flex-wrap gap-1">
-                      {volunteer.fields?.map((field) => (
-                        <Badge key={field} variant="secondary" className="text-xs">
-                          {field}
-                        </Badge>
-                      ))}
+                      {Array.isArray(volunteer.fields) && volunteer.fields.length > 0 ? (
+                        volunteer.fields.map((field) => (
+                          <Badge key={field} variant="secondary" className="text-xs">
+                            {field}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted-foreground">無</span>
+                      )}
                     </div>
                   </div>
                   <div className="col-span-2 flex items-center text-sm text-muted-foreground">
@@ -290,4 +294,5 @@ export default function AdminVolunteersPage() {
     </div>
   );
 }
+
 

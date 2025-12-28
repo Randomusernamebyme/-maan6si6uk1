@@ -293,41 +293,57 @@ export default function AdminVolunteerDetailPage() {
               <div>
                 <Label className="text-muted-foreground">服務範疇</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {volunteer.fields?.map((field) => (
-                    <Badge key={field} variant="secondary">
-                      {field}
-                    </Badge>
-                  ))}
+                  {Array.isArray(volunteer.fields) && volunteer.fields.length > 0 ? (
+                    volunteer.fields.map((field) => (
+                      <Badge key={field} variant="secondary">
+                        {field}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-sm">無</span>
+                  )}
                 </div>
               </div>
               <div>
                 <Label className="text-muted-foreground">技能列表</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {volunteer.skills?.map((skill, index) => (
-                    <Badge key={index} variant="outline">
-                      {skill}
-                    </Badge>
-                  ))}
+                  {Array.isArray(volunteer.skills) && volunteer.skills.length > 0 ? (
+                    volunteer.skills.map((skill, index) => (
+                      <Badge key={index} variant="outline">
+                        {skill}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-sm">無</span>
+                  )}
                 </div>
               </div>
               <div>
                 <Label className="text-muted-foreground">可服務時間</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {volunteer.availability?.map((day, index) => (
-                    <Badge key={index} variant="outline">
-                      {day}
-                    </Badge>
-                  ))}
+                  {Array.isArray(volunteer.availability) && volunteer.availability.length > 0 ? (
+                    volunteer.availability.map((day, index) => (
+                      <Badge key={index} variant="outline">
+                        {day}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-sm">無</span>
+                  )}
                 </div>
               </div>
               <div>
                 <Label className="text-muted-foreground">想服務的對象</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {volunteer.targetAudience?.map((audience, index) => (
-                    <Badge key={index} variant="outline">
-                      {audience}
-                    </Badge>
-                  ))}
+                  {Array.isArray(volunteer.targetAudience) && volunteer.targetAudience.length > 0 ? (
+                    volunteer.targetAudience.map((audience, index) => (
+                      <Badge key={index} variant="outline">
+                        {audience}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-sm">無</span>
+                  )}
                 </div>
               </div>
             </CardContent>

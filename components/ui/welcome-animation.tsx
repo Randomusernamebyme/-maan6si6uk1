@@ -53,3 +53,4 @@ export function WelcomeAnimation({ onComplete }: WelcomeAnimationProps) {
   );
 }
 
+
