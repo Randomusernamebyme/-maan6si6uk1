@@ -73,10 +73,23 @@ export default function RequestDetailPage() {
         }
 
         const data = await response.json();
+        
+        // 處理日期字段
+        const formatDateField = (dateStr: string | undefined): Date | undefined => {
+          if (!dateStr) return undefined;
+          if (typeof dateStr === 'string') {
+            const date = new Date(dateStr);
+            return isNaN(date.getTime()) ? undefined : date;
+          }
+          return undefined;
+        };
+
         setRequest({
           ...data,
-          createdAt: data.createdAt ? new Date(data.createdAt.seconds * 1000) : new Date(),
-          updatedAt: data.updatedAt ? new Date(data.updatedAt.seconds * 1000) : new Date(),
+          createdAt: formatDateField(data.createdAt) || new Date(),
+          updatedAt: formatDateField(data.updatedAt) || new Date(),
+          matchedAt: formatDateField(data.matchedAt),
+          completedAt: formatDateField(data.completedAt),
         } as Request);
       } catch (err: any) {
         setError(err.message || "載入失敗");

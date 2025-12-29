@@ -45,11 +45,29 @@ export async function GET(
     }
 
     const requestData = requestDoc.data();
+    
+    // 處理日期字段
+    const formatDate = (date: any): string | undefined => {
+      if (!date) return undefined;
+      if (date.toDate) {
+        return date.toDate().toISOString();
+      }
+      if (date instanceof Date) {
+        return date.toISOString();
+      }
+      if (typeof date === 'string') {
+        return date;
+      }
+      return undefined;
+    };
+
     return NextResponse.json({
       id: requestDoc.id,
       ...requestData,
-      createdAt: requestData?.createdAt?.toDate?.()?.toISOString(),
-      updatedAt: requestData?.updatedAt?.toDate?.()?.toISOString(),
+      createdAt: formatDate(requestData?.createdAt),
+      updatedAt: formatDate(requestData?.updatedAt),
+      matchedAt: formatDate(requestData?.matchedAt),
+      completedAt: formatDate(requestData?.completedAt),
     });
   } catch (error: any) {
     console.error("Error fetching request:", error);
