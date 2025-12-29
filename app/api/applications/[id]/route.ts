@@ -119,13 +119,20 @@ export async function PATCH(
     }
 
     const applicationData = applicationDoc.data();
+    if (!applicationData) {
+      return NextResponse.json(
+        { error: "報名記錄數據無效" },
+        { status: 400 }
+      );
+    }
+
     const updateData: any = {
       ...body,
       updatedAt: new Date(),
     };
 
     // 如果管理員接受申請（status 改為 approved）
-    if (body.status === "approved" && applicationData?.status !== "approved") {
+    if (body.status === "approved" && applicationData.status !== "approved") {
       updateData.matchedAt = new Date();
 
       // 更新對應的 request 狀態為 "matched"（如果當前是 published）
