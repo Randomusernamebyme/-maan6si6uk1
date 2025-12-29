@@ -162,7 +162,7 @@ export function RegisterForm() {
         skills: skillsArray.length > 0 ? skillsArray : undefined,
         availability: data.availability,
         targetAudience: audienceArray.length > 0 ? audienceArray : undefined,
-        goals: data.goals && data.goals.trim() !== "" ? data.goals.trim() : null,
+        goals: data.goals && data.goals.trim() !== "" ? data.goals.trim() : undefined,
       });
 
       // 顯示歡迎動畫
