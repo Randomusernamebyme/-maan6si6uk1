@@ -177,19 +177,37 @@ function ApplicationItem({
     return null;
   }
 
-  const statusLabels: Record<string, string> = {
-    pending: "待處理",
-    approved: "已選中",
-    rejected: "未選中",
-    completed: "已完成",
+  // 根據 request 狀態決定顯示的申請狀態
+  const getDisplayStatus = () => {
+    // 如果 request 已完成，申請狀態應該顯示為已完成
+    if (request.status === "completed") {
+      return { status: "completed", label: "已完成", variant: "secondary" as const };
+    }
+    // 如果 request 已取消，申請狀態應該顯示為未選中
+    if (request.status === "cancelled") {
+      return { status: "rejected", label: "未選中", variant: "destructive" as const };
+    }
+    // 其他情況使用 application 的原始狀態
+    const statusLabels: Record<string, string> = {
+      pending: "待處理",
+      approved: "已選中",
+      rejected: "未選中",
+      completed: "已完成",
+    };
+    const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+      pending: "outline",
+      approved: "default",
+      rejected: "destructive",
+      completed: "secondary",
+    };
+    return {
+      status: application.status,
+      label: statusLabels[application.status] || application.status,
+      variant: statusVariants[application.status] || "outline",
+    };
   };
 
-  const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-    pending: "outline",
-    approved: "default",
-    rejected: "destructive",
-    completed: "secondary",
-  };
+  const displayStatus = getDisplayStatus();
 
   return (
     <>
@@ -197,8 +215,8 @@ function ApplicationItem({
         <CardHeader>
           <div className="flex items-start justify-between">
             <CardTitle className="text-lg">{request.fields.join("、")}</CardTitle>
-            <Badge variant={statusVariants[application.status] || "outline"}>
-              {statusLabels[application.status] || application.status}
+            <Badge variant={displayStatus.variant}>
+              {displayStatus.label}
             </Badge>
           </div>
         </CardHeader>
