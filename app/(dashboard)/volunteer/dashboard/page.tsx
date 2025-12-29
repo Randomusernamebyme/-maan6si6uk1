@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Request } from "@/types";
 import { format } from "date-fns";
 import { zhTW } from "date-fns/locale";
@@ -30,13 +30,38 @@ export default function VolunteerDashboardPage() {
   const [sortBy, setSortBy] = useState<"latest" | "urgent">("latest");
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
 
+  // 調試：記錄獲取到的 requests
+  useEffect(() => {
+    console.log("=== 委托載入狀態 ===");
+    console.log("Loading:", loading);
+    console.log("Error:", error);
+    console.log("獲取到的委托數量:", requests.length);
+    console.log("用戶信息:", user ? { uid: user.uid, fields: user.fields, status: user.status } : "未登入");
+    
+    if (!loading && requests.length > 0) {
+      console.log("委托詳情:", requests.map(r => ({ 
+        id: r.id, 
+        status: r.status, 
+        fields: r.fields,
+        description: r.description?.substring(0, 50) + "..."
+      })));
+    }
+    if (!loading && requests.length === 0 && !error) {
+      console.warn("⚠️ 沒有獲取到任何 published 委托，可能的原因：");
+      console.warn("1. 數據庫中沒有 status='published' 的委托");
+      console.warn("2. Firestore 規則阻止了查詢");
+      console.warn("3. 用戶未登入或認證失敗");
+    }
+  }, [requests, loading, error, user]);
+
   // 篩選和排序委托
   const filteredRequests = useMemo(() => {
     let filtered = requests.filter((request) => {
       // 確保 request.fields 是數組
       const requestFields = Array.isArray(request.fields) ? request.fields : [];
       
-      // 只顯示符合義工 fields 的委托
+      // 只顯示符合義工 fields 的委托（如果義工有設置 fields）
+      // 如果義工沒有設置 fields 或 fields 為空，則顯示所有委托
       if (user?.fields && Array.isArray(user.fields) && user.fields.length > 0) {
         const hasMatchingField = requestFields.some((field) =>
           user.fields!.includes(field)
@@ -181,10 +206,30 @@ export default function VolunteerDashboardPage() {
               </Select>
             </div>
 
+            {/* 調試信息 */}
+            {!loading && (
+              <div className="text-sm text-muted-foreground mb-4">
+                <p>總共獲取到 {requests.length} 條 published 委托</p>
+                <p>篩選後顯示 {filteredRequests.length} 條委托</p>
+                {user?.fields && user.fields.length > 0 && (
+                  <p>您的服務領域: {user.fields.join("、")}</p>
+                )}
+              </div>
+            )}
+
             {/* 委托列表 */}
             {filteredRequests.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">目前沒有符合條件的委托</p>
+                <p className="text-muted-foreground">
+                  {requests.length === 0 
+                    ? "目前沒有 published 的委托" 
+                    : "目前沒有符合條件的委托（可能因為領域不匹配）"}
+                </p>
+                {requests.length > 0 && user?.fields && user.fields.length > 0 && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    提示：只顯示符合您服務領域的委托。您的領域：{user.fields.join("、")}
+                  </p>
+                )}
               </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
