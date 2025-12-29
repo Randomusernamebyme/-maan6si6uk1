@@ -1,7 +1,7 @@
 "use client";
 
 import { useApplications } from "@/lib/hooks/useApplications";
-import { useRequest } from "@/lib/hooks/useRequest";
+import { useRequestForVolunteer } from "@/lib/hooks/useRequestForVolunteer";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error";
@@ -129,7 +129,7 @@ function ApplicationItem({
   application: any;
   formatDate: (date: Date) => string;
 }) {
-  const { request, loading } = useRequest(application.requestId);
+  const { request, loading } = useRequestForVolunteer(application.requestId);
   const router = useRouter();
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
