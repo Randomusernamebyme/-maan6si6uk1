@@ -5,7 +5,6 @@ import {
   collection,
   query,
   where,
-  orderBy,
   onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
@@ -25,31 +24,43 @@ export function useApplications(volunteerId?: string) {
 
     const q = query(
       collection(db, "applications"),
-      where("volunteerId", "==", volunteerId),
-      orderBy("createdAt", "desc")
+      where("volunteerId", "==", volunteerId)
     );
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const data = snapshot.docs.map((doc) => {
-          const docData = doc.data();
-          return {
-            id: doc.id,
-            ...docData,
-            createdAt: convertTimestamp(docData.createdAt),
-            updatedAt: convertTimestamp(docData.updatedAt),
-            matchedAt: docData.matchedAt
-              ? convertTimestamp(docData.matchedAt)
-              : undefined,
-            completedAt: docData.completedAt
-              ? convertTimestamp(docData.completedAt)
-              : undefined,
-          } as Application;
-        });
-        setApplications(data);
-        setLoading(false);
-        setError(null);
+        try {
+          const data = snapshot.docs.map((doc) => {
+            const docData = doc.data();
+            return {
+              id: doc.id,
+              ...docData,
+              createdAt: convertTimestamp(docData.createdAt) || new Date(),
+              updatedAt: convertTimestamp(docData.updatedAt) || new Date(),
+              matchedAt: docData.matchedAt
+                ? convertTimestamp(docData.matchedAt)
+                : undefined,
+              completedAt: docData.completedAt
+                ? convertTimestamp(docData.completedAt)
+                : undefined,
+            } as Application;
+          });
+          
+          // 手動排序（最新優先）
+          data.sort((a, b) => {
+            if (!a.createdAt || !b.createdAt) return 0;
+            return b.createdAt.getTime() - a.createdAt.getTime();
+          });
+          
+          setApplications(data);
+          setLoading(false);
+          setError(null);
+        } catch (err) {
+          console.error("Error processing applications data:", err);
+          setError(err as Error);
+          setLoading(false);
+        }
       },
       (err) => {
         console.error("Error fetching applications:", err);

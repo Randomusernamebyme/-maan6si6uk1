@@ -5,7 +5,6 @@ import {
   collection,
   query,
   where,
-  orderBy,
   onSnapshot,
   Timestamp,
 } from "firebase/firestore";
@@ -19,10 +18,7 @@ export function useRequests(status?: RequestStatus | RequestStatus[]) {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    let q = query(
-      collection(db, "requests"),
-      orderBy("createdAt", "desc")
-    );
+    let q = query(collection(db, "requests"));
 
     if (status) {
       if (Array.isArray(status)) {
@@ -36,24 +32,37 @@ export function useRequests(status?: RequestStatus | RequestStatus[]) {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const data = snapshot.docs.map((doc) => {
-          const docData = doc.data();
-          return {
-            id: doc.id,
-            ...docData,
-            createdAt: convertTimestamp(docData.createdAt),
-            updatedAt: convertTimestamp(docData.updatedAt),
-            matchedAt: docData.matchedAt
-              ? convertTimestamp(docData.matchedAt)
-              : undefined,
-            completedAt: docData.completedAt
-              ? convertTimestamp(docData.completedAt)
-              : undefined,
-          } as Request;
-        });
-        setRequests(data);
-        setLoading(false);
-        setError(null);
+        try {
+          const data = snapshot.docs.map((doc) => {
+            const docData = doc.data();
+            return {
+              id: doc.id,
+              ...docData,
+              createdAt: convertTimestamp(docData.createdAt) || new Date(),
+              updatedAt: convertTimestamp(docData.updatedAt) || new Date(),
+              matchedAt: docData.matchedAt
+                ? convertTimestamp(docData.matchedAt)
+                : undefined,
+              completedAt: docData.completedAt
+                ? convertTimestamp(docData.completedAt)
+                : undefined,
+            } as Request;
+          });
+          
+          // 手動排序（最新優先）
+          data.sort((a, b) => {
+            if (!a.createdAt || !b.createdAt) return 0;
+            return b.createdAt.getTime() - a.createdAt.getTime();
+          });
+          
+          setRequests(data);
+          setLoading(false);
+          setError(null);
+        } catch (err) {
+          console.error("Error processing requests data:", err);
+          setError(err as Error);
+          setLoading(false);
+        }
       },
       (err) => {
         console.error("Error fetching requests:", err);
