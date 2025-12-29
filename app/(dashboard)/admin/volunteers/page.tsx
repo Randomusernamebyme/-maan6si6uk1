@@ -54,27 +54,39 @@ export default function AdminVolunteersPage() {
         const unsubscribe = onSnapshot(
           q,
           (snapshot) => {
-            const data = snapshot.docs.map((doc) => {
-              const docData = doc.data();
-              return {
-                uid: doc.id,
-                ...docData,
-                createdAt: convertTimestamp(docData.createdAt),
-                updatedAt: convertTimestamp(docData.updatedAt),
-                interviewDate: docData.interviewDate ? convertTimestamp(docData.interviewDate) : undefined,
-                lastLoginAt: docData.lastLoginAt ? convertTimestamp(docData.lastLoginAt) : undefined,
-              } as User;
-            });
-            
-            // 手動排序
-            data.sort((a, b) => {
-              if (!a.createdAt || !b.createdAt) return 0;
-              return b.createdAt.getTime() - a.createdAt.getTime();
-            });
-            
-            setVolunteers(data);
-            setLoading(false);
-            setError(null);
+            try {
+              const data = snapshot.docs.map((doc) => {
+                const docData = doc.data();
+                return {
+                  uid: doc.id,
+                  ...docData,
+                  createdAt: convertTimestamp(docData.createdAt) || new Date(),
+                  updatedAt: convertTimestamp(docData.updatedAt) || new Date(),
+                  interviewDate: docData.interviewDate ? convertTimestamp(docData.interviewDate) : undefined,
+                  lastLoginAt: docData.lastLoginAt ? convertTimestamp(docData.lastLoginAt) : undefined,
+                  // 確保必要欄位有預設值
+                  displayName: docData.displayName || "未知",
+                  email: docData.email || "",
+                  status: docData.status || "pending",
+                  fields: Array.isArray(docData.fields) ? docData.fields : [],
+                  skills: Array.isArray(docData.skills) ? docData.skills : [],
+                } as User;
+              });
+              
+              // 手動排序
+              data.sort((a, b) => {
+                if (!a.createdAt || !b.createdAt) return 0;
+                return b.createdAt.getTime() - a.createdAt.getTime();
+              });
+              
+              setVolunteers(data);
+              setLoading(false);
+              setError(null);
+            } catch (err) {
+              console.error("Error processing volunteers data:", err);
+              setError(err as Error);
+              setLoading(false);
+            }
           },
           (err) => {
             console.error("Error fetching volunteers:", err);
@@ -108,9 +120,9 @@ export default function AdminVolunteersPage() {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesSearch =
-          volunteer.displayName.toLowerCase().includes(query) ||
-          volunteer.email.toLowerCase().includes(query) ||
-          (volunteer.skills && volunteer.skills.some((s) => s.toLowerCase().includes(query)));
+          (volunteer.displayName || "").toLowerCase().includes(query) ||
+          (volunteer.email || "").toLowerCase().includes(query) ||
+          (Array.isArray(volunteer.skills) && volunteer.skills.some((s) => String(s).toLowerCase().includes(query)));
         if (!matchesSearch) return false;
       }
 

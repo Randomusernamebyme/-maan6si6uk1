@@ -17,14 +17,17 @@ import {
 import { db } from './config';
 
 // 將 Firestore Timestamp 轉換為 Date
-export const convertTimestamp = (timestamp: any): Date => {
+export const convertTimestamp = (timestamp: any): Date | undefined => {
+  if (!timestamp) return undefined;
   if (timestamp?.toDate) {
-    return timestamp.toDate();
+    const date = timestamp.toDate();
+    return isNaN(date.getTime()) ? undefined : date;
   }
   if (timestamp instanceof Date) {
-    return timestamp;
+    return isNaN(timestamp.getTime()) ? undefined : timestamp;
   }
-  return new Date(timestamp);
+  const date = new Date(timestamp);
+  return isNaN(date.getTime()) ? undefined : date;
 };
 
 // 將 Date 轉換為 Firestore Timestamp
@@ -65,7 +68,7 @@ export async function getDocuments<T>(
     const q = query(collectionRef, ...constraints);
     const querySnapshot = await getDocs(q);
 
-    return querySnapshot.docs.map((doc) => ({
+    return querySnapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
     })) as T[];

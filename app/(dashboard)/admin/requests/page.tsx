@@ -51,27 +51,38 @@ export default function AdminRequestsPage() {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const data = snapshot.docs.map((doc) => {
-          const docData = doc.data();
-          return {
-            id: doc.id,
-            ...docData,
-            createdAt: convertTimestamp(docData.createdAt),
-            updatedAt: convertTimestamp(docData.updatedAt),
-            matchedAt: docData.matchedAt ? convertTimestamp(docData.matchedAt) : undefined,
-            completedAt: docData.completedAt ? convertTimestamp(docData.completedAt) : undefined,
-          } as Request;
-        });
-        
-        // 手動排序
-        data.sort((a, b) => {
-          if (!a.createdAt || !b.createdAt) return 0;
-          return b.createdAt.getTime() - a.createdAt.getTime();
-        });
-        
-        setRequests(data);
-        setLoading(false);
-        setError(null);
+        try {
+          const data = snapshot.docs.map((doc) => {
+            const docData = doc.data();
+            return {
+              id: doc.id,
+              ...docData,
+              createdAt: convertTimestamp(docData.createdAt) || new Date(),
+              updatedAt: convertTimestamp(docData.updatedAt) || new Date(),
+              matchedAt: docData.matchedAt ? convertTimestamp(docData.matchedAt) : undefined,
+              completedAt: docData.completedAt ? convertTimestamp(docData.completedAt) : undefined,
+              // 確保必要欄位有預設值
+              status: docData.status || "pending",
+              fields: Array.isArray(docData.fields) ? docData.fields : [],
+              description: docData.description || "",
+              requester: docData.requester || { name: "未知", email: "", phone: "" },
+            } as Request;
+          });
+          
+          // 手動排序
+          data.sort((a, b) => {
+            if (!a.createdAt || !b.createdAt) return 0;
+            return b.createdAt.getTime() - a.createdAt.getTime();
+          });
+          
+          setRequests(data);
+          setLoading(false);
+          setError(null);
+        } catch (err) {
+          console.error("Error processing requests data:", err);
+          setError(err as Error);
+          setLoading(false);
+        }
       },
       (err) => {
         console.error("Error fetching requests:", err);
@@ -100,9 +111,9 @@ export default function AdminRequestsPage() {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesSearch =
-          request.description.toLowerCase().includes(query) ||
-          request.requester.name.toLowerCase().includes(query) ||
-          (Array.isArray(request.fields) && request.fields.some((f) => f.toLowerCase().includes(query)));
+          (request.description || "").toLowerCase().includes(query) ||
+          (request.requester?.name || "").toLowerCase().includes(query) ||
+          (Array.isArray(request.fields) && request.fields.some((f) => String(f).toLowerCase().includes(query)));
         if (!matchesSearch) return false;
       }
 
@@ -244,7 +255,7 @@ export default function AdminRequestsPage() {
                     {request.id.substring(0, 8)}
                   </div>
                   <div className="col-span-2 flex items-center text-sm">
-                    {request.requester.name}
+                    {request.requester?.name || "未知"}
                   </div>
                   <div className="col-span-2 flex items-center">
                     <div className="flex flex-wrap gap-1">

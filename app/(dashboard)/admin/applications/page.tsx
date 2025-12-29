@@ -47,29 +47,39 @@ export default function AdminApplicationsPage() {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const data = snapshot.docs.map((doc) => {
-          const docData = doc.data();
-          return {
-            id: doc.id,
-            ...docData,
-            createdAt: convertTimestamp(docData.createdAt),
-            updatedAt: convertTimestamp(docData.updatedAt),
-            matchedAt: docData.matchedAt ? convertTimestamp(docData.matchedAt) : undefined,
-            completedAt: docData.completedAt ? convertTimestamp(docData.completedAt) : undefined,
-            requestTitle: `委托 ${doc.id.substring(0, 8)}`,
-            volunteerName: `義工 ${docData.volunteerId?.substring(0, 8) || "未知"}`,
-          } as Application & { requestTitle?: string; volunteerName?: string };
-        });
-        
-        // 手動排序
-        data.sort((a, b) => {
-          if (!a.createdAt || !b.createdAt) return 0;
-          return b.createdAt.getTime() - a.createdAt.getTime();
-        });
-        
-        setApplications(data);
-        setLoading(false);
-        setError(null);
+        try {
+          const data = snapshot.docs.map((doc) => {
+            const docData = doc.data();
+            return {
+              id: doc.id,
+              ...docData,
+              createdAt: convertTimestamp(docData.createdAt) || new Date(),
+              updatedAt: convertTimestamp(docData.updatedAt) || new Date(),
+              matchedAt: docData.matchedAt ? convertTimestamp(docData.matchedAt) : undefined,
+              completedAt: docData.completedAt ? convertTimestamp(docData.completedAt) : undefined,
+              // 確保必要欄位有預設值
+              status: docData.status || "pending",
+              requestId: docData.requestId || "",
+              volunteerId: docData.volunteerId || "",
+              requestTitle: `委托 ${doc.id.substring(0, 8)}`,
+              volunteerName: `義工 ${docData.volunteerId?.substring(0, 8) || "未知"}`,
+            } as Application & { requestTitle?: string; volunteerName?: string };
+          });
+          
+          // 手動排序
+          data.sort((a, b) => {
+            if (!a.createdAt || !b.createdAt) return 0;
+            return b.createdAt.getTime() - a.createdAt.getTime();
+          });
+          
+          setApplications(data);
+          setLoading(false);
+          setError(null);
+        } catch (err) {
+          console.error("Error processing applications data:", err);
+          setError(err as Error);
+          setLoading(false);
+        }
       },
       (err) => {
         console.error("Error fetching applications:", err);
@@ -84,8 +94,8 @@ export default function AdminApplicationsPage() {
   const filteredApplications = useMemo(() => {
     return applications.filter((application) => {
       if (statusFilter !== "all" && application.status !== statusFilter) return false;
-      if (requestFilter !== "all" && application.requestId !== requestFilter) return false;
-      if (volunteerFilter !== "all" && application.volunteerId !== volunteerFilter) return false;
+      if (requestFilter !== "all" && (application.requestId || "") !== requestFilter) return false;
+      if (volunteerFilter !== "all" && (application.volunteerId || "") !== volunteerFilter) return false;
       return true;
     });
   }, [applications, statusFilter, requestFilter, volunteerFilter]);
