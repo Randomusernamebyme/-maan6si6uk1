@@ -32,7 +32,7 @@ const STATUS_LABELS: Record<ApplicationStatus, string> = {
 
 export default function AdminApplicationsPage() {
   const router = useRouter();
-  const [applications, setApplications] = useState<(Application & { requestTitle?: string; volunteerName?: string })[]>([]);
+  const [applications, setApplications] = useState<(Application & { requestTitle?: string; volunteerName?: string; requestStatus?: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
