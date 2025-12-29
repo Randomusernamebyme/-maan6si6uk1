@@ -8,6 +8,7 @@ import { convertTimestamp } from "@/lib/firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error";
@@ -19,9 +20,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import Link from "next/link";
 import { format } from "date-fns";
 import { zhTW } from "date-fns/locale";
+import { getAuthToken } from "@/lib/utils/auth";
+import { useRouter } from "next/navigation";
 
 const STATUS_TABS: RequestStatus[] = ["pending", "open", "published", "matched", "in-progress", "completed", "cancelled"];
 const STATUS_LABELS: Record<RequestStatus, string> = {
@@ -35,6 +46,7 @@ const STATUS_LABELS: Record<RequestStatus, string> = {
 };
 
 export default function AdminRequestsPage() {
+  const router = useRouter();
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -42,6 +54,11 @@ export default function AdminRequestsPage() {
   const [fieldFilter, setFieldFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRequests, setSelectedRequests] = useState<Set<string>>(new Set());
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [showBatchApproveDialog, setShowBatchApproveDialog] = useState(false);
+  const [showBatchMergeDialog, setShowBatchMergeDialog] = useState(false);
+  const [batchProcessing, setBatchProcessing] = useState(false);
 
   useEffect(() => {
     const q = query(
@@ -107,6 +124,18 @@ export default function AdminRequestsPage() {
         return false;
       }
 
+      // 日期範圍篩選
+      if (startDate || endDate) {
+        const requestDate = request.createdAt;
+        if (!requestDate) return false;
+        if (startDate && requestDate < new Date(startDate)) return false;
+        if (endDate) {
+          const endDateTime = new Date(endDate);
+          endDateTime.setHours(23, 59, 59, 999); // 設置為當天結束時間
+          if (requestDate > endDateTime) return false;
+        }
+      }
+
       // 搜尋
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -119,7 +148,7 @@ export default function AdminRequestsPage() {
 
       return true;
     });
-  }, [requests, statusFilter, fieldFilter, searchQuery]);
+  }, [requests, statusFilter, fieldFilter, searchQuery, startDate, endDate]);
 
   const formatDate = (date: Date | undefined | null) => {
     if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
@@ -146,6 +175,88 @@ export default function AdminRequestsPage() {
     }
   };
 
+  const handleBatchApprove = async () => {
+    if (selectedRequests.size === 0) return;
+
+    try {
+      setBatchProcessing(true);
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("請先登入");
+      }
+
+      // 批量更新狀態為 open
+      const updatePromises = Array.from(selectedRequests).map(async (requestId) => {
+        const response = await fetch(`/api/admin/requests/${requestId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: "open" }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "更新失敗");
+        }
+      });
+
+      await Promise.all(updatePromises);
+      setSelectedRequests(new Set());
+      setShowBatchApproveDialog(false);
+      router.refresh();
+    } catch (err: any) {
+      alert("批量審核失敗：" + (err.message || "請稍後再試"));
+    } finally {
+      setBatchProcessing(false);
+    }
+  };
+
+  const handleBatchMerge = async () => {
+    if (selectedRequests.size < 2) {
+      alert("請至少選擇2個委托進行合併");
+      return;
+    }
+
+    try {
+      setBatchProcessing(true);
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("請先登入");
+      }
+
+      const selectedArray = Array.from(selectedRequests);
+      const mainRequestId = selectedArray[0]; // 第一個作為主委托
+      const mergeRequestIds = selectedArray.slice(1); // 其餘作為被合併的委托
+
+      const response = await fetch("/api/admin/requests/merge", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          mainRequestId,
+          mergeRequestIds,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "合併失敗");
+      }
+
+      setSelectedRequests(new Set());
+      setShowBatchMergeDialog(false);
+      router.refresh();
+    } catch (err: any) {
+      alert("批量合併失敗：" + (err.message || "請稍後再試"));
+    } finally {
+      setBatchProcessing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -164,11 +275,21 @@ export default function AdminRequestsPage() {
         <h2 className="text-2xl font-bold">委托管理</h2>
         {selectedRequests.size > 0 && (
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              批量審核
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowBatchApproveDialog(true)}
+              disabled={batchProcessing}
+            >
+              批量審核 ({selectedRequests.size})
             </Button>
-            <Button variant="outline" size="sm">
-              批量合併
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowBatchMergeDialog(true)}
+              disabled={batchProcessing || selectedRequests.size < 2}
+            >
+              批量合併 ({selectedRequests.size})
             </Button>
           </div>
         )}
@@ -180,24 +301,58 @@ export default function AdminRequestsPage() {
           <CardTitle>篩選和搜尋</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <Input
-              placeholder="搜尋標題/描述/委托者姓名..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1"
-            />
-            <Select value={fieldFilter} onValueChange={setFieldFilter}>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="選擇領域" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">所有領域</SelectItem>
-                <SelectItem value="生活助手">生活助手</SelectItem>
-                <SelectItem value="社區拍檔">社區拍檔</SelectItem>
-                <SelectItem value="街坊樹窿">街坊樹窿</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <Input
+                placeholder="搜尋標題/描述/委托者姓名..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1"
+              />
+              <Select value={fieldFilter} onValueChange={setFieldFilter}>
+                <SelectTrigger className="w-full md:w-[180px]">
+                  <SelectValue placeholder="選擇領域" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">所有領域</SelectItem>
+                  <SelectItem value="生活助手">生活助手</SelectItem>
+                  <SelectItem value="社區拍檔">社區拍檔</SelectItem>
+                  <SelectItem value="街坊樹窿">街坊樹窿</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <Label className="text-sm text-muted-foreground">開始日期</Label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex-1">
+                <Label className="text-sm text-muted-foreground">結束日期</Label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              {(startDate || endDate) && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setStartDate("");
+                    setEndDate("");
+                  }}
+                  className="mt-6"
+                >
+                  清除日期
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -299,6 +454,54 @@ export default function AdminRequestsPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* 批量審核對話框 */}
+      <Dialog open={showBatchApproveDialog} onOpenChange={setShowBatchApproveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>批量審核</DialogTitle>
+            <DialogDescription>
+              確定要將選中的 {selectedRequests.size} 個委托批量審核為「已批准」嗎？
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowBatchApproveDialog(false)}
+              disabled={batchProcessing}
+            >
+              取消
+            </Button>
+            <Button onClick={handleBatchApprove} disabled={batchProcessing}>
+              {batchProcessing ? <Loading size="sm" /> : "確認審核"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 批量合併對話框 */}
+      <Dialog open={showBatchMergeDialog} onOpenChange={setShowBatchMergeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>批量合併</DialogTitle>
+            <DialogDescription>
+              確定要將選中的 {selectedRequests.size} 個委托合併嗎？第一個委托將作為主委托，其餘將被合併到主委托中。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowBatchMergeDialog(false)}
+              disabled={batchProcessing}
+            >
+              取消
+            </Button>
+            <Button onClick={handleBatchMerge} disabled={batchProcessing}>
+              {batchProcessing ? <Loading size="sm" /> : "確認合併"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

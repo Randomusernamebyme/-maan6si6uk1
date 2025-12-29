@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase/config";
+import { convertTimestamp } from "@/lib/firebase/firestore";
 import { getAuthToken } from "@/lib/utils/auth";
 import { Request } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,6 +48,10 @@ export default function RequestDetailPage() {
   const [showFollowUpDialog, setShowFollowUpDialog] = useState(false);
   const [followUpMethod, setFollowUpMethod] = useState("");
   const [followUpContent, setFollowUpContent] = useState("");
+  const [mergeSearchQuery, setMergeSearchQuery] = useState("");
+  const [availableRequests, setAvailableRequests] = useState<Request[]>([]);
+  const [selectedMergeRequests, setSelectedMergeRequests] = useState<Set<string>>(new Set());
+  const [mergeLoading, setMergeLoading] = useState(false);
 
   useEffect(() => {
     const fetchRequest = async () => {
@@ -166,6 +173,87 @@ export default function RequestDetailPage() {
     }
   };
 
+  // 獲取可合併的委托列表
+  useEffect(() => {
+    if (!showMergeDialog) return;
+
+    const fetchAvailableRequests = async () => {
+      try {
+        const token = await getAuthToken();
+        if (!token) return;
+
+        const response = await fetch(`/api/admin/requests/${requestId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) return;
+
+        // 獲取所有 pending 狀態的委托（除了當前委托）
+        const q = query(
+          collection(db, "requests"),
+          where("status", "==", "pending")
+        );
+        const snapshot = await getDocs(q);
+        const requests = snapshot.docs
+          .map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+            createdAt: convertTimestamp(doc.data().createdAt),
+          }))
+          .filter((r: any) => r.id !== requestId && !r.isMerged) as Request[];
+
+        setAvailableRequests(requests);
+      } catch (err) {
+        console.error("Error fetching available requests:", err);
+      }
+    };
+
+    fetchAvailableRequests();
+  }, [showMergeDialog, requestId]);
+
+  const handleMerge = async () => {
+    if (selectedMergeRequests.size === 0) {
+      setError("請至少選擇一個要合併的委托");
+      return;
+    }
+
+    try {
+      setMergeLoading(true);
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("請先登入");
+      }
+
+      const response = await fetch("/api/admin/requests/merge", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          mainRequestId: requestId,
+          mergeRequestIds: Array.from(selectedMergeRequests),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "合併失敗");
+      }
+
+      setShowMergeDialog(false);
+      setSelectedMergeRequests(new Set());
+      router.refresh();
+      window.location.reload();
+    } catch (err: any) {
+      setError(err.message || "合併失敗");
+    } finally {
+      setMergeLoading(false);
+    }
+  };
+
   const formatDate = (date: Date | undefined | null) => {
     if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
       return "無效日期";
@@ -253,6 +341,12 @@ export default function RequestDetailPage() {
                   <p className="text-sm text-muted-foreground mt-1">{request.estimatedDuration}</p>
                 </div>
               )}
+              {request.preferredDate && (
+                <div>
+                  <Label>希望日期</Label>
+                  <p className="text-sm text-muted-foreground mt-1">{request.preferredDate}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -270,6 +364,18 @@ export default function RequestDetailPage() {
                 <Label>電話</Label>
                 <p className="text-sm text-muted-foreground mt-1">{request.requester.phone}</p>
               </div>
+              {request.requester.whatsApp && (
+                <div>
+                  <Label>WhatsApp</Label>
+                  <p className="text-sm text-muted-foreground mt-1">{request.requester.whatsApp}</p>
+                </div>
+              )}
+              {request.requester.address && (
+                <div>
+                  <Label>地址</Label>
+                  <p className="text-sm text-muted-foreground mt-1">{request.requester.address}</p>
+                </div>
+              )}
               <div>
                 <Label>年齡</Label>
                 <p className="text-sm text-muted-foreground mt-1">{request.requester.age}</p>
@@ -367,6 +473,13 @@ export default function RequestDetailPage() {
                   >
                     拒絕
                   </Button>
+                  <Button
+                    onClick={() => setShowMergeDialog(true)}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    合併
+                  </Button>
                 </div>
               )}
 
@@ -457,6 +570,89 @@ export default function RequestDetailPage() {
               取消
             </Button>
             <Button onClick={handleAddFollowUp}>確認</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 合併委托對話框 */}
+      <Dialog open={showMergeDialog} onOpenChange={setShowMergeDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>合併委托</DialogTitle>
+            <DialogDescription>
+              選擇要合併到當前委托的其他委托。當前委托將作為主委托保留。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>搜尋委托</Label>
+              <Input
+                placeholder="搜尋委托描述或委托者姓名..."
+                value={mergeSearchQuery}
+                onChange={(e) => setMergeSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {availableRequests
+                .filter((r) => {
+                  if (!mergeSearchQuery) return true;
+                  const query = mergeSearchQuery.toLowerCase();
+                  return (
+                    (r.description || "").toLowerCase().includes(query) ||
+                    (r.requester?.name || "").toLowerCase().includes(query)
+                  );
+                })
+                .map((r) => (
+                  <div
+                    key={r.id}
+                    className="flex items-center space-x-2 p-2 border rounded-md hover:bg-muted/50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedMergeRequests.has(r.id)}
+                      onChange={(e) => {
+                        const newSelected = new Set(selectedMergeRequests);
+                        if (e.target.checked) {
+                          newSelected.add(r.id);
+                        } else {
+                          newSelected.delete(r.id);
+                        }
+                        setSelectedMergeRequests(newSelected);
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">
+                        {r.requester?.name || "未知"} - {r.id.substring(0, 8)}
+                      </p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {r.description?.substring(0, 100)}...
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              {availableRequests.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  沒有可合併的委托
+                </p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowMergeDialog(false);
+                setSelectedMergeRequests(new Set());
+                setMergeSearchQuery("");
+              }}
+              disabled={mergeLoading}
+            >
+              取消
+            </Button>
+            <Button onClick={handleMerge} disabled={mergeLoading || selectedMergeRequests.size === 0}>
+              {mergeLoading ? <Loading size="sm" /> : `確認合併 (${selectedMergeRequests.size})`}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

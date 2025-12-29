@@ -42,6 +42,7 @@ export default function AdminVolunteersPage() {
   const [fieldFilter, setFieldFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedVolunteers, setSelectedVolunteers] = useState<Set<string>>(new Set());
+  const [batchProcessing, setBatchProcessing] = useState(false);
 
   useEffect(() => {
     const fetchVolunteers = async () => {
@@ -166,6 +167,43 @@ export default function AdminVolunteersPage() {
     }
   };
 
+  const handleBatchApprove = async () => {
+    if (selectedVolunteers.size === 0) return;
+
+    try {
+      setBatchProcessing(true);
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("請先登入");
+      }
+
+      // 批量更新狀態為 approved
+      const updatePromises = Array.from(selectedVolunteers).map(async (volunteerId) => {
+        const response = await fetch(`/api/admin/volunteers/${volunteerId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: "approved" }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "更新失敗");
+        }
+      });
+
+      await Promise.all(updatePromises);
+      setSelectedVolunteers(new Set());
+      router.refresh();
+    } catch (err: any) {
+      alert("批量批准失敗：" + (err.message || "請稍後再試"));
+    } finally {
+      setBatchProcessing(false);
+    }
+  };
+
   const formatDate = (date: Date | undefined | null) => {
     if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
       return "無效日期";
@@ -190,8 +228,13 @@ export default function AdminVolunteersPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">義工管理</h2>
         {selectedVolunteers.size > 0 && (
-          <Button variant="outline" size="sm">
-            批量批准
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBatchApprove}
+            disabled={batchProcessing}
+          >
+            批量批准 ({selectedVolunteers.size})
           </Button>
         )}
       </div>
