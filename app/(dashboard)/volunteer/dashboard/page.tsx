@@ -33,9 +33,12 @@ export default function VolunteerDashboardPage() {
   // 篩選和排序委托
   const filteredRequests = useMemo(() => {
     let filtered = requests.filter((request) => {
+      // 確保 request.fields 是數組
+      const requestFields = Array.isArray(request.fields) ? request.fields : [];
+      
       // 只顯示符合義工 fields 的委托
-      if (user?.fields && user.fields.length > 0) {
-        const hasMatchingField = request.fields.some((field) =>
+      if (user?.fields && Array.isArray(user.fields) && user.fields.length > 0) {
+        const hasMatchingField = requestFields.some((field) =>
           user.fields!.includes(field)
         );
         if (!hasMatchingField) return false;
@@ -45,14 +48,14 @@ export default function VolunteerDashboardPage() {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesSearch =
-          request.description.toLowerCase().includes(query) ||
-          request.fields.some((f) => f.toLowerCase().includes(query));
+          (request.description || "").toLowerCase().includes(query) ||
+          requestFields.some((f) => String(f).toLowerCase().includes(query));
         if (!matchesSearch) return false;
       }
 
       // 領域篩選
       if (fieldFilter !== "all") {
-        if (!request.fields.includes(fieldFilter as any)) return false;
+        if (!requestFields.includes(fieldFilter as any)) return false;
       }
 
       // 緊急程度篩選
@@ -225,7 +228,7 @@ function RequestCard({
     return format(date, "yyyy年MM月dd日", { locale: zhTW });
   };
 
-  const hasMatchingSkills = request.requiredSkills
+  const hasMatchingSkills = Array.isArray(request.requiredSkills) && request.requiredSkills.length > 0
     ? request.requiredSkills.some((skill) => userSkills.includes(skill))
     : false;
 
@@ -233,7 +236,11 @@ function RequestCard({
     <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={onClick}>
       <CardHeader>
         <div className="flex items-start justify-between">
-          <CardTitle className="text-lg line-clamp-2">{request.fields.join("、")}</CardTitle>
+          <CardTitle className="text-lg line-clamp-2">
+            {Array.isArray(request.fields) && request.fields.length > 0
+              ? request.fields.join("、")
+              : "委托"}
+          </CardTitle>
           {request.urgency === "urgent" && (
             <Badge variant="destructive">緊急</Badge>
           )}
@@ -242,14 +249,18 @@ function RequestCard({
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
-          {request.description}
+          {request.description || "無描述"}
         </p>
         <div className="flex flex-wrap gap-2">
-          {request.fields.map((field) => (
-            <Badge key={field} variant="secondary">
-              {field}
-            </Badge>
-          ))}
+          {Array.isArray(request.fields) && request.fields.length > 0 ? (
+            request.fields.map((field) => (
+              <Badge key={field} variant="secondary">
+                {field}
+              </Badge>
+            ))
+          ) : (
+            <Badge variant="secondary">未分類</Badge>
+          )}
         </div>
         {hasMatchingSkills && (
           <Badge variant="outline" className="mt-2">

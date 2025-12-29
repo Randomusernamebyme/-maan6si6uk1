@@ -31,9 +31,11 @@ service cloud.firestore {
       // 任何人都可以創建委托（status 必須是 'pending'）
       allow create: if request.resource.data.status == 'pending';
       
-      // 義工和管理員可以讀取公開的委托（status='open'）
+      // 義工和管理員可以讀取公開的委托（status='published' 或 'open'）
       allow read: if request.auth != null && 
-        (resource.data.status == 'open' || isAdmin());
+        (resource.data.status == 'published' || 
+         resource.data.status == 'open' || 
+         isAdmin());
       
       // 只有管理員可以更新和刪除委托
       allow update, delete: if isAdmin();
