@@ -50,7 +50,7 @@ export default function AdminRequestsPage() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [statusFilter, setStatusFilter] = useState<RequestStatus>("pending");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [fieldFilter, setFieldFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRequests, setSelectedRequests] = useState<Set<string>>(new Set());
@@ -117,7 +117,7 @@ export default function AdminRequestsPage() {
       if (request.isMerged) return false;
 
       // 狀態篩選
-      if (request.status !== statusFilter) return false;
+      if (statusFilter !== "all" && request.status !== statusFilter) return false;
 
       // 領域篩選
       if (fieldFilter !== "all" && Array.isArray(request.fields) && !request.fields.includes(fieldFilter as ServiceField)) {
@@ -140,6 +140,7 @@ export default function AdminRequestsPage() {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesSearch =
+          (request.title || "").toLowerCase().includes(query) ||
           (request.description || "").toLowerCase().includes(query) ||
           (request.requester?.name || "").toLowerCase().includes(query) ||
           (Array.isArray(request.fields) && request.fields.some((f) => String(f).toLowerCase().includes(query)));
@@ -358,19 +359,27 @@ export default function AdminRequestsPage() {
       </Card>
 
       {/* 狀態分頁 */}
-      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as RequestStatus)}>
-        <TabsList className="grid w-full grid-cols-7">
-          {STATUS_TABS.map((status) => (
-            <TabsTrigger key={status} value={status}>
-              {STATUS_LABELS[status]}
-            </TabsTrigger>
-          ))}
+      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v)}>
+        <TabsList className="grid w-full grid-cols-8">
+          <TabsTrigger value="all">
+            全部 ({requests.filter(r => !r.isMerged).length})
+          </TabsTrigger>
+          {STATUS_TABS.map((status) => {
+            const count = requests.filter(r => !r.isMerged && r.status === status).length;
+            return (
+              <TabsTrigger key={status} value={status}>
+                {STATUS_LABELS[status]} ({count})
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
 
         <TabsContent value={statusFilter} className="mt-6">
           {filteredRequests.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">目前沒有{STATUS_LABELS[statusFilter]}的委托</p>
+              <p className="text-muted-foreground">
+                {statusFilter === "all" ? "目前沒有委托" : `目前沒有${STATUS_LABELS[statusFilter as RequestStatus]}的委托`}
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -385,10 +394,11 @@ export default function AdminRequestsPage() {
                   />
                 </div>
                 <div className="col-span-1">編號</div>
+                <div className="col-span-2">標題</div>
                 <div className="col-span-2">委托者</div>
                 <div className="col-span-2">領域</div>
                 <div className="col-span-2">提交時間</div>
-                <div className="col-span-2">狀態</div>
+                <div className="col-span-1">狀態</div>
                 <div className="col-span-2">操作</div>
               </div>
 
@@ -409,6 +419,9 @@ export default function AdminRequestsPage() {
                   <div className="col-span-1 flex items-center text-sm font-mono">
                     {request.id.substring(0, 8)}
                   </div>
+                  <div className="col-span-2 flex items-center text-sm font-medium">
+                    {request.title || "無標題"}
+                  </div>
                   <div className="col-span-2 flex items-center text-sm">
                     {request.requester?.name || "未知"}
                   </div>
@@ -428,7 +441,7 @@ export default function AdminRequestsPage() {
                   <div className="col-span-2 flex items-center text-sm text-muted-foreground">
                     {formatDate(request.createdAt)}
                   </div>
-                  <div className="col-span-2 flex items-center">
+                  <div className="col-span-1 flex items-center">
                     <Badge
                       variant={
                         request.status === "pending"

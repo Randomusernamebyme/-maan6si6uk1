@@ -311,6 +311,14 @@ export default function RequestDetailPage() {
               <CardTitle>基本資料</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {request.title && (
+                <div>
+                  <Label>標題</Label>
+                  <p className="text-sm font-semibold mt-1">
+                    {request.title}
+                  </p>
+                </div>
+              )}
               <div>
                 <Label>描述</Label>
                 <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
@@ -514,6 +522,31 @@ export default function RequestDetailPage() {
                     className="w-full"
                   >
                     標記為進行中
+                  </Button>
+                </div>
+              )}
+
+              {request.status === "matched" && (
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => handleStatusChange("in-progress")}
+                    className="w-full"
+                  >
+                    標記為進行中
+                  </Button>
+                  <Button
+                    onClick={() => handleStatusChange("completed")}
+                    variant="secondary"
+                    className="w-full"
+                  >
+                    標記為已完成
+                  </Button>
+                  <Button
+                    onClick={() => handleStatusChange("cancelled")}
+                    variant="destructive"
+                    className="w-full"
+                  >
+                    取消
                   </Button>
                 </div>
               )}

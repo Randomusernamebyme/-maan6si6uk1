@@ -8,6 +8,7 @@ export async function POST(request: NextRequest) {
 
     // 驗證必要欄位
     if (
+      !body.title ||
       !body.requester?.name ||
       !body.requester?.phone ||
       !body.requester?.age ||
@@ -22,23 +23,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 創建委托文檔
+    // 創建委托文檔（將空字符串轉為null）
     const requestData: Omit<Request, "id" | "createdAt" | "updatedAt"> = {
+      title: body.title,
       requester: {
         name: body.requester.name,
         phone: body.requester.phone,
-        whatsApp: body.requester.whatsApp,
-        address: body.requester.address,
+        whatsApp: body.requester.whatsApp && body.requester.whatsApp.trim() !== "" ? body.requester.whatsApp.trim() : null,
+        address: body.requester.address && body.requester.address.trim() !== "" ? body.requester.address.trim() : null,
         age: body.requester.age,
         district: body.requester.district,
       },
       description: body.description,
       fields: body.fields,
-      appreciation: body.appreciation,
-      urgency: body.urgency,
-      serviceType: body.serviceType,
-      estimatedDuration: body.estimatedDuration,
-      preferredDate: body.preferredDate,
+      appreciation: body.appreciation && body.appreciation.trim() !== "" ? body.appreciation.trim() : null,
+      urgency: body.urgency || null,
+      serviceType: body.serviceType && body.serviceType.trim() !== "" ? body.serviceType.trim() : null,
+      estimatedDuration: body.estimatedDuration && body.estimatedDuration.trim() !== "" ? body.estimatedDuration.trim() : null,
+      preferredDate: body.preferredDate && body.preferredDate.trim() !== "" ? body.preferredDate.trim() : null,
       status: "pending",
     };
 

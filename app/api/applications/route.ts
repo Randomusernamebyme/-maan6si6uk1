@@ -67,8 +67,8 @@ export async function POST(request: NextRequest) {
     const applicationData: Omit<Application, "id" | "createdAt" | "updatedAt"> = {
       requestId: body.requestId,
       volunteerId: body.volunteerId,
-      message: body.message,
-      availableTime: body.availableTime,
+      message: body.message && body.message.trim() !== "" ? body.message.trim() : null,
+      availableTime: body.availableTime && body.availableTime.trim() !== "" ? body.availableTime.trim() : null,
       status: "pending",
     };
 

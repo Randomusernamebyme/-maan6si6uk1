@@ -38,7 +38,7 @@ export default function AdminVolunteersPage() {
   const [volunteers, setVolunteers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [statusFilter, setStatusFilter] = useState<UserStatus>("pending");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [fieldFilter, setFieldFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedVolunteers, setSelectedVolunteers] = useState<Set<string>>(new Set());
@@ -110,7 +110,7 @@ export default function AdminVolunteersPage() {
   const filteredVolunteers = useMemo(() => {
     return volunteers.filter((volunteer) => {
       // 狀態篩選
-      if (volunteer.status !== statusFilter) return false;
+      if (statusFilter !== "all" && volunteer.status !== statusFilter) return false;
 
       // 領域篩選
       if (fieldFilter !== "all" && volunteer.fields && !volunteer.fields.includes(fieldFilter as ServiceField)) {
@@ -268,19 +268,27 @@ export default function AdminVolunteersPage() {
       </Card>
 
       {/* 狀態分頁 */}
-      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as UserStatus)}>
-        <TabsList className="grid w-full grid-cols-4">
-          {STATUS_TABS.map((status) => (
-            <TabsTrigger key={status} value={status}>
-              {STATUS_LABELS[status]}
-            </TabsTrigger>
-          ))}
+      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v)}>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="all">
+            全部 ({volunteers.length})
+          </TabsTrigger>
+          {STATUS_TABS.map((status) => {
+            const count = volunteers.filter(v => v.status === status).length;
+            return (
+              <TabsTrigger key={status} value={status}>
+                {STATUS_LABELS[status]} ({count})
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
 
         <TabsContent value={statusFilter} className="mt-6">
           {filteredVolunteers.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">目前沒有{STATUS_LABELS[statusFilter]}的義工</p>
+              <p className="text-muted-foreground">
+                {statusFilter === "all" ? "目前沒有義工" : `目前沒有${STATUS_LABELS[statusFilter as UserStatus]}的義工`}
+              </p>
             </div>
           ) : (
             <div className="space-y-4">

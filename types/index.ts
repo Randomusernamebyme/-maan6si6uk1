@@ -58,21 +58,22 @@ export interface Request {
   requester: {
     name: string; // 點樣稱呼你?
     phone: string; // 聯絡電話
-    whatsApp?: string; // WhatsApp 號碼
-    address?: string; // 地址
+    whatsApp?: string | null; // WhatsApp 號碼
+    address?: string | null; // 地址
     age: string; // 年齡
     district: string; // 居住地區
   };
 
   // 需求詳情
+  title?: string; // 委托標題
   description: string; // 有咩煩惱或者需求啊?
   fields: ServiceField[]; // 幫助範疇
-  appreciation?: string; // 回報方式(例: 心意卡、煮餐飯)
-  urgency?: UrgencyLevel; // 緊急程度
+  appreciation?: string | null; // 回報方式(例: 心意卡、煮餐飯)
+  urgency?: UrgencyLevel | null; // 緊急程度
   requiredSkills?: string[]; // 需要的技能
-  serviceType?: string; // 服務形式
-  estimatedDuration?: string; // 預計時長
-  preferredDate?: string; // 希望日期
+  serviceType?: string | null; // 服務形式
+  estimatedDuration?: string | null; // 預計時長
+  preferredDate?: string | null; // 希望日期
 
   // 後台管理
   status: RequestStatus;

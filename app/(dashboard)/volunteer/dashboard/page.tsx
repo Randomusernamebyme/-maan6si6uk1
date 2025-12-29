@@ -41,6 +41,7 @@ export default function VolunteerDashboardPage() {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesSearch =
+          (request.title || "").toLowerCase().includes(query) ||
           (request.description || "").toLowerCase().includes(query) ||
           requestFields.some((f) => String(f).toLowerCase().includes(query));
         if (!matchesSearch) return false;
@@ -234,9 +235,9 @@ function RequestCard({
       <CardHeader>
         <div className="flex items-start justify-between">
           <CardTitle className="text-lg line-clamp-2">
-            {Array.isArray(request.fields) && request.fields.length > 0
+            {request.title || (Array.isArray(request.fields) && request.fields.length > 0
               ? request.fields.join("、")
-              : "委托"}
+              : "委托")}
           </CardTitle>
           {request.urgency === "urgent" && (
             <Badge variant="destructive">緊急</Badge>

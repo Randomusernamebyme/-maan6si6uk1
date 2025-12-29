@@ -18,6 +18,7 @@ import { ServiceField } from "@/types";
 const phoneRegex = /^(\+?852[-.\s]?)?[2-9]\d{7}$/;
 
 const requestSchema = z.object({
+  title: z.string().min(1, "請輸入委托標題"),
   requesterName: z.string().min(1, "請輸入您的稱呼"),
   requesterPhone: z
     .string()
@@ -26,8 +27,12 @@ const requestSchema = z.object({
   requesterWhatsApp: z
     .string()
     .optional()
-    .refine((val) => !val || phoneRegex.test(val), "請輸入有效的香港電話號碼（8位數字）"),
-  requesterAddress: z.string().optional(),
+    .refine((val) => !val || val.trim() === "" || phoneRegex.test(val), "請輸入有效的香港電話號碼（8位數字）")
+    .transform((val) => (val && val.trim() !== "" ? val.trim() : null)),
+  requesterAddress: z
+    .string()
+    .optional()
+    .transform((val) => (val && val.trim() !== "" ? val.trim() : null)),
   requesterAge: z.enum(["12-24", "25-37", "38-50", "51-63", "64-76", "76或以上"], {
     required_error: "請選擇年齡範圍",
   }),
@@ -36,11 +41,26 @@ const requestSchema = z.object({
   }),
   description: z.string().min(20, "請詳細描述您的需求（至少20個字）"),
   fields: z.array(z.enum(["生活助手", "社區拍檔", "街坊樹窿"])).min(1, "請至少選擇一個幫助範疇"),
-  appreciation: z.string().optional(),
-  urgency: z.enum(["urgent", "normal"]).optional(),
-  serviceType: z.string().optional(),
-  estimatedDuration: z.string().optional(),
-  preferredDate: z.string().optional(),
+  appreciation: z
+    .string()
+    .optional()
+    .transform((val) => (val && val.trim() !== "" ? val.trim() : null)),
+  urgency: z
+    .enum(["urgent", "normal"])
+    .optional()
+    .transform((val) => val || null),
+  serviceType: z
+    .string()
+    .optional()
+    .transform((val) => (val && val.trim() !== "" ? val.trim() : null)),
+  estimatedDuration: z
+    .string()
+    .optional()
+    .transform((val) => (val && val.trim() !== "" ? val.trim() : null)),
+  preferredDate: z
+    .string()
+    .optional()
+    .transform((val) => (val && val.trim() !== "" ? val.trim() : null)),
 });
 
 type RequestFormData = z.infer<typeof requestSchema>;
@@ -88,21 +108,22 @@ export function RequestSubmissionForm() {
       setShowSuccess(false);
 
       const requestData = {
+        title: data.title,
         requester: {
           name: data.requesterName,
           phone: data.requesterPhone,
-          whatsApp: data.requesterWhatsApp || undefined,
-          address: data.requesterAddress || undefined,
+          whatsApp: data.requesterWhatsApp ?? null,
+          address: data.requesterAddress ?? null,
           age: data.requesterAge,
           district: data.requesterDistrict,
         },
         description: data.description,
         fields: data.fields,
-        appreciation: data.appreciation,
-        urgency: data.urgency || undefined,
-        serviceType: data.serviceType || undefined,
-        estimatedDuration: data.estimatedDuration || undefined,
-        preferredDate: data.preferredDate || undefined,
+        appreciation: data.appreciation ?? null,
+        urgency: data.urgency ?? null,
+        serviceType: data.serviceType ?? null,
+        estimatedDuration: data.estimatedDuration ?? null,
+        preferredDate: data.preferredDate ?? null,
       };
 
       const response = await fetch("/api/requests/submit", {
@@ -134,7 +155,22 @@ export function RequestSubmissionForm() {
         {error && <ErrorDisplay message={error} />}
 
         <div className="space-y-4">
-          <h3 className="font-semibold">委托者資料</h3>
+          <h3 className="font-semibold">委托資料</h3>
+
+          <div className="space-y-2">
+            <Label htmlFor="title">委托標題 *</Label>
+            <Input
+              id="title"
+              {...register("title")}
+              placeholder="例如：需要協助購物"
+              className="bg-background"
+            />
+            {errors.title && (
+              <p className="text-sm text-destructive">{errors.title.message}</p>
+            )}
+          </div>
+
+          <h3 className="font-semibold pt-4 border-t">委托者資料</h3>
 
           <div className="space-y-2">
             <Label htmlFor="requesterName">點樣稱呼你？ *</Label>

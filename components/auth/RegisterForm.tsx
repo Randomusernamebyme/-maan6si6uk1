@@ -159,10 +159,10 @@ export function RegisterForm() {
         phone: data.phone,
         age: data.age,
         fields: data.fields,
-        skills: skillsArray,
+        skills: skillsArray.length > 0 ? skillsArray : undefined,
         availability: data.availability,
-        targetAudience: audienceArray,
-        goals: data.goals,
+        targetAudience: audienceArray.length > 0 ? audienceArray : undefined,
+        goals: data.goals && data.goals.trim() !== "" ? data.goals.trim() : null,
       });
 
       // 顯示歡迎動畫

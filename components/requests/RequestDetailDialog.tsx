@@ -113,9 +113,9 @@ export function RequestDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">{request.fields.join("、")}</DialogTitle>
+          <DialogTitle className="text-2xl">{request.title || request.fields.join("、")}</DialogTitle>
           <DialogDescription>
-            發布時間：{formatDate(request.createdAt)}
+            {request.title ? request.fields.join("、") : ""} 發布時間：{formatDate(request.createdAt)}
             {request.urgency === "urgent" && (
               <Badge variant="destructive" className="ml-2">
                 緊急

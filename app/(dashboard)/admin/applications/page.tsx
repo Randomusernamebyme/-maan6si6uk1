@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { zhTW } from "date-fns/locale";
 import { getAuthToken } from "@/lib/utils/auth";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
   pending: "待處理",
@@ -227,11 +228,11 @@ export default function AdminApplicationsPage() {
                 <SelectValue placeholder="選擇狀態" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">全部狀態</SelectItem>
-                <SelectItem value="pending">待處理</SelectItem>
-                <SelectItem value="approved">已選中</SelectItem>
-                <SelectItem value="rejected">未選中</SelectItem>
-                <SelectItem value="completed">已完成</SelectItem>
+                <SelectItem value="all">全部狀態 ({applications.length})</SelectItem>
+                <SelectItem value="pending">待處理 ({applications.filter(a => a.status === "pending").length})</SelectItem>
+                <SelectItem value="approved">已選中 ({applications.filter(a => a.status === "approved").length})</SelectItem>
+                <SelectItem value="rejected">未選中 ({applications.filter(a => a.status === "rejected").length})</SelectItem>
+                <SelectItem value="completed">已完成 ({applications.filter(a => a.status === "completed").length})</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -243,8 +244,15 @@ export default function AdminApplicationsPage() {
         {Object.entries(groupedByRequest).map(([requestId, apps]) => (
           <Card key={requestId}>
             <CardHeader>
-              <CardTitle>{apps[0]?.requestTitle || "未知委托"}</CardTitle>
-              <CardDescription>委托 ID: {requestId.substring(0, 8)}</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>{apps[0]?.requestTitle || "未知委托"}</CardTitle>
+                  <CardDescription>委托 ID: {requestId.substring(0, 8)}</CardDescription>
+                </div>
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/admin/requests/${requestId}`}>查看委托詳情</Link>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -256,7 +264,12 @@ export default function AdminApplicationsPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-4">
                         <div>
-                          <p className="font-semibold">{app.volunteerName}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold">{app.volunteerName}</p>
+                            <Button asChild variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                              <Link href={`/admin/volunteers/${app.volunteerId}`}>查看義工資料</Link>
+                            </Button>
+                          </div>
                           <p className="text-sm text-muted-foreground">
                             {formatDate(app.createdAt)}
                           </p>
