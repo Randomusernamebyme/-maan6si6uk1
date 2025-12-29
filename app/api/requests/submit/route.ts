@@ -27,12 +27,18 @@ export async function POST(request: NextRequest) {
       requester: {
         name: body.requester.name,
         phone: body.requester.phone,
+        whatsApp: body.requester.whatsApp,
+        address: body.requester.address,
         age: body.requester.age,
         district: body.requester.district,
       },
       description: body.description,
       fields: body.fields,
       appreciation: body.appreciation,
+      urgency: body.urgency,
+      serviceType: body.serviceType,
+      estimatedDuration: body.estimatedDuration,
+      preferredDate: body.preferredDate,
       status: "pending",
     };
 

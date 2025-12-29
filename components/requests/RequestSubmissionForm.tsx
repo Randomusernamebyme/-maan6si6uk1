@@ -23,6 +23,11 @@ const requestSchema = z.object({
     .string()
     .min(1, "請輸入聯絡電話")
     .regex(phoneRegex, "請輸入有效的香港電話號碼（8位數字）"),
+  requesterWhatsApp: z
+    .string()
+    .optional()
+    .refine((val) => !val || phoneRegex.test(val), "請輸入有效的香港電話號碼（8位數字）"),
+  requesterAddress: z.string().optional(),
   requesterAge: z.enum(["12-24", "25-37", "38-50", "51-63", "64-76", "76或以上"], {
     required_error: "請選擇年齡範圍",
   }),
@@ -32,6 +37,10 @@ const requestSchema = z.object({
   description: z.string().min(20, "請詳細描述您的需求（至少20個字）"),
   fields: z.array(z.enum(["生活助手", "社區拍檔", "街坊樹窿"])).min(1, "請至少選擇一個幫助範疇"),
   appreciation: z.string().optional(),
+  urgency: z.enum(["urgent", "normal"]).optional(),
+  serviceType: z.string().optional(),
+  estimatedDuration: z.string().optional(),
+  preferredDate: z.string().optional(),
 });
 
 type RequestFormData = z.infer<typeof requestSchema>;
@@ -82,12 +91,18 @@ export function RequestSubmissionForm() {
         requester: {
           name: data.requesterName,
           phone: data.requesterPhone,
+          whatsApp: data.requesterWhatsApp || undefined,
+          address: data.requesterAddress || undefined,
           age: data.requesterAge,
           district: data.requesterDistrict,
         },
         description: data.description,
         fields: data.fields,
         appreciation: data.appreciation,
+        urgency: data.urgency || undefined,
+        serviceType: data.serviceType || undefined,
+        estimatedDuration: data.estimatedDuration || undefined,
+        preferredDate: data.preferredDate || undefined,
       };
 
       const response = await fetch("/api/requests/submit", {
@@ -135,7 +150,7 @@ export function RequestSubmissionForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="requesterPhone">留低你嘅聯絡電話 (可WhatsApp) *</Label>
+            <Label htmlFor="requesterPhone">留低你嘅聯絡電話 *</Label>
             <Input
               id="requesterPhone"
               {...register("requesterPhone")}
@@ -148,6 +163,29 @@ export function RequestSubmissionForm() {
             <p className="text-xs text-muted-foreground">
               請輸入8位數字（例如：91234567）
             </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="requesterWhatsApp">WhatsApp 號碼（選填）</Label>
+            <Input
+              id="requesterWhatsApp"
+              {...register("requesterWhatsApp")}
+              placeholder="例如：91234567（如與電話相同可留空）"
+              className="bg-background"
+            />
+            {errors.requesterWhatsApp && (
+              <p className="text-sm text-destructive">{errors.requesterWhatsApp.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="requesterAddress">地址（選填）</Label>
+            <Input
+              id="requesterAddress"
+              {...register("requesterAddress")}
+              placeholder="例如：堅尼地城海旁"
+              className="bg-background"
+            />
           </div>
 
           <div className="space-y-2">
@@ -239,6 +277,66 @@ export function RequestSubmissionForm() {
             <p className="text-xs text-muted-foreground">
               最少需要20個字
             </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="urgency">緊急程度（選填）</Label>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="urgency-normal"
+                  value="normal"
+                  {...register("urgency")}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="urgency-normal" className="font-normal cursor-pointer">
+                  一般
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="urgency-urgent"
+                  value="urgent"
+                  {...register("urgency")}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="urgency-urgent" className="font-normal cursor-pointer">
+                  緊急
+                </Label>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="serviceType">服務形式（選填）</Label>
+            <Input
+              id="serviceType"
+              {...register("serviceType")}
+              placeholder="例如：上門服務、線上支援、電話聯絡"
+              className="bg-background"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="estimatedDuration">預計時長（選填）</Label>
+            <Input
+              id="estimatedDuration"
+              {...register("estimatedDuration")}
+              placeholder="例如：2小時、每週一次、持續一個月"
+              className="bg-background"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="preferredDate">希望日期（選填）</Label>
+            <Input
+              id="preferredDate"
+              {...register("preferredDate")}
+              placeholder="例如：每週六下午、12月25日前、盡快"
+              className="bg-background"
+            />
           </div>
 
           <div className="space-y-2">

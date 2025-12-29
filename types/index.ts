@@ -58,6 +58,8 @@ export interface Request {
   requester: {
     name: string; // 點樣稱呼你?
     phone: string; // 聯絡電話
+    whatsApp?: string; // WhatsApp 號碼
+    address?: string; // 地址
     age: string; // 年齡
     district: string; // 居住地區
   };
@@ -70,6 +72,7 @@ export interface Request {
   requiredSkills?: string[]; // 需要的技能
   serviceType?: string; // 服務形式
   estimatedDuration?: string; // 預計時長
+  preferredDate?: string; // 希望日期
 
   // 後台管理
   status: RequestStatus;
