@@ -19,7 +19,7 @@ export default function AdminLayout({
   }
 
   const navItems = [
-    { href: "/admin", label: "儀表板" },
+    { href: "/admin/dashboard", label: "儀表板" },
     { href: "/admin/requests", label: "委托管理" },
     { href: "/admin/volunteers", label: "義工管理" },
     { href: "/admin/applications", label: "報名管理" },
@@ -43,7 +43,7 @@ export default function AdminLayout({
         <aside className="w-full md:w-64 flex-shrink-0">
           <nav className="space-y-1">
             {navItems.map((item) => {
-              const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
+              const isActive = pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.href}

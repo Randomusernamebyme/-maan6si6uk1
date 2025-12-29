@@ -110,8 +110,24 @@ export default function AdminVolunteerDetailPage() {
               completedAt: data.completedAt ? convertTimestamp(data.completedAt) : undefined,
             } as Application;
 
-            // 獲取委托標題
+            // 獲取委托標題（使用 API 路由以避免權限問題）
             try {
+              const token = await getAuthToken();
+              if (token) {
+                const response = await fetch(`/api/admin/requests/${application.requestId}`, {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                });
+                if (response.ok) {
+                  const requestData = await response.json();
+                  return {
+                    ...application,
+                    requestTitle: requestData.fields?.join("、") || "未知",
+                  };
+                }
+              }
+              // 如果 API 失敗，嘗試直接讀取（管理員應該有權限）
               const requestDoc = await getDoc(firestoreDoc(db, "requests", application.requestId));
               return {
                 ...application,

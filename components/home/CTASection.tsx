@@ -6,6 +6,12 @@ import { useAuth } from "@/lib/hooks/useAuth";
 
 export function CTASection() {
   const { user } = useAuth();
+  
+  // 如果已登入，不顯示CTA
+  if (user) {
+    return null;
+  }
+  
   return (
     <section className="py-16 md:py-24 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -19,10 +25,13 @@ export function CTASection() {
           </p>
           <div className="flex flex-wrap gap-4 justify-center pt-4">
             <Button asChild size="lg" className="bg-foreground text-background hover:bg-foreground/90">
-              <Link href="/request">提交委托請求</Link>
+              <Link href="/request">提交委托</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="border-2">
               <Link href="/register">成為義工</Link>
+            </Button>
+            <Button asChild size="lg" variant="ghost">
+              <Link href="/login">登入</Link>
             </Button>
           </div>
         </div>

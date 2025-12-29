@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User, Home } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 
 export function Header() {
   const { user, logout, loading } = useAuth();
@@ -30,63 +30,16 @@ export function Header() {
             <span className="text-xl font-bold">堅城萬事屋</span>
           </Link>
           
-          <nav className="hidden md:flex items-center gap-4">
-            <Link
-              href="/"
-              className="text-sm font-medium transition-colors hover:text-foreground/80 text-foreground/60"
-            >
-              <Home className="h-4 w-4 inline mr-1" />
-              首頁
-            </Link>
-            {user && (
-              <>
-                {user.role === "volunteer" && (
-                  <>
-                    <Link
-                      href="/volunteer/dashboard"
-                      className="text-sm font-medium transition-colors hover:text-foreground/80 text-foreground/60"
-                    >
-                      看板
-                    </Link>
-                    <Link
-                      href="/volunteer/applications"
-                      className="text-sm font-medium transition-colors hover:text-foreground/80 text-foreground/60"
-                    >
-                      我的報名
-                    </Link>
-                    <Link
-                      href="/volunteer/profile"
-                      className="text-sm font-medium transition-colors hover:text-foreground/80 text-foreground/60"
-                    >
-                      個人資料
-                    </Link>
-                  </>
-                )}
-                {user.role === "admin" && (
-                  <>
-                    <Link
-                      href="/admin"
-                      className="text-sm font-medium transition-colors hover:text-foreground/80 text-foreground/60"
-                    >
-                      管理後台
-                    </Link>
-                    <Link
-                      href="/admin/requests"
-                      className="text-sm font-medium transition-colors hover:text-foreground/80 text-foreground/60"
-                    >
-                      委托管理
-                    </Link>
-                    <Link
-                      href="/admin/volunteers"
-                      className="text-sm font-medium transition-colors hover:text-foreground/80 text-foreground/60"
-                    >
-                      義工管理
-                    </Link>
-                  </>
-                )}
-              </>
-            )}
-          </nav>
+          {user && (
+            <nav className="hidden md:flex items-center gap-4">
+              <Link
+                href={user.role === "admin" ? "/admin/dashboard" : "/volunteer/dashboard"}
+                className="text-sm font-medium transition-colors hover:text-foreground/80 text-foreground/60"
+              >
+                看板
+              </Link>
+            </nav>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -105,7 +58,7 @@ export function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
-                  <Link href={user.role === "admin" ? "/admin" : "/volunteer/profile"} className="flex items-center">
+                  <Link href={user.role === "admin" ? "/admin/dashboard" : "/volunteer/profile"} className="flex items-center">
                     <User className="mr-2 h-4 w-4" />
                     個人資料
                   </Link>
