@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminDb } from "@/lib/firebase/admin";
+import { getAdminDb, getAdminAuth } from "@/lib/firebase/admin";
 
 async function verifyAdmin(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -9,11 +9,12 @@ async function verifyAdmin(request: NextRequest) {
 
   const token = authHeader.substring(7);
   try {
-    const admin = getAdminDb();
-    const decodedToken = await admin.auth().verifyIdToken(token);
+    const adminAuth = getAdminAuth();
+    const adminDb = getAdminDb();
+    const decodedToken = await adminAuth.verifyIdToken(token);
     
     // 檢查是否為管理員
-    const userDoc = await admin.firestore().collection("users").doc(decodedToken.uid).get();
+    const userDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
     if (!userDoc.exists || userDoc.data()?.role !== "admin") {
       return null;
     }
@@ -37,7 +38,7 @@ export async function GET(
 
     const requestId = params.id;
     const adminDb = getAdminDb();
-    const requestDoc = await adminDb.firestore().collection("requests").doc(requestId).get();
+    const requestDoc = await adminDb.collection("requests").doc(requestId).get();
 
     if (!requestDoc.exists) {
       return NextResponse.json({ error: "委托不存在" }, { status: 404 });
