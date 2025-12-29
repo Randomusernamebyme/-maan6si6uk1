@@ -69,7 +69,7 @@ export default function AdminApplicationsPage() {
                     status: docData.status || "pending",
                     requestId: docData.requestId || "",
                     volunteerId: docData.volunteerId || "",
-                  } as Application & { requestTitle?: string; volunteerName?: string; requestStatus?: string });
+                  } as Application & { requestTitle?: string; volunteerName?: string; requestStatus?: string };
 
                   // 獲取 request 信息
                   try {
