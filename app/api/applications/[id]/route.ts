@@ -109,11 +109,53 @@ export async function PATCH(
     const body = await request.json();
     const adminDb = getAdminDb();
     const applicationRef = adminDb.collection("applications").doc(params.id);
+    const applicationDoc = await applicationRef.get();
 
-    await applicationRef.update({
+    if (!applicationDoc.exists) {
+      return NextResponse.json(
+        { error: "報名記錄不存在" },
+        { status: 404 }
+      );
+    }
+
+    const applicationData = applicationDoc.data();
+    const updateData: any = {
       ...body,
       updatedAt: new Date(),
-    });
+    };
+
+    // 如果管理員接受申請（status 改為 approved）
+    if (body.status === "approved" && applicationData?.status !== "approved") {
+      updateData.matchedAt = new Date();
+
+      // 更新對應的 request 狀態為 "matched"（如果當前是 published）
+      const requestRef = adminDb.collection("requests").doc(applicationData.requestId);
+      const requestDoc = await requestRef.get();
+
+      if (requestDoc.exists) {
+        const requestData = requestDoc.data();
+        if (requestData?.status === "published" || requestData?.status === "open") {
+          await requestRef.update({
+            status: "matched",
+            matchedAt: new Date(),
+            updatedAt: new Date(),
+          });
+        } else if (!requestData?.matchedAt && requestData?.status !== "matched") {
+          // 如果 request 還沒有 matchedAt，設置它
+          await requestRef.update({
+            matchedAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
+      }
+    }
+
+    // 如果管理員拒絕申請
+    if (body.status === "rejected" && applicationData?.status !== "rejected") {
+      // 不需要更新 request 狀態
+    }
+
+    await applicationRef.update(updateData);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

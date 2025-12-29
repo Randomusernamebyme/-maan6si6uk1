@@ -32,7 +32,7 @@ async function verifyVolunteerAndApplication(
       .get();
 
     if (applicationsSnapshot.empty) {
-      // 如果沒有報名，檢查 request 是否為 published 或 open（義工可以查看公開的 request）
+      // 如果沒有報名，檢查 request 是否為公開狀態（published 或 open）
       const requestDoc = await adminDb.collection("requests").doc(requestId).get();
       if (!requestDoc.exists) {
         return null;
@@ -41,6 +41,9 @@ async function verifyVolunteerAndApplication(
       if (requestData?.status !== "published" && requestData?.status !== "open") {
         return null; // 義工只能查看已報名的或公開的 request
       }
+    } else {
+      // 義工已報名，可以查看該 request（無論狀態如何）
+      // 這允許義工查看已配對、進行中、已完成、已取消的 request
     }
 
     return decodedToken;

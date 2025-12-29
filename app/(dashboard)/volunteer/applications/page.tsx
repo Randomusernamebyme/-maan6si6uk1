@@ -243,7 +243,59 @@ function ApplicationItem({
             </div>
           )}
 
-          {application.status === "approved" && (
+          {/* 顯示 Request 狀態 */}
+          {request.status && (
+            <div className="border-t pt-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-semibold">委托狀態：</span>
+                <Badge
+                  variant={
+                    request.status === "matched"
+                      ? "default"
+                      : request.status === "in-progress"
+                      ? "default"
+                      : request.status === "completed"
+                      ? "secondary"
+                      : request.status === "cancelled"
+                      ? "destructive"
+                      : "outline"
+                  }
+                >
+                  {request.status === "matched"
+                    ? "已配對"
+                    : request.status === "in-progress"
+                    ? "進行中"
+                    : request.status === "completed"
+                    ? "已完成"
+                    : request.status === "cancelled"
+                    ? "已取消"
+                    : request.status}
+                </Badge>
+              </div>
+              {request.status === "matched" && (
+                <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-3 text-sm text-blue-800 dark:text-blue-200">
+                  您已被選中！請留意 WhatsApp，團隊會聯絡您進行培訓和討論活動流程。
+                </div>
+              )}
+              {request.status === "in-progress" && (
+                <div className="rounded-md bg-green-50 dark:bg-green-900/20 p-3 text-sm text-green-800 dark:text-green-200">
+                  委托正在進行中，感謝您的參與！
+                </div>
+              )}
+              {request.status === "completed" && (
+                <div className="rounded-md bg-gray-50 dark:bg-gray-900/20 p-3 text-sm text-gray-800 dark:text-gray-200">
+                  委托已完成，感謝您的服務！
+                </div>
+              )}
+              {request.status === "cancelled" && (
+                <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-800 dark:text-red-200">
+                  此委托已取消。
+                </div>
+              )}
+            </div>
+          )}
+
+          {application.status === "approved" && request.status !== "matched" && request.status !== "in-progress" && request.status !== "completed" && request.status !== "cancelled" && (
             <div className="border-t pt-4">
               <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-4 text-sm text-blue-800 dark:text-blue-200">
                 請留意 WhatsApp，團隊會聯絡你

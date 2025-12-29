@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { collection, query, onSnapshot } from "firebase/firestore";
+import { collection, query, onSnapshot, getDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { Application, ApplicationStatus } from "@/types";
 import { convertTimestamp } from "@/lib/firebase/firestore";
@@ -40,55 +40,106 @@ export default function AdminApplicationsPage() {
   const [volunteerFilter, setVolunteerFilter] = useState<string>("all");
 
   useEffect(() => {
-    const q = query(
-      collection(db, "applications")
-    );
+    let unsubscribe: (() => void) | null = null;
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        try {
-          const data = snapshot.docs.map((doc) => {
-            const docData = doc.data();
-            return {
-              id: doc.id,
-              ...docData,
-              createdAt: convertTimestamp(docData.createdAt) || new Date(),
-              updatedAt: convertTimestamp(docData.updatedAt) || new Date(),
-              matchedAt: docData.matchedAt ? convertTimestamp(docData.matchedAt) : undefined,
-              completedAt: docData.completedAt ? convertTimestamp(docData.completedAt) : undefined,
-              // 確保必要欄位有預設值
-              status: docData.status || "pending",
-              requestId: docData.requestId || "",
-              volunteerId: docData.volunteerId || "",
-              requestTitle: `委托 ${doc.id.substring(0, 8)}`,
-              volunteerName: `義工 ${docData.volunteerId?.substring(0, 8) || "未知"}`,
-            } as Application & { requestTitle?: string; volunteerName?: string };
-          });
-          
-          // 手動排序
-          data.sort((a, b) => {
-            if (!a.createdAt || !b.createdAt) return 0;
-            return b.createdAt.getTime() - a.createdAt.getTime();
-          });
-          
-          setApplications(data);
-          setLoading(false);
-          setError(null);
-        } catch (err) {
-          console.error("Error processing applications data:", err);
-          setError(err as Error);
-          setLoading(false);
+    const fetchApplications = async () => {
+      try {
+        setLoading(true);
+        const token = await getAuthToken();
+        if (!token) {
+          throw new Error("請先登入");
         }
-      },
-      (err) => {
-        console.error("Error fetching applications:", err);
+
+        // 獲取所有申請
+        const q = query(collection(db, "applications"));
+        unsubscribe = onSnapshot(
+          q,
+          async (snapshot) => {
+            try {
+              const applicationsData = await Promise.all(
+                snapshot.docs.map(async (docItem) => {
+                  const docData = docItem.data();
+                  const application = {
+                    id: docItem.id,
+                    ...docData,
+                    createdAt: convertTimestamp(docData.createdAt) || new Date(),
+                    updatedAt: convertTimestamp(docData.updatedAt) || new Date(),
+                    matchedAt: docData.matchedAt ? convertTimestamp(docData.matchedAt) : undefined,
+                    completedAt: docData.completedAt ? convertTimestamp(docData.completedAt) : undefined,
+                    status: docData.status || "pending",
+                    requestId: docData.requestId || "",
+                    volunteerId: docData.volunteerId || "",
+                  } as Application & { requestTitle?: string; volunteerName?: string; requestStatus?: string });
+
+                  // 獲取 request 信息
+                  try {
+                    const requestResponse = await fetch(`/api/admin/requests/${application.requestId}`, {
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                      },
+                    });
+                    if (requestResponse.ok) {
+                      const requestData = await requestResponse.json();
+                      application.requestTitle = requestData.fields?.join("、") || "未知委托";
+                      application.requestStatus = requestData.status || "未知";
+                    }
+                  } catch (error) {
+                    console.error("Error fetching request:", error);
+                    application.requestTitle = "未知委托";
+                  }
+
+                  // 獲取 volunteer 信息
+                  try {
+                    const volunteerDoc = await getDoc(doc(db, "users", application.volunteerId));
+                    if (volunteerDoc.exists()) {
+                      application.volunteerName = volunteerDoc.data()?.displayName || "未知義工";
+                    } else {
+                      application.volunteerName = "未知義工";
+                    }
+                  } catch (error) {
+                    console.error("Error fetching volunteer:", error);
+                    application.volunteerName = "未知義工";
+                  }
+
+                  return application;
+                })
+              );
+
+              // 手動排序
+              applicationsData.sort((a, b) => {
+                if (!a.createdAt || !b.createdAt) return 0;
+                return b.createdAt.getTime() - a.createdAt.getTime();
+              });
+
+              setApplications(applicationsData);
+              setLoading(false);
+              setError(null);
+            } catch (err) {
+              console.error("Error processing applications data:", err);
+              setError(err as Error);
+              setLoading(false);
+            }
+          },
+          (err) => {
+            console.error("Error fetching applications:", err);
+            setError(err as Error);
+            setLoading(false);
+          }
+        );
+      } catch (err: any) {
+        console.error("Error setting up applications listener:", err);
         setError(err as Error);
         setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
+    fetchApplications();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
 
   const filteredApplications = useMemo(() => {
@@ -231,6 +282,34 @@ export default function AdminApplicationsPage() {
                         <p className="text-sm text-muted-foreground mt-1">
                           可服務時間：{app.availableTime}
                         </p>
+                      )}
+                      {app.requestStatus && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-sm text-muted-foreground">委托狀態：</span>
+                          <Badge
+                            variant={
+                              app.requestStatus === "matched"
+                                ? "default"
+                                : app.requestStatus === "in-progress"
+                                ? "default"
+                                : app.requestStatus === "completed"
+                                ? "secondary"
+                                : app.requestStatus === "cancelled"
+                                ? "destructive"
+                                : "outline"
+                            }
+                          >
+                            {app.requestStatus === "matched"
+                              ? "已配對"
+                              : app.requestStatus === "in-progress"
+                              ? "進行中"
+                              : app.requestStatus === "completed"
+                              ? "已完成"
+                              : app.requestStatus === "cancelled"
+                              ? "已取消"
+                              : app.requestStatus}
+                          </Badge>
+                        </div>
                       )}
                     </div>
                     <div className="flex gap-2">
