@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { collection, query, where, getDocs, doc as firestoreDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-import { User, Application, ActivityLog, Request } from "@/types";
+import { User, Application, ActivityLog, Request, ServiceField } from "@/types";
 import { convertTimestamp } from "@/lib/firebase/firestore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,9 @@ import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -64,8 +66,21 @@ export default function AdminVolunteerDetailPage() {
   // 對話框狀態
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [interviewNotes, setInterviewNotes] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
+  
+  // 編輯表單狀態
+  const [editFormData, setEditFormData] = useState({
+    displayName: "",
+    phone: "",
+    fields: [] as string[],
+    skills: [] as string[],
+    availability: [] as string[],
+    targetAudience: [] as string[],
+    goals: "",
+  });
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -90,6 +105,17 @@ export default function AdminVolunteerDetailPage() {
         } as User;
 
         setVolunteer(volunteerData);
+        
+        // 初始化編輯表單數據
+        setEditFormData({
+          displayName: volunteerData.displayName || "",
+          phone: volunteerData.phone || "",
+          fields: Array.isArray(volunteerData.fields) ? volunteerData.fields : [],
+          skills: Array.isArray(volunteerData.skills) ? volunteerData.skills : [],
+          availability: Array.isArray(volunteerData.availability) ? volunteerData.availability : [],
+          targetAudience: Array.isArray(volunteerData.targetAudience) ? volunteerData.targetAudience : [],
+          goals: volunteerData.goals || "",
+        });
 
         // 獲取報名記錄
         const applicationsQuery = query(
@@ -241,6 +267,53 @@ export default function AdminVolunteerDetailPage() {
   const handleReject = () => {
     setRejectDialogOpen(false);
     handleStatusChange("rejected", rejectionReason);
+  };
+
+  const handleEdit = () => {
+    if (!volunteer) return;
+    setEditFormData({
+      displayName: volunteer.displayName || "",
+      phone: volunteer.phone || "",
+      fields: Array.isArray(volunteer.fields) ? volunteer.fields : [],
+      skills: Array.isArray(volunteer.skills) ? volunteer.skills : [],
+      availability: Array.isArray(volunteer.availability) ? volunteer.availability : [],
+      targetAudience: Array.isArray(volunteer.targetAudience) ? volunteer.targetAudience : [],
+      goals: volunteer.goals || "",
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      setEditLoading(true);
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("請先登入");
+      }
+
+      const response = await fetch(`/api/admin/volunteers/${volunteerId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(editFormData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "更新失敗");
+      }
+
+      alert("更新成功！");
+      setEditDialogOpen(false);
+      router.refresh();
+      window.location.reload();
+    } catch (err: any) {
+      alert("更新失敗：" + (err.message || "請稍後再試"));
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   if (loading) {
@@ -630,7 +703,7 @@ export default function AdminVolunteerDetailPage() {
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => alert("編輯功能開發中")}
+                    onClick={handleEdit}
                   >
                     編輯
                   </Button>
@@ -657,6 +730,163 @@ export default function AdminVolunteerDetailPage() {
               </Button>
             </CardContent>
           </Card>
+          
+          {/* 編輯對話框 */}
+          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>編輯義工資料</DialogTitle>
+                <DialogDescription>
+                  修改義工的基本資料、服務領域、技能等信息
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="editDisplayName">姓名 *</Label>
+                  <Input
+                    id="editDisplayName"
+                    value={editFormData.displayName}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, displayName: e.target.value })
+                    }
+                    placeholder="義工姓名"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="editPhone">電話 (WhatsApp) *</Label>
+                  <Input
+                    id="editPhone"
+                    value={editFormData.phone}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, phone: e.target.value })
+                    }
+                    placeholder="電話號碼"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>服務範疇 *</Label>
+                  <div className="space-y-2">
+                    {(["生活助手", "社區拍檔", "街坊樹窿"] as ServiceField[]).map((field) => (
+                      <div key={field} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`editField-${field}`}
+                          checked={editFormData.fields.includes(field)}
+                          onCheckedChange={(checked) => {
+                            const newFields = checked
+                              ? [...editFormData.fields, field]
+                              : editFormData.fields.filter((f) => f !== field);
+                            setEditFormData({ ...editFormData, fields: newFields });
+                          }}
+                        />
+                        <Label htmlFor={`editField-${field}`} className="font-normal cursor-pointer">
+                          {field}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="editSkills">技能（多個技能請用逗號分隔）</Label>
+                  <Input
+                    id="editSkills"
+                    value={editFormData.skills.join(", ")}
+                    onChange={(e) => {
+                      const skills = e.target.value
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter((s) => s.length > 0);
+                      setEditFormData({ ...editFormData, skills });
+                    }}
+                    placeholder="例如：電腦操作, 廣東話, 陪伴"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>可服務時間</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"].map((day) => (
+                      <div key={day} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`editAvailability-${day}`}
+                          checked={editFormData.availability.includes(day)}
+                          onCheckedChange={(checked) => {
+                            const newAvailability = checked
+                              ? [...editFormData.availability, day]
+                              : editFormData.availability.filter((d) => d !== day);
+                            setEditFormData({ ...editFormData, availability: newAvailability });
+                          }}
+                        />
+                        <Label htmlFor={`editAvailability-${day}`} className="font-normal cursor-pointer text-sm">
+                          {day}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>想服務的對象</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {["長者", "兒童", "青少年", "家庭", "殘疾人士", "其他"].map((audience) => (
+                      <div key={audience} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`editTarget-${audience}`}
+                          checked={editFormData.targetAudience.includes(audience)}
+                          onCheckedChange={(checked) => {
+                            const newTargetAudience = checked
+                              ? [...editFormData.targetAudience, audience]
+                              : editFormData.targetAudience.filter((a) => a !== audience);
+                            setEditFormData({ ...editFormData, targetAudience: newTargetAudience });
+                          }}
+                        />
+                        <Label htmlFor={`editTarget-${audience}`} className="font-normal cursor-pointer text-sm">
+                          {audience}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="editGoals">想透過萬事屋完成的目標</Label>
+                  <Textarea
+                    id="editGoals"
+                    value={editFormData.goals}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, goals: e.target.value })
+                    }
+                    placeholder="請輸入義工的目標和動機..."
+                    rows={4}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setEditDialogOpen(false)}
+                  disabled={editLoading}
+                >
+                  取消
+                </Button>
+                <Button
+                  onClick={handleSaveEdit}
+                  disabled={editLoading || !editFormData.displayName.trim() || !editFormData.phone.trim() || editFormData.fields.length === 0}
+                >
+                  {editLoading ? <Loading size="sm" /> : "保存"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+    </div>
+  );
+}
 
           {/* 系統資訊 */}
           <Card>
