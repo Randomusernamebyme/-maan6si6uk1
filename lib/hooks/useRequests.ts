@@ -55,7 +55,6 @@ export function useRequests(status?: RequestStatus | RequestStatus[]) {
             return b.createdAt.getTime() - a.createdAt.getTime();
           });
           
-          console.log(`獲取到 ${data.length} 條委托，狀態篩選: ${status || "全部"}`);
           setRequests(data);
           setLoading(false);
           setError(null);
@@ -67,11 +66,6 @@ export function useRequests(status?: RequestStatus | RequestStatus[]) {
       },
       (err) => {
         console.error("Error fetching requests:", err);
-        console.error("Error details:", {
-          code: err.code,
-          message: err.message,
-          status: status
-        });
         setError(err as Error);
         setLoading(false);
       }
