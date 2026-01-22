@@ -9,11 +9,12 @@ async function verifyAdmin(request: NextRequest) {
 
   const token = authHeader.substring(7);
   try {
-    const admin = getAdminDb();
-    const decodedToken = await admin.auth().verifyIdToken(token);
+    const adminAuth = getAdminAuth();
+    const adminDb = getAdminDb();
+    const decodedToken = await adminAuth.verifyIdToken(token);
     
     // 檢查是否為管理員
-    const userDoc = await admin.firestore().collection("users").doc(decodedToken.uid).get();
+    const userDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
     if (!userDoc.exists || userDoc.data()?.role !== "admin") {
       return null;
     }
