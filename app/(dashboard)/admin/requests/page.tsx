@@ -301,19 +301,27 @@ export default function AdminRequestsPage() {
       </Card>
 
       {/* 狀態分頁 */}
-      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as RequestStatus)}>
-        <TabsList className="grid w-full grid-cols-7">
-          {STATUS_TABS.map((status) => (
-            <TabsTrigger key={status} value={status}>
-              {STATUS_LABELS[status]}
-            </TabsTrigger>
-          ))}
+      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v)}>
+        <TabsList className="grid w-full grid-cols-8">
+          <TabsTrigger value="all">
+            全部 ({requests.filter(r => !r.isMerged).length})
+          </TabsTrigger>
+          {STATUS_TABS.map((status) => {
+            const count = requests.filter(r => !r.isMerged && r.status === status).length;
+            return (
+              <TabsTrigger key={status} value={status}>
+                {STATUS_LABELS[status]} ({count})
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
 
         <TabsContent value={statusFilter} className="mt-6">
           {filteredRequests.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">目前沒有{STATUS_LABELS[statusFilter]}的委托</p>
+              <p className="text-muted-foreground">
+                {statusFilter === "all" ? "目前沒有委托" : `目前沒有${STATUS_LABELS[statusFilter as RequestStatus]}的委托`}
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
