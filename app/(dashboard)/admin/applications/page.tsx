@@ -106,10 +106,13 @@ export default function AdminApplicationsPage() {
                 if (docSnap.exists()) {
                   const data = docSnap.data();
                   return { 
-                    id: docSnap.id,
                     uid: docSnap.id,
-                    ...data 
-                  } as User;
+                    ...data,
+                    createdAt: convertTimestamp(data.createdAt) || new Date(),
+                    updatedAt: convertTimestamp(data.updatedAt) || new Date(),
+                    lastLoginAt: data.lastLoginAt ? convertTimestamp(data.lastLoginAt) : undefined,
+                    interviewDate: data.interviewDate ? convertTimestamp(data.interviewDate) : undefined,
+                  } as unknown as User;
                 }
                 return null;
               } catch (err) {
