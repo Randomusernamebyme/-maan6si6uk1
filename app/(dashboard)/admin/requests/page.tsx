@@ -46,6 +46,7 @@ const STATUS_LABELS: Record<RequestStatus, string> = {
 };
 
 export default function AdminRequestsPage() {
+  const router = useRouter();
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
