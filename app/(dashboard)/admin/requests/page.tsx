@@ -115,7 +115,7 @@ export default function AdminRequestsPage() {
       if (request.isMerged) return false;
 
       // 狀態篩選
-      if (request.status !== statusFilter) return false;
+      if (statusFilter !== "all" && request.status !== statusFilter) return false;
 
       // 領域篩選
       if (fieldFilter !== "all" && Array.isArray(request.fields) && !request.fields.includes(fieldFilter as ServiceField)) {

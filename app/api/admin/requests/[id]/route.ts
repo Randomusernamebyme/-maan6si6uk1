@@ -59,3 +59,54 @@ export async function GET(
     );
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ error: "未授權" }, { status: 401 });
+    }
+
+    const requestId = params.id;
+    const body = await request.json();
+    const adminDb = getAdminDb();
+
+    // 檢查委托是否存在
+    const requestDoc = await adminDb.collection("requests").doc(requestId).get();
+    if (!requestDoc.exists) {
+      return NextResponse.json({ error: "委托不存在" }, { status: 404 });
+    }
+
+    // 更新委托
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+
+    if (body.status) {
+      updateData.status = body.status;
+      
+      // 根據狀態更新相關時間戳
+      if (body.status === "matched") {
+        updateData.matchedAt = new Date();
+      } else if (body.status === "completed") {
+        updateData.completedAt = new Date();
+      }
+    }
+
+    await adminDb.collection("requests").doc(requestId).update(updateData);
+
+    return NextResponse.json({ 
+      success: true,
+      message: "委托已更新"
+    });
+  } catch (error: any) {
+    console.error("Error updating request:", error);
+    return NextResponse.json(
+      { error: error.message || "更新委托失敗" },
+      { status: 500 }
+    );
+  }
+}
