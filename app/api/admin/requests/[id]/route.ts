@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminDb } from "@/lib/firebase/admin";
+import { getAdminDb, getAdminAuth } from "@/lib/firebase/admin";
 
 async function verifyAdmin(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
