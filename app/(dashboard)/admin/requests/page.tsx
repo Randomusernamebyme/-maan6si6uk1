@@ -49,7 +49,7 @@ export default function AdminRequestsPage() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [statusFilter, setStatusFilter] = useState<RequestStatus>("pending");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [fieldFilter, setFieldFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRequests, setSelectedRequests] = useState<Set<string>>(new Set());
