@@ -38,7 +38,7 @@ export async function GET(
 
     const requestId = params.id;
     const adminDb = getAdminDb();
-    const requestDoc = await adminDb.firestore().collection("requests").doc(requestId).get();
+    const requestDoc = await adminDb.collection("requests").doc(requestId).get();
 
     if (!requestDoc.exists) {
       return NextResponse.json({ error: "委托不存在" }, { status: 404 });
