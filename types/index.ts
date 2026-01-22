@@ -100,8 +100,8 @@ export interface Application {
   volunteerId: string; // 義工ID
 
   // 報名資訊
-  message?: string; // 義工的留言
-  availableTime?: string; // 可服務時間
+  message?: string | null; // 義工的留言
+  availableTime?: string | null; // 可服務時間
   status: ApplicationStatus;
 
   // 配對資訊
