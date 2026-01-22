@@ -130,7 +130,7 @@ export default function AdminApplicationsPage() {
 
           const volunteersMap: Record<string, User> = {};
           volunteersData.forEach(vol => {
-            if (vol) volunteersMap[vol.id] = vol;
+            if (vol) volunteersMap[vol.uid] = vol;
           });
 
           setRequests(requestsMap);
