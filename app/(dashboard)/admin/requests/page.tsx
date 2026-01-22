@@ -31,6 +31,8 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { format } from "date-fns";
 import { zhTW } from "date-fns/locale";
+import { getAuthToken } from "@/lib/utils/auth";
+import { useRouter } from "next/navigation";
 
 const STATUS_TABS: RequestStatus[] = ["pending", "open", "published", "matched", "in-progress", "completed", "cancelled"];
 const STATUS_LABELS: Record<RequestStatus, string> = {
