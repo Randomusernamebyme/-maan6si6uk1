@@ -104,7 +104,12 @@ export default function AdminApplicationsPage() {
               try {
                 const docSnap = await getDoc(doc(db, "users", id));
                 if (docSnap.exists()) {
-                  return { id: docSnap.id, ...docSnap.data() } as User;
+                  const data = docSnap.data();
+                  return { 
+                    id: docSnap.id,
+                    uid: docSnap.id,
+                    ...data 
+                  } as User;
                 }
                 return null;
               } catch (err) {
