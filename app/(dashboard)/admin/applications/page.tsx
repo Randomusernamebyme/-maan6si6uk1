@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { collection, query, onSnapshot, getDoc, doc } from "firebase/firestore";
+import { collection, query, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { Application, ApplicationStatus } from "@/types";
 import { convertTimestamp } from "@/lib/firebase/firestore";
@@ -21,8 +21,7 @@ import {
 import { format } from "date-fns";
 import { zhTW } from "date-fns/locale";
 import { getAuthToken } from "@/lib/utils/auth";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
   pending: "待處理",
@@ -33,114 +32,67 @@ const STATUS_LABELS: Record<ApplicationStatus, string> = {
 
 export default function AdminApplicationsPage() {
   const router = useRouter();
-  const [applications, setApplications] = useState<(Application & { requestTitle?: string; volunteerName?: string; requestStatus?: string })[]>([]);
+  const [applications, setApplications] = useState<(Application & { requestTitle?: string; volunteerName?: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const searchParams = useSearchParams();
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [requestFilter, setRequestFilter] = useState<string>("all");
+  const [requestFilter, setRequestFilter] = useState<string>(searchParams?.get("request") || "all");
   const [volunteerFilter, setVolunteerFilter] = useState<string>("all");
+  const [highlightApplicationId, setHighlightApplicationId] = useState<string | null>(
+    searchParams?.get("application") || null
+  );
 
   useEffect(() => {
-    let unsubscribe: (() => void) | null = null;
+    const q = query(
+      collection(db, "applications")
+    );
 
-    const fetchApplications = async () => {
-      try {
-        setLoading(true);
-        const token = await getAuthToken();
-        if (!token) {
-          throw new Error("請先登入");
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        try {
+          const data = snapshot.docs.map((doc) => {
+            const docData = doc.data();
+            return {
+              id: doc.id,
+              ...docData,
+              createdAt: convertTimestamp(docData.createdAt) || new Date(),
+              updatedAt: convertTimestamp(docData.updatedAt) || new Date(),
+              matchedAt: docData.matchedAt ? convertTimestamp(docData.matchedAt) : undefined,
+              completedAt: docData.completedAt ? convertTimestamp(docData.completedAt) : undefined,
+              // 確保必要欄位有預設值
+              status: docData.status || "pending",
+              requestId: docData.requestId || "",
+              volunteerId: docData.volunteerId || "",
+              requestTitle: `委托 ${doc.id.substring(0, 8)}`,
+              volunteerName: `義工 ${docData.volunteerId?.substring(0, 8) || "未知"}`,
+            } as Application & { requestTitle?: string; volunteerName?: string };
+          });
+          
+          // 手動排序
+          data.sort((a, b) => {
+            if (!a.createdAt || !b.createdAt) return 0;
+            return b.createdAt.getTime() - a.createdAt.getTime();
+          });
+          
+          setApplications(data);
+          setLoading(false);
+          setError(null);
+        } catch (err) {
+          console.error("Error processing applications data:", err);
+          setError(err as Error);
+          setLoading(false);
         }
-
-        // 獲取所有申請
-        const q = query(collection(db, "applications"));
-        unsubscribe = onSnapshot(
-          q,
-          async (snapshot) => {
-            try {
-              const applicationsData = await Promise.all(
-                snapshot.docs.map(async (docItem) => {
-                  const docData = docItem.data();
-                  const application = {
-                    id: docItem.id,
-                    ...docData,
-                    createdAt: convertTimestamp(docData.createdAt) || new Date(),
-                    updatedAt: convertTimestamp(docData.updatedAt) || new Date(),
-                    matchedAt: docData.matchedAt ? convertTimestamp(docData.matchedAt) : undefined,
-                    completedAt: docData.completedAt ? convertTimestamp(docData.completedAt) : undefined,
-                    status: docData.status || "pending",
-                    requestId: docData.requestId || "",
-                    volunteerId: docData.volunteerId || "",
-                  } as Application & { requestTitle?: string; volunteerName?: string; requestStatus?: string };
-
-                  // 獲取 request 信息
-                  try {
-                    const requestResponse = await fetch(`/api/admin/requests/${application.requestId}`, {
-                      headers: {
-                        Authorization: `Bearer ${token}`,
-                      },
-                    });
-                    if (requestResponse.ok) {
-                      const requestData = await requestResponse.json();
-                      application.requestTitle = requestData.fields?.join("、") || "未知委托";
-                      application.requestStatus = requestData.status || "未知";
-                    }
-                  } catch (error) {
-                    console.error("Error fetching request:", error);
-                    application.requestTitle = "未知委托";
-                  }
-
-                  // 獲取 volunteer 信息
-                  try {
-                    const volunteerDoc = await getDoc(doc(db, "users", application.volunteerId));
-                    if (volunteerDoc.exists()) {
-                      application.volunteerName = volunteerDoc.data()?.displayName || "未知義工";
-                    } else {
-                      application.volunteerName = "未知義工";
-                    }
-                  } catch (error) {
-                    console.error("Error fetching volunteer:", error);
-                    application.volunteerName = "未知義工";
-                  }
-
-                  return application;
-                })
-              );
-
-              // 手動排序
-              applicationsData.sort((a, b) => {
-                if (!a.createdAt || !b.createdAt) return 0;
-                return b.createdAt.getTime() - a.createdAt.getTime();
-              });
-
-              setApplications(applicationsData);
-              setLoading(false);
-              setError(null);
-            } catch (err) {
-              console.error("Error processing applications data:", err);
-              setError(err as Error);
-              setLoading(false);
-            }
-          },
-          (err) => {
-            console.error("Error fetching applications:", err);
-            setError(err as Error);
-            setLoading(false);
-          }
-        );
-      } catch (err: any) {
-        console.error("Error setting up applications listener:", err);
+      },
+      (err) => {
+        console.error("Error fetching applications:", err);
         setError(err as Error);
         setLoading(false);
       }
-    };
+    );
 
-    fetchApplications();
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
+    return () => unsubscribe();
   }, []);
 
   const filteredApplications = useMemo(() => {
@@ -228,11 +180,11 @@ export default function AdminApplicationsPage() {
                 <SelectValue placeholder="選擇狀態" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">全部狀態 ({applications.length})</SelectItem>
-                <SelectItem value="pending">待處理 ({applications.filter(a => a.status === "pending").length})</SelectItem>
-                <SelectItem value="approved">已選中 ({applications.filter(a => a.status === "approved").length})</SelectItem>
-                <SelectItem value="rejected">未選中 ({applications.filter(a => a.status === "rejected").length})</SelectItem>
-                <SelectItem value="completed">已完成 ({applications.filter(a => a.status === "completed").length})</SelectItem>
+                <SelectItem value="all">全部狀態</SelectItem>
+                <SelectItem value="pending">待處理</SelectItem>
+                <SelectItem value="approved">已選中</SelectItem>
+                <SelectItem value="rejected">未選中</SelectItem>
+                <SelectItem value="completed">已完成</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -244,32 +196,22 @@ export default function AdminApplicationsPage() {
         {Object.entries(groupedByRequest).map(([requestId, apps]) => (
           <Card key={requestId}>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>{apps[0]?.requestTitle || "未知委托"}</CardTitle>
-                  <CardDescription>委托 ID: {requestId.substring(0, 8)}</CardDescription>
-                </div>
-                <Button asChild variant="outline" size="sm">
-                  <Link href={`/admin/requests/${requestId}`}>查看委托詳情</Link>
-                </Button>
-              </div>
+              <CardTitle>{apps[0]?.requestTitle || "未知委托"}</CardTitle>
+              <CardDescription>委托 ID: {requestId.substring(0, 8)}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {apps.map((app) => (
                   <div
                     key={app.id}
-                    className="flex items-center justify-between p-4 border rounded-md"
+                    className={`flex items-center justify-between p-4 border rounded-md ${
+                      highlightApplicationId === app.id ? "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20" : ""
+                    }`}
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-4">
                         <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold">{app.volunteerName}</p>
-                            <Button asChild variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                              <Link href={`/admin/volunteers/${app.volunteerId}`}>查看義工資料</Link>
-                            </Button>
-                          </div>
+                          <p className="font-semibold">{app.volunteerName}</p>
                           <p className="text-sm text-muted-foreground">
                             {formatDate(app.createdAt)}
                           </p>
@@ -295,34 +237,6 @@ export default function AdminApplicationsPage() {
                         <p className="text-sm text-muted-foreground mt-1">
                           可服務時間：{app.availableTime}
                         </p>
-                      )}
-                      {app.requestStatus && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-sm text-muted-foreground">委托狀態：</span>
-                          <Badge
-                            variant={
-                              app.requestStatus === "matched"
-                                ? "default"
-                                : app.requestStatus === "in-progress"
-                                ? "default"
-                                : app.requestStatus === "completed"
-                                ? "secondary"
-                                : app.requestStatus === "cancelled"
-                                ? "destructive"
-                                : "outline"
-                            }
-                          >
-                            {app.requestStatus === "matched"
-                              ? "已配對"
-                              : app.requestStatus === "in-progress"
-                              ? "進行中"
-                              : app.requestStatus === "completed"
-                              ? "已完成"
-                              : app.requestStatus === "cancelled"
-                              ? "已取消"
-                              : app.requestStatus}
-                          </Badge>
-                        </div>
                       )}
                     </div>
                     <div className="flex gap-2">

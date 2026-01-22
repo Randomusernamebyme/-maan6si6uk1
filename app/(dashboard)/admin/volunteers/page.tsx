@@ -38,11 +38,10 @@ export default function AdminVolunteersPage() {
   const [volunteers, setVolunteers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<UserStatus>("pending");
   const [fieldFilter, setFieldFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedVolunteers, setSelectedVolunteers] = useState<Set<string>>(new Set());
-  const [batchProcessing, setBatchProcessing] = useState(false);
 
   useEffect(() => {
     const fetchVolunteers = async () => {
@@ -110,7 +109,7 @@ export default function AdminVolunteersPage() {
   const filteredVolunteers = useMemo(() => {
     return volunteers.filter((volunteer) => {
       // 狀態篩選
-      if (statusFilter !== "all" && volunteer.status !== statusFilter) return false;
+      if (volunteer.status !== statusFilter) return false;
 
       // 領域篩選
       if (fieldFilter !== "all" && volunteer.fields && !volunteer.fields.includes(fieldFilter as ServiceField)) {
@@ -167,43 +166,6 @@ export default function AdminVolunteersPage() {
     }
   };
 
-  const handleBatchApprove = async () => {
-    if (selectedVolunteers.size === 0) return;
-
-    try {
-      setBatchProcessing(true);
-      const token = await getAuthToken();
-      if (!token) {
-        throw new Error("請先登入");
-      }
-
-      // 批量更新狀態為 approved
-      const updatePromises = Array.from(selectedVolunteers).map(async (volunteerId) => {
-        const response = await fetch(`/api/admin/volunteers/${volunteerId}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: "approved" }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "更新失敗");
-        }
-      });
-
-      await Promise.all(updatePromises);
-      setSelectedVolunteers(new Set());
-      router.refresh();
-    } catch (err: any) {
-      alert("批量批准失敗：" + (err.message || "請稍後再試"));
-    } finally {
-      setBatchProcessing(false);
-    }
-  };
-
   const formatDate = (date: Date | undefined | null) => {
     if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
       return "無效日期";
@@ -228,13 +190,8 @@ export default function AdminVolunteersPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">義工管理</h2>
         {selectedVolunteers.size > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleBatchApprove}
-            disabled={batchProcessing}
-          >
-            批量批准 ({selectedVolunteers.size})
+          <Button variant="outline" size="sm">
+            批量批准
           </Button>
         )}
       </div>
@@ -268,27 +225,19 @@ export default function AdminVolunteersPage() {
       </Card>
 
       {/* 狀態分頁 */}
-      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v)}>
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="all">
-            全部 ({volunteers.length})
-          </TabsTrigger>
-          {STATUS_TABS.map((status) => {
-            const count = volunteers.filter(v => v.status === status).length;
-            return (
-              <TabsTrigger key={status} value={status}>
-                {STATUS_LABELS[status]} ({count})
-              </TabsTrigger>
-            );
-          })}
+      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as UserStatus)}>
+        <TabsList className="grid w-full grid-cols-4">
+          {STATUS_TABS.map((status) => (
+            <TabsTrigger key={status} value={status}>
+              {STATUS_LABELS[status]}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value={statusFilter} className="mt-6">
           {filteredVolunteers.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                {statusFilter === "all" ? "目前沒有義工" : `目前沒有${STATUS_LABELS[statusFilter as UserStatus]}的義工`}
-              </p>
+              <p className="text-muted-foreground">目前沒有{STATUS_LABELS[statusFilter]}的義工</p>
             </div>
           ) : (
             <div className="space-y-4">

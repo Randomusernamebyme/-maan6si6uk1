@@ -627,6 +627,13 @@ export default function AdminVolunteerDetailPage() {
                   >
                     暫停
                   </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => alert("編輯功能開發中")}
+                  >
+                    編輯
+                  </Button>
                 </>
               )}
 

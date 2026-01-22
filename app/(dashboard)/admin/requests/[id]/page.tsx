@@ -2,9 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
-import { convertTimestamp } from "@/lib/firebase/firestore";
 import { getAuthToken } from "@/lib/utils/auth";
 import { Request } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +23,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createActivityLog } from "@/lib/utils/admin";
+import { collection, query, where, onSnapshot, getDoc, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase/config";
+import { Application, ApplicationStatus } from "@/types";
+import { convertTimestamp } from "@/lib/firebase/firestore";
+import Link from "next/link";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "待審核",
@@ -48,10 +50,8 @@ export default function RequestDetailPage() {
   const [showFollowUpDialog, setShowFollowUpDialog] = useState(false);
   const [followUpMethod, setFollowUpMethod] = useState("");
   const [followUpContent, setFollowUpContent] = useState("");
-  const [mergeSearchQuery, setMergeSearchQuery] = useState("");
-  const [availableRequests, setAvailableRequests] = useState<Request[]>([]);
-  const [selectedMergeRequests, setSelectedMergeRequests] = useState<Set<string>>(new Set());
-  const [mergeLoading, setMergeLoading] = useState(false);
+  const [applications, setApplications] = useState<(Application & { volunteerName?: string })[]>([]);
+  const [applicationsLoading, setApplicationsLoading] = useState(true);
 
   useEffect(() => {
     const fetchRequest = async () => {
@@ -73,23 +73,10 @@ export default function RequestDetailPage() {
         }
 
         const data = await response.json();
-        
-        // 處理日期字段
-        const formatDateField = (dateStr: string | undefined): Date | undefined => {
-          if (!dateStr) return undefined;
-          if (typeof dateStr === 'string') {
-            const date = new Date(dateStr);
-            return isNaN(date.getTime()) ? undefined : date;
-          }
-          return undefined;
-        };
-
         setRequest({
           ...data,
-          createdAt: formatDateField(data.createdAt) || new Date(),
-          updatedAt: formatDateField(data.updatedAt) || new Date(),
-          matchedAt: formatDateField(data.matchedAt),
-          completedAt: formatDateField(data.completedAt),
+          createdAt: data.createdAt ? new Date(data.createdAt.seconds * 1000) : new Date(),
+          updatedAt: data.updatedAt ? new Date(data.updatedAt.seconds * 1000) : new Date(),
         } as Request);
       } catch (err: any) {
         setError(err.message || "載入失敗");
@@ -186,87 +173,6 @@ export default function RequestDetailPage() {
     }
   };
 
-  // 獲取可合併的委托列表
-  useEffect(() => {
-    if (!showMergeDialog) return;
-
-    const fetchAvailableRequests = async () => {
-      try {
-        const token = await getAuthToken();
-        if (!token) return;
-
-        const response = await fetch(`/api/admin/requests/${requestId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) return;
-
-        // 獲取所有 pending 狀態的委托（除了當前委托）
-        const q = query(
-          collection(db, "requests"),
-          where("status", "==", "pending")
-        );
-        const snapshot = await getDocs(q);
-        const requests = snapshot.docs
-          .map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-            createdAt: convertTimestamp(doc.data().createdAt),
-          }))
-          .filter((r: any) => r.id !== requestId && !r.isMerged) as Request[];
-
-        setAvailableRequests(requests);
-      } catch (err) {
-        console.error("Error fetching available requests:", err);
-      }
-    };
-
-    fetchAvailableRequests();
-  }, [showMergeDialog, requestId]);
-
-  const handleMerge = async () => {
-    if (selectedMergeRequests.size === 0) {
-      setError("請至少選擇一個要合併的委托");
-      return;
-    }
-
-    try {
-      setMergeLoading(true);
-      const token = await getAuthToken();
-      if (!token) {
-        throw new Error("請先登入");
-      }
-
-      const response = await fetch("/api/admin/requests/merge", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          mainRequestId: requestId,
-          mergeRequestIds: Array.from(selectedMergeRequests),
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "合併失敗");
-      }
-
-      setShowMergeDialog(false);
-      setSelectedMergeRequests(new Set());
-      router.refresh();
-      window.location.reload();
-    } catch (err: any) {
-      setError(err.message || "合併失敗");
-    } finally {
-      setMergeLoading(false);
-    }
-  };
-
   const formatDate = (date: Date | undefined | null) => {
     if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
       return "無效日期";
@@ -311,14 +217,6 @@ export default function RequestDetailPage() {
               <CardTitle>基本資料</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {request.title && (
-                <div>
-                  <Label>標題</Label>
-                  <p className="text-sm font-semibold mt-1">
-                    {request.title}
-                  </p>
-                </div>
-              )}
               <div>
                 <Label>描述</Label>
                 <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
@@ -362,12 +260,6 @@ export default function RequestDetailPage() {
                   <p className="text-sm text-muted-foreground mt-1">{request.estimatedDuration}</p>
                 </div>
               )}
-              {request.preferredDate && (
-                <div>
-                  <Label>希望日期</Label>
-                  <p className="text-sm text-muted-foreground mt-1">{request.preferredDate}</p>
-                </div>
-              )}
             </CardContent>
           </Card>
 
@@ -385,18 +277,6 @@ export default function RequestDetailPage() {
                 <Label>電話</Label>
                 <p className="text-sm text-muted-foreground mt-1">{request.requester.phone}</p>
               </div>
-              {request.requester.whatsApp && (
-                <div>
-                  <Label>WhatsApp</Label>
-                  <p className="text-sm text-muted-foreground mt-1">{request.requester.whatsApp}</p>
-                </div>
-              )}
-              {request.requester.address && (
-                <div>
-                  <Label>地址</Label>
-                  <p className="text-sm text-muted-foreground mt-1">{request.requester.address}</p>
-                </div>
-              )}
               <div>
                 <Label>年齡</Label>
                 <p className="text-sm text-muted-foreground mt-1">{request.requester.age}</p>
@@ -428,6 +308,224 @@ export default function RequestDetailPage() {
                 <div className="text-sm">
                   <span className="font-semibold">完成：</span>
                   <span className="text-muted-foreground ml-2">{formatDate(request.completedAt)}</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 報名資料 */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>報名資料</CardTitle>
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/admin/applications?request=${requestId}`}>
+                    前往報名管理
+                  </Link>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {applicationsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loading size="sm" />
+                </div>
+              ) : applications.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  目前沒有報名記錄
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {/* 已選中 */}
+                  {applications.filter((app) => app.status === "approved").length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-sm mb-2 text-green-600">
+                        已選中 ({applications.filter((app) => app.status === "approved").length})
+                      </h4>
+                      <div className="space-y-2">
+                        {applications
+                          .filter((app) => app.status === "approved")
+                          .map((app) => (
+                            <div
+                              key={app.id}
+                              className="p-3 border rounded-md bg-green-50 dark:bg-green-900/20"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-semibold">{app.volunteerName}</p>
+                                    <Button asChild variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                                      <Link href={`/admin/volunteers/${app.volunteerId}`}>
+                                        查看義工資料
+                                      </Link>
+                                    </Button>
+                                    <Button asChild variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                                      <Link href={`/admin/applications?application=${app.id}`}>
+                                        查看報名詳情
+                                      </Link>
+                                    </Button>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    報名時間：{formatDate(app.createdAt)}
+                                  </p>
+                                  {app.availableTime && (
+                                    <p className="text-xs text-muted-foreground">
+                                      可服務時間：{app.availableTime}
+                                    </p>
+                                  )}
+                                  {app.message && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      {app.message}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 待處理 */}
+                  {applications.filter((app) => app.status === "pending").length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-sm mb-2">
+                        待處理 ({applications.filter((app) => app.status === "pending").length})
+                      </h4>
+                      <div className="space-y-2">
+                        {applications
+                          .filter((app) => app.status === "pending")
+                          .map((app) => (
+                            <div
+                              key={app.id}
+                              className="p-3 border rounded-md"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-semibold">{app.volunteerName}</p>
+                                    <Button asChild variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                                      <Link href={`/admin/volunteers/${app.volunteerId}`}>
+                                        查看義工資料
+                                      </Link>
+                                    </Button>
+                                    <Button asChild variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                                      <Link href={`/admin/applications?application=${app.id}`}>
+                                        查看報名詳情
+                                      </Link>
+                                    </Button>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    報名時間：{formatDate(app.createdAt)}
+                                  </p>
+                                  {app.availableTime && (
+                                    <p className="text-xs text-muted-foreground">
+                                      可服務時間：{app.availableTime}
+                                    </p>
+                                  )}
+                                  {app.message && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      {app.message}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={async () => {
+                                      try {
+                                        const token = await getAuthToken();
+                                        if (!token) return;
+                                        const response = await fetch(`/api/applications/${app.id}`, {
+                                          method: "PATCH",
+                                          headers: {
+                                            "Content-Type": "application/json",
+                                            Authorization: `Bearer ${token}`,
+                                          },
+                                          body: JSON.stringify({ status: "approved" }),
+                                        });
+                                        if (response.ok) {
+                                          router.refresh();
+                                        }
+                                      } catch (err) {
+                                        console.error("Error updating application:", err);
+                                      }
+                                    }}
+                                  >
+                                    選擇
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={async () => {
+                                      try {
+                                        const token = await getAuthToken();
+                                        if (!token) return;
+                                        const response = await fetch(`/api/applications/${app.id}`, {
+                                          method: "PATCH",
+                                          headers: {
+                                            "Content-Type": "application/json",
+                                            Authorization: `Bearer ${token}`,
+                                          },
+                                          body: JSON.stringify({ status: "rejected" }),
+                                        });
+                                        if (response.ok) {
+                                          router.refresh();
+                                        }
+                                      } catch (err) {
+                                        console.error("Error updating application:", err);
+                                      }
+                                    }}
+                                  >
+                                    拒絕
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 未選中 */}
+                  {applications.filter((app) => app.status === "rejected").length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-sm mb-2 text-gray-500">
+                        未選中 ({applications.filter((app) => app.status === "rejected").length})
+                      </h4>
+                      <div className="space-y-2">
+                        {applications
+                          .filter((app) => app.status === "rejected")
+                          .map((app) => (
+                            <div
+                              key={app.id}
+                              className="p-3 border rounded-md bg-gray-50 dark:bg-gray-900/20"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-semibold">{app.volunteerName}</p>
+                                    <Button asChild variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                                      <Link href={`/admin/volunteers/${app.volunteerId}`}>
+                                        查看義工資料
+                                      </Link>
+                                    </Button>
+                                    <Button asChild variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                                      <Link href={`/admin/applications?application=${app.id}`}>
+                                        查看報名詳情
+                                      </Link>
+                                    </Button>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    報名時間：{formatDate(app.createdAt)}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -494,13 +592,6 @@ export default function RequestDetailPage() {
                   >
                     拒絕
                   </Button>
-                  <Button
-                    onClick={() => setShowMergeDialog(true)}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    合併
-                  </Button>
                 </div>
               )}
 
@@ -522,31 +613,6 @@ export default function RequestDetailPage() {
                     className="w-full"
                   >
                     標記為進行中
-                  </Button>
-                </div>
-              )}
-
-              {request.status === "matched" && (
-                <div className="space-y-2">
-                  <Button
-                    onClick={() => handleStatusChange("in-progress")}
-                    className="w-full"
-                  >
-                    標記為進行中
-                  </Button>
-                  <Button
-                    onClick={() => handleStatusChange("completed")}
-                    variant="secondary"
-                    className="w-full"
-                  >
-                    標記為已完成
-                  </Button>
-                  <Button
-                    onClick={() => handleStatusChange("cancelled")}
-                    variant="destructive"
-                    className="w-full"
-                  >
-                    取消
                   </Button>
                 </div>
               )}
@@ -616,89 +682,6 @@ export default function RequestDetailPage() {
               取消
             </Button>
             <Button onClick={handleAddFollowUp}>確認</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* 合併委托對話框 */}
-      <Dialog open={showMergeDialog} onOpenChange={setShowMergeDialog}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>合併委托</DialogTitle>
-            <DialogDescription>
-              選擇要合併到當前委托的其他委托。當前委托將作為主委托保留。
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>搜尋委托</Label>
-              <Input
-                placeholder="搜尋委托描述或委托者姓名..."
-                value={mergeSearchQuery}
-                onChange={(e) => setMergeSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              {availableRequests
-                .filter((r) => {
-                  if (!mergeSearchQuery) return true;
-                  const query = mergeSearchQuery.toLowerCase();
-                  return (
-                    (r.description || "").toLowerCase().includes(query) ||
-                    (r.requester?.name || "").toLowerCase().includes(query)
-                  );
-                })
-                .map((r) => (
-                  <div
-                    key={r.id}
-                    className="flex items-center space-x-2 p-2 border rounded-md hover:bg-muted/50"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedMergeRequests.has(r.id)}
-                      onChange={(e) => {
-                        const newSelected = new Set(selectedMergeRequests);
-                        if (e.target.checked) {
-                          newSelected.add(r.id);
-                        } else {
-                          newSelected.delete(r.id);
-                        }
-                        setSelectedMergeRequests(newSelected);
-                      }}
-                      className="h-4 w-4"
-                    />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                        {r.requester?.name || "未知"} - {r.id.substring(0, 8)}
-                      </p>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {r.description?.substring(0, 100)}...
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              {availableRequests.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  沒有可合併的委托
-                </p>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowMergeDialog(false);
-                setSelectedMergeRequests(new Set());
-                setMergeSearchQuery("");
-              }}
-              disabled={mergeLoading}
-            >
-              取消
-            </Button>
-            <Button onClick={handleMerge} disabled={mergeLoading || selectedMergeRequests.size === 0}>
-              {mergeLoading ? <Loading size="sm" /> : `確認合併 (${selectedMergeRequests.size})`}
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
