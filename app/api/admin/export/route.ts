@@ -55,13 +55,25 @@ export async function GET(request: NextRequest) {
       const snapshot = await q.get();
       data = snapshot.docs.map((doc: any) => {
         const docData = doc.data();
+        // 安全地轉換 Firestore Timestamp 為 Date
+        const convertTimestamp = (ts: any) => {
+          if (!ts) return undefined;
+          if (ts.toDate && typeof ts.toDate === 'function') {
+            return ts.toDate();
+          }
+          if (ts instanceof Date) {
+            return ts;
+          }
+          return undefined;
+        };
+        
         return {
           id: doc.id,
           ...docData,
-          createdAt: docData.createdAt?.toDate(),
-          updatedAt: docData.updatedAt?.toDate(),
-          matchedAt: docData.matchedAt?.toDate(),
-          completedAt: docData.completedAt?.toDate(),
+          createdAt: convertTimestamp(docData.createdAt),
+          updatedAt: convertTimestamp(docData.updatedAt),
+          matchedAt: convertTimestamp(docData.matchedAt),
+          completedAt: convertTimestamp(docData.completedAt),
         };
       });
       
@@ -103,13 +115,25 @@ export async function GET(request: NextRequest) {
       const snapshot = await q.get();
       data = snapshot.docs.map((doc: any) => {
         const docData = doc.data();
+        // 安全地轉換 Firestore Timestamp 為 Date
+        const convertTimestamp = (ts: any) => {
+          if (!ts) return undefined;
+          if (ts.toDate && typeof ts.toDate === 'function') {
+            return ts.toDate();
+          }
+          if (ts instanceof Date) {
+            return ts;
+          }
+          return undefined;
+        };
+        
         return {
           uid: doc.id,
           ...docData,
-          createdAt: docData.createdAt?.toDate(),
-          updatedAt: docData.updatedAt?.toDate(),
-          interviewDate: docData.interviewDate?.toDate(),
-          lastLoginAt: docData.lastLoginAt?.toDate(),
+          createdAt: convertTimestamp(docData.createdAt),
+          updatedAt: convertTimestamp(docData.updatedAt),
+          interviewDate: convertTimestamp(docData.interviewDate),
+          lastLoginAt: convertTimestamp(docData.lastLoginAt),
         };
       });
       
@@ -198,13 +222,25 @@ export async function GET(request: NextRequest) {
         const requestInfo = requestMap.get(docData.requestId) || { name: "未知委托", fields: [] };
         const volunteerInfo = volunteerMap.get(docData.volunteerId) || { name: "未知義工", email: "" };
         
+        // 安全地轉換 Firestore Timestamp 為 Date
+        const convertTimestamp = (ts: any) => {
+          if (!ts) return undefined;
+          if (ts.toDate && typeof ts.toDate === 'function') {
+            return ts.toDate();
+          }
+          if (ts instanceof Date) {
+            return ts;
+          }
+          return undefined;
+        };
+        
         return {
           id: doc.id,
           ...docData,
-          createdAt: docData.createdAt?.toDate(),
-          updatedAt: docData.updatedAt?.toDate(),
-          matchedAt: docData.matchedAt?.toDate(),
-          completedAt: docData.completedAt?.toDate(),
+          createdAt: convertTimestamp(docData.createdAt),
+          updatedAt: convertTimestamp(docData.updatedAt),
+          matchedAt: convertTimestamp(docData.matchedAt),
+          completedAt: convertTimestamp(docData.completedAt),
           requestName: requestInfo.name,
           requestFields: requestInfo.fields,
           volunteerName: volunteerInfo.name,
