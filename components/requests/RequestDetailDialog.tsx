@@ -49,8 +49,10 @@ export function RequestDetailDialog({
     return format(date, "yyyy年MM月dd日", { locale: zhTW });
   };
 
-  // 檢查是否已報名
-  const hasApplied = applications.some((app) => app.requestId === request.id);
+  // 檢查是否已報名及報名狀態
+  const application = applications.find((app) => app.requestId === request.id);
+  const hasApplied = !!application;
+  const applicationStatus = application?.status;
 
   // 檢查技能匹配
   const matchingSkills = request.requiredSkills
@@ -253,8 +255,19 @@ export function RequestDetailDialog({
           )}
 
           {hasApplied && (
-            <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-4 text-sm text-blue-800 dark:text-blue-200">
-              您已報名此委托
+            <div className={`rounded-md p-4 text-sm ${
+              applicationStatus === "approved" 
+                ? "bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200"
+                : applicationStatus === "rejected"
+                ? "bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200"
+                : applicationStatus === "completed"
+                ? "bg-gray-50 dark:bg-gray-900/20 text-gray-800 dark:text-gray-200"
+                : "bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200"
+            }`}>
+              {applicationStatus === "approved" && "✓ 您已被選中！請留意 WhatsApp，團隊會聯絡你"}
+              {applicationStatus === "rejected" && "您的報名未被選中"}
+              {applicationStatus === "completed" && "✓ 此委托已完成"}
+              {(!applicationStatus || applicationStatus === "pending") && "您已報名此委托，等待審核中"}
             </div>
           )}
         </div>
