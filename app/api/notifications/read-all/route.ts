@@ -31,14 +31,19 @@ export async function PATCH(request: NextRequest) {
 
     const adminDb = getAdminDb();
     
-    // 獲取所有未讀通知
+    // 獲取所有通知（避免需要複合索引），然後在內存中過濾
     const snapshot = await adminDb
       .collection("notifications")
       .where("userId", "==", decodedToken.uid)
-      .where("read", "==", false)
       .get();
+    
+    // 過濾出未讀通知
+    const unreadDocs = snapshot.docs.filter((doc) => {
+      const data = doc.data();
+      return !data.read;
+    });
 
-    if (snapshot.empty) {
+    if (unreadDocs.length === 0) {
       return NextResponse.json({
         success: true,
         updatedCount: 0,
@@ -50,7 +55,7 @@ export async function PATCH(request: NextRequest) {
     const batch = adminDb.batch();
     const now = new Date();
     
-    snapshot.docs.forEach((doc) => {
+    unreadDocs.forEach((doc) => {
       batch.update(doc.ref, {
         read: true,
         readAt: now,
@@ -62,8 +67,8 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      updatedCount: snapshot.docs.length,
-      message: `已標記 ${snapshot.docs.length} 條通知為已讀`,
+      updatedCount: unreadDocs.length,
+      message: `已標記 ${unreadDocs.length} 條通知為已讀`,
     });
   } catch (error: any) {
     console.error("Error marking all notifications as read:", error);

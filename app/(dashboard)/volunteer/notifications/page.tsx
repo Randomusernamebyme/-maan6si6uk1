@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NotificationCard } from "@/components/notifications/NotificationCard";
 import { getAuthToken } from "@/lib/utils/auth";
-import { Notification } from "@/types";
 
 export default function NotificationsPage() {
   const { user } = useRequireAuth("volunteer");

@@ -33,7 +33,7 @@ export function NotificationCard({ notification, onMarkAsRead }: NotificationCar
     }
   };
 
-  const getLink = () => {
+  const getLink = (): string | null => {
     if (notification.relatedRequestId) {
       // 義工可以查看委托詳情（如果已發布）
       return `/volunteer/dashboard`; // 或者可以創建一個委托詳情頁面
@@ -45,48 +45,50 @@ export function NotificationCard({ notification, onMarkAsRead }: NotificationCar
   };
 
   const link = getLink();
-  const CardWrapper = link ? Link : "div";
-  const wrapperProps = link ? { href: link } : {};
 
-  return (
-    <CardWrapper {...wrapperProps}>
-      <Card
-        className={`cursor-pointer transition-all hover:shadow-md ${
-          !notification.read ? "border-2 border-foreground bg-muted/50" : ""
-        }`}
-        onClick={handleClick}
-      >
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <CardTitle className="text-lg">{notification.title}</CardTitle>
-                <Badge
-                  variant="outline"
-                  className={`${TYPE_COLORS[notification.type]} text-white border-0`}
-                >
-                  {TYPE_LABELS[notification.type]}
+  const cardContent = (
+    <Card
+      className={`cursor-pointer transition-all hover:shadow-md ${
+        !notification.read ? "border-2 border-foreground bg-muted/50" : ""
+      }`}
+      onClick={handleClick}
+    >
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <CardTitle className="text-lg">{notification.title}</CardTitle>
+              <Badge
+                variant="outline"
+                className={`${TYPE_COLORS[notification.type]} text-white border-0`}
+              >
+                {TYPE_LABELS[notification.type]}
+              </Badge>
+              {!notification.read && (
+                <Badge variant="default" className="bg-blue-500">
+                  未讀
                 </Badge>
-                {!notification.read && (
-                  <Badge variant="default" className="bg-blue-500">
-                    未讀
-                  </Badge>
-                )}
-              </div>
-              <CardDescription className="text-sm mt-1">
-                {format(notification.createdAt, "yyyy年MM月dd日 HH:mm", {
-                  locale: zhTW,
-                })}
-              </CardDescription>
+              )}
             </div>
+            <CardDescription className="text-sm mt-1">
+              {format(notification.createdAt, "yyyy年MM月dd日 HH:mm", {
+                locale: zhTW,
+              })}
+            </CardDescription>
           </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {notification.message}
-          </p>
-        </CardContent>
-      </Card>
-    </CardWrapper>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          {notification.message}
+        </p>
+      </CardContent>
+    </Card>
   );
+
+  if (link) {
+    return <Link href={link}>{cardContent}</Link>;
+  }
+
+  return cardContent;
 }

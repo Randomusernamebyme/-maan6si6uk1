@@ -30,6 +30,7 @@ export function useNotifications(
     setError(null);
 
     // 先嘗試使用 Firestore 實時監聽
+    // 注意：為了避免需要複合索引，我們只查詢 userId，然後在內存中過濾 read 狀態
     try {
       let q: any = query(
         collection(db, "notifications"),
@@ -37,19 +38,9 @@ export function useNotifications(
         orderBy("createdAt", "desc")
       );
 
-      // 如果指定了 read 篩選
-      if (options?.read !== null && options?.read !== undefined) {
-        q = query(
-          collection(db, "notifications"),
-          where("userId", "==", userId),
-          where("read", "==", options.read),
-          orderBy("createdAt", "desc")
-        );
-      }
-
-      // 如果指定了 limit
+      // 如果指定了 limit，應用 limit（但不在查詢中過濾 read，避免需要複合索引）
       if (options?.limit) {
-        q = query(q, firestoreLimit(options.limit));
+        q = query(q, firestoreLimit(options.limit * 2)); // 獲取更多以確保有足夠的結果
       }
 
       const unsubscribe = onSnapshot(
@@ -73,6 +64,13 @@ export function useNotifications(
               createdAt: convertTimestamp(docData.createdAt),
             };
 
+            // 在內存中過濾 read 狀態
+            if (options?.read !== null && options?.read !== undefined) {
+              if (notification.read !== options.read) {
+                return; // 跳過不符合條件的通知
+              }
+            }
+
             // 類型篩選（在內存中）
             if (!options?.type || notification.type === options.type) {
               allNotifications.push(notification);
@@ -83,7 +81,12 @@ export function useNotifications(
             }
           });
 
-          setNotifications(allNotifications);
+          // 如果指定了 limit，應用 limit
+          const finalNotifications = options?.limit
+            ? allNotifications.slice(0, options.limit)
+            : allNotifications;
+
+          setNotifications(finalNotifications);
           setUnreadCount(unread);
           setLoading(false);
         },

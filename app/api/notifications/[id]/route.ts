@@ -55,11 +55,23 @@ export async function GET(
       );
     }
 
+    // 安全地轉換日期
+    const convertTimestamp = (ts: any) => {
+      if (!ts) return undefined;
+      if (ts.toDate && typeof ts.toDate === 'function') {
+        return ts.toDate();
+      }
+      if (ts instanceof Date) {
+        return ts;
+      }
+      return undefined;
+    };
+
     return NextResponse.json({
       id: notificationDoc.id,
       ...docData,
-      createdAt: docData?.createdAt?.toDate(),
-      readAt: docData?.readAt?.toDate(),
+      createdAt: convertTimestamp(docData?.createdAt),
+      readAt: convertTimestamp(docData?.readAt),
     });
   } catch (error: any) {
     console.error("Error fetching notification:", error);
@@ -124,11 +136,23 @@ export async function PATCH(
     const updatedDoc = await notificationRef.get();
     const updatedData = updatedDoc.data();
 
+    // 安全地轉換日期
+    const convertTimestamp = (ts: any) => {
+      if (!ts) return undefined;
+      if (ts.toDate && typeof ts.toDate === 'function') {
+        return ts.toDate();
+      }
+      if (ts instanceof Date) {
+        return ts;
+      }
+      return undefined;
+    };
+
     return NextResponse.json({
       id: updatedDoc.id,
       ...updatedData,
-      createdAt: updatedData?.createdAt?.toDate(),
-      readAt: updatedData?.readAt?.toDate(),
+      createdAt: convertTimestamp(updatedData?.createdAt),
+      readAt: convertTimestamp(updatedData?.readAt),
     });
   } catch (error: any) {
     console.error("Error updating notification:", error);
