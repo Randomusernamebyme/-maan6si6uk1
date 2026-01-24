@@ -204,7 +204,9 @@ function ApplicationItem({
       <Card className="border-2">
         <CardHeader>
           <div className="flex items-start justify-between">
-            <CardTitle className="text-lg">{request.fields.join("、")}</CardTitle>
+            <CardTitle className="text-lg">
+              {request.name || request.fields.join("、")}
+            </CardTitle>
             <Badge variant={statusVariants[application.status] || "outline"}>
               {statusLabels[application.status] || application.status}
             </Badge>

@@ -8,6 +8,7 @@ export async function POST(request: NextRequest) {
 
     // 驗證必要欄位
     if (
+      !body.name ||
       !body.requester?.name ||
       !body.requester?.phone ||
       !body.requester?.age ||
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest) {
 
     // 創建委托文檔
     const requestData: Omit<Request, "id" | "createdAt" | "updatedAt"> = {
+      name: body.name,
       requester: {
         name: body.requester.name,
         phone: body.requester.phone,

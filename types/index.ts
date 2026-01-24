@@ -53,6 +53,7 @@ export interface User {
 export interface Request {
   // 基本資料
   id: string; // 文檔ID (主鍵)
+  name?: string; // 委托名稱（用戶自定義）
 
   // 委托者資料 (敏感, 只有admin可見)
   requester: {

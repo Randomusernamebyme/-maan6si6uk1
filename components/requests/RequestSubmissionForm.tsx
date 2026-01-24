@@ -18,6 +18,7 @@ import { ServiceField } from "@/types";
 const phoneRegex = /^(\+?852[-.\s]?)?[2-9]\d{7}$/;
 
 const requestSchema = z.object({
+  requestName: z.string().min(1, "請輸入委托名稱").max(50, "委托名稱不能超過50個字"),
   requesterName: z.string().min(1, "請輸入您的稱呼"),
   requesterPhone: z
     .string()
@@ -79,6 +80,7 @@ export function RequestSubmissionForm() {
       setShowSuccess(false);
 
       const requestData = {
+        name: data.requestName,
         requester: {
           name: data.requesterName,
           phone: data.requesterPhone,
@@ -119,6 +121,26 @@ export function RequestSubmissionForm() {
         {error && <ErrorDisplay message={error} />}
 
         <div className="space-y-4">
+          <h3 className="font-semibold">委托資料</h3>
+
+          <div className="space-y-2">
+            <Label htmlFor="requestName">委托名稱 *</Label>
+            <Input
+              id="requestName"
+              {...register("requestName")}
+              placeholder="例如：需要協助購物、陪伴聊天等"
+              className="bg-background"
+            />
+            {errors.requestName && (
+              <p className="text-sm text-destructive">{errors.requestName.message}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              為您的委托起一個簡短的名稱，方便識別
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4 border-t pt-4">
           <h3 className="font-semibold">委托者資料</h3>
 
           <div className="space-y-2">

@@ -113,7 +113,11 @@ export function RequestDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">{request.fields.join("、")}</DialogTitle>
+          <DialogTitle className="text-2xl">
+            {request.name || (Array.isArray(request.fields) && request.fields.length > 0
+              ? request.fields.join("、")
+              : "委托")}
+          </DialogTitle>
           <DialogDescription>
             發布時間：{formatDate(request.createdAt)}
             {request.urgency === "urgent" && (

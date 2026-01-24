@@ -304,8 +304,12 @@ export default function RequestDetailPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">委托詳情</h2>
-          <p className="text-muted-foreground">編號：{request.id.substring(0, 8)}</p>
+          <h2 className="text-2xl font-bold">
+            {request.name || "委托詳情"}
+          </h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            編號：{request.id.substring(0, 8)}
+          </p>
         </div>
         <Button variant="outline" onClick={() => router.back()}>
           返回列表
