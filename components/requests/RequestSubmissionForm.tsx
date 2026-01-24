@@ -12,7 +12,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ErrorDisplay } from "@/components/ui/error";
 import { Loading } from "@/components/ui/loading";
 import { SuccessAnimation } from "@/components/ui/success-animation";
+import Image from "next/image";
 import { ServiceField } from "@/types";
+import { SERVICE_FIELD_IMAGES } from "@/lib/constants/serviceFields";
 
 // 香港電話號碼驗證：8位數字（可選前綴如+852或852）
 const phoneRegex = /^(\+?852[-.\s]?)?[2-9]\d{7}$/;
@@ -227,17 +229,41 @@ export function RequestSubmissionForm() {
             <p className="text-sm text-muted-foreground mb-2">
               請選擇您需要的幫助範疇（可多選）
             </p>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {SERVICE_FIELDS.map((field) => (
-                <div key={field} className="flex items-center space-x-2">
+                <div
+                  key={field}
+                  className={`flex items-start space-x-3 p-3 rounded-lg border-2 transition-colors ${
+                    selectedFields.includes(field)
+                      ? "border-foreground bg-muted"
+                      : "border-border hover:border-foreground/50"
+                  }`}
+                >
                   <Checkbox
                     id={`field-${field}`}
                     checked={selectedFields.includes(field)}
                     onCheckedChange={() => toggleField(field)}
+                    className="mt-1"
                   />
-                  <Label htmlFor={`field-${field}`} className="font-normal cursor-pointer">
-                    {field}
-                  </Label>
+                  <div className="flex-1 flex items-center space-x-3">
+                    {SERVICE_FIELD_IMAGES[field] && (
+                      <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                        <Image
+                          src={SERVICE_FIELD_IMAGES[field]}
+                          alt={field}
+                          fill
+                          className="object-cover"
+                          sizes="64px"
+                        />
+                      </div>
+                    )}
+                    <Label
+                      htmlFor={`field-${field}`}
+                      className="font-normal cursor-pointer flex-1"
+                    >
+                      {field}
+                    </Label>
+                  </div>
                 </div>
               ))}
             </div>

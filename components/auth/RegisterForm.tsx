@@ -13,7 +13,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ErrorDisplay } from "@/components/ui/error";
 import { Loading } from "@/components/ui/loading";
 import { WelcomeAnimation } from "@/components/ui/welcome-animation";
+import Image from "next/image";
 import { ServiceField } from "@/types";
+import { SERVICE_FIELD_IMAGES } from "@/lib/constants/serviceFields";
 
 const registerSchema = z.object({
   email: z.string().email("請輸入有效的電子郵件"),
@@ -274,17 +276,41 @@ export function RegisterForm() {
         <p className="text-sm text-muted-foreground mb-2">
           我哋有社區拍檔、街坊樹窿、同埋生活助手，你認為自己適合加入邊一/幾個範疇？
         </p>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {SERVICE_FIELDS.map((field) => (
-            <div key={field} className="flex items-center space-x-2">
+            <div
+              key={field}
+              className={`flex items-start space-x-3 p-3 rounded-lg border-2 transition-colors ${
+                selectedFields.includes(field)
+                  ? "border-foreground bg-muted"
+                  : "border-border hover:border-foreground/50"
+              }`}
+            >
               <Checkbox
                 id={`field-${field}`}
                 checked={selectedFields.includes(field)}
                 onCheckedChange={() => toggleField(field)}
+                className="mt-1"
               />
-              <Label htmlFor={`field-${field}`} className="font-normal cursor-pointer">
-                {field}
-              </Label>
+              <div className="flex-1 flex items-center space-x-3">
+                {SERVICE_FIELD_IMAGES[field] && (
+                  <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                    <Image
+                      src={SERVICE_FIELD_IMAGES[field]}
+                      alt={field}
+                      fill
+                      className="object-cover"
+                      sizes="64px"
+                    />
+                  </div>
+                )}
+                <Label
+                  htmlFor={`field-${field}`}
+                  className="font-normal cursor-pointer flex-1"
+                >
+                  {field}
+                </Label>
+              </div>
             </div>
           ))}
         </div>
