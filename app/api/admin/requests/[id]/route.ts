@@ -106,6 +106,24 @@ export async function PATCH(
         updateData.matchedAt = new Date();
       } else if (body.status === "completed") {
         updateData.completedAt = new Date();
+        
+        // 當請求標記為完成時，自動更新相關的已批准報名記錄為 completed
+        const completedAt = new Date();
+        const applicationsSnapshot = await adminDb
+          .collection("applications")
+          .where("requestId", "==", requestId)
+          .where("status", "==", "approved")
+          .get();
+        
+        const updatePromises = applicationsSnapshot.docs.map((appDoc) =>
+          appDoc.ref.update({
+            status: "completed",
+            completedAt: completedAt,
+            updatedAt: completedAt,
+          })
+        );
+        
+        await Promise.all(updatePromises);
       }
     }
 

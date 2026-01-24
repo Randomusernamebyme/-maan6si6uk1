@@ -97,9 +97,9 @@ export function useRequest(requestId: string | null) {
           // 立即獲取一次
           await fetchViaAPI();
 
-          // 設置輪詢以保持同步（每 5 秒更新一次）
+          // 設置輪詢以保持同步（每 3 秒更新一次，對於已完成狀態更頻繁檢查）
           if (!pollingIntervalRef.current) {
-            pollingIntervalRef.current = setInterval(fetchViaAPI, 5000);
+            pollingIntervalRef.current = setInterval(fetchViaAPI, 3000);
           }
           
           return;

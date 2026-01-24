@@ -245,7 +245,15 @@ function ApplicationItem({
             {request.status && (
               <div>
                 <span className="text-muted-foreground">委托狀態：</span>
-                <Badge variant="outline" className="ml-1">
+                <Badge 
+                  variant={
+                    request.status === "completed" ? "secondary" :
+                    request.status === "cancelled" ? "destructive" :
+                    request.status === "in-progress" ? "default" :
+                    "outline"
+                  } 
+                  className="ml-1"
+                >
                   {request.status === "published" && "已發布"}
                   {request.status === "matched" && "已配對"}
                   {request.status === "in-progress" && "進行中"}
