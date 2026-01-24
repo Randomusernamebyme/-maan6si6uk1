@@ -78,6 +78,34 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
     });
 
+    // 獲取義工信息用於活動日誌
+    const volunteerDoc = await adminDb.collection("users").doc(body.volunteerId).get();
+    const volunteerName = volunteerDoc.exists ? (volunteerDoc.data()?.displayName || volunteerDoc.data()?.email || "未知義工") : "未知義工";
+    
+    // 獲取請求信息用於活動日誌
+    const requestDoc = await adminDb.collection("requests").doc(body.requestId).get();
+    const requestName = requestDoc.exists ? (requestDoc.data()?.name || "未知委托") : "未知委托";
+
+    // 創建活動日誌（異步，不阻塞響應）
+    try {
+      await adminDb.collection("activity_logs").add({
+        userId: decodedToken.uid,
+        action: "create",
+        targetType: "application",
+        targetId: docRef.id,
+        description: `義工 ${volunteerName} 報名了委托「${requestName}」`,
+        changes: {
+          requestId: body.requestId,
+          volunteerId: body.volunteerId,
+          status: "pending",
+        },
+        createdAt: new Date(),
+      });
+    } catch (logError) {
+      console.error("Error creating activity log:", logError);
+      // 不影響主要操作
+    }
+
     return NextResponse.json(
       { success: true, id: docRef.id },
       { status: 201 }

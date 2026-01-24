@@ -115,13 +115,44 @@ export async function PATCH(
           .where("status", "==", "approved")
           .get();
         
-        const updatePromises = applicationsSnapshot.docs.map((appDoc) =>
-          appDoc.ref.update({
+        // 獲取請求名稱用於活動日誌
+        const requestName = requestDoc.data()?.name || "未知委托";
+        
+        const updatePromises = applicationsSnapshot.docs.map(async (appDoc) => {
+          const appData = appDoc.data();
+          
+          // 更新報名記錄
+          await appDoc.ref.update({
             status: "completed",
             completedAt: completedAt,
             updatedAt: completedAt,
-          })
-        );
+          });
+          
+          // 為每個報名記錄創建活動日誌
+          try {
+            const volunteerDoc = await adminDb.collection("users").doc(appData.volunteerId).get();
+            const volunteerName = volunteerDoc.exists ? (volunteerDoc.data()?.displayName || volunteerDoc.data()?.email || "未知義工") : "未知義工";
+            
+            await adminDb.collection("activity_logs").add({
+              userId: admin.uid,
+              action: "update_application_status",
+              targetType: "application",
+              targetId: appDoc.id,
+              description: `委托「${requestName}」已完成，義工 ${volunteerName} 的報名狀態自動更新為已完成`,
+              changes: {
+                oldStatus: appData.status,
+                newStatus: "completed",
+                requestId: requestId,
+                volunteerId: appData.volunteerId,
+                autoUpdated: true,
+              },
+              createdAt: completedAt,
+            });
+          } catch (logError) {
+            console.error("Error creating activity log for application:", logError);
+            // 不影響主要操作
+          }
+        });
         
         await Promise.all(updatePromises);
       }

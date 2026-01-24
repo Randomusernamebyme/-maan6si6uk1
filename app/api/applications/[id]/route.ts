@@ -76,8 +76,53 @@ export async function DELETE(
       );
     }
 
+    // 獲取義工和請求信息用於活動日誌
+    let volunteerName = "未知義工";
+    let requestName = "未知委托";
+    
+    try {
+      if (applicationData?.volunteerId) {
+        const volunteerDoc = await adminDb.collection("users").doc(applicationData.volunteerId).get();
+        if (volunteerDoc.exists) {
+          volunteerName = volunteerDoc.data()?.displayName || volunteerDoc.data()?.email || "未知義工";
+        }
+      }
+      
+      if (applicationData?.requestId) {
+        const requestDoc = await adminDb.collection("requests").doc(applicationData.requestId).get();
+        if (requestDoc.exists) {
+          requestName = requestDoc.data()?.name || "未知委托";
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching related data for activity log:", err);
+    }
+
     // 刪除報名記錄
     await applicationRef.delete();
+
+    // 創建活動日誌（異步，不阻塞響應）
+    try {
+      const isAdmin = await verifyAdmin(request);
+      await adminDb.collection("activity_logs").add({
+        userId: decodedToken.uid,
+        action: isAdmin ? "delete" : "withdraw",
+        targetType: "application",
+        targetId: params.id,
+        description: isAdmin 
+          ? `管理員刪除了義工 ${volunteerName} 對委托「${requestName}」的報名`
+          : `義工 ${volunteerName} 撤回了對委托「${requestName}」的報名`,
+        changes: {
+          requestId: applicationData?.requestId,
+          volunteerId: applicationData?.volunteerId,
+          status: applicationData?.status,
+        },
+        createdAt: new Date(),
+      });
+    } catch (logError) {
+      console.error("Error creating activity log:", logError);
+      // 不影響主要操作
+    }
 
     return NextResponse.json(
       { success: true },
@@ -109,11 +154,63 @@ export async function PATCH(
     const body = await request.json();
     const adminDb = getAdminDb();
     const applicationRef = adminDb.collection("applications").doc(params.id);
+    const applicationDoc = await applicationRef.get();
+
+    if (!applicationDoc.exists) {
+      return NextResponse.json(
+        { error: "報名記錄不存在" },
+        { status: 404 }
+      );
+    }
+
+    const oldData = applicationDoc.data();
+    const oldStatus = oldData?.status;
 
     await applicationRef.update({
       ...body,
       updatedAt: new Date(),
     });
+
+    // 獲取更新後的狀態
+    const newStatus = body.status || oldStatus;
+
+    // 如果狀態有變化，創建活動日誌
+    if (body.status && body.status !== oldStatus) {
+      try {
+        // 獲取義工信息
+        const volunteerDoc = await adminDb.collection("users").doc(oldData?.volunteerId).get();
+        const volunteerName = volunteerDoc.exists ? (volunteerDoc.data()?.displayName || volunteerDoc.data()?.email || "未知義工") : "未知義工";
+        
+        // 獲取請求信息
+        const requestDoc = await adminDb.collection("requests").doc(oldData?.requestId).get();
+        const requestName = requestDoc.exists ? (requestDoc.data()?.name || "未知委托") : "未知委托";
+
+        const statusLabels: Record<string, string> = {
+          pending: "待處理",
+          approved: "已選中",
+          rejected: "未選中",
+          completed: "已完成",
+        };
+
+        await adminDb.collection("activity_logs").add({
+          userId: decodedToken.uid,
+          action: "update_application_status",
+          targetType: "application",
+          targetId: params.id,
+          description: `將義工 ${volunteerName} 對委托「${requestName}」的報名狀態從 ${statusLabels[oldStatus] || oldStatus} 更改為 ${statusLabels[newStatus] || newStatus}`,
+          changes: {
+            oldStatus,
+            newStatus,
+            requestId: oldData?.requestId,
+            volunteerId: oldData?.volunteerId,
+          },
+          createdAt: new Date(),
+        });
+      } catch (logError) {
+        console.error("Error creating activity log:", logError);
+        // 不影響主要操作
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
