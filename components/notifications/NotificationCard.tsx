@@ -35,10 +35,11 @@ export function NotificationCard({ notification, onMarkAsRead }: NotificationCar
 
   const getLink = () => {
     if (notification.relatedRequestId) {
-      return `/admin/requests/${notification.relatedRequestId}`;
+      // 義工可以查看委托詳情（如果已發布）
+      return `/volunteer/dashboard`; // 或者可以創建一個委托詳情頁面
     }
     if (notification.relatedApplicationId) {
-      return `/admin/applications`;
+      return `/volunteer/applications`;
     }
     return null;
   };

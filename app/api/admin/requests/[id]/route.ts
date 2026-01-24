@@ -163,7 +163,8 @@ export async function PATCH(
                 }
               );
             } catch (notifError) {
-              console.error("Error creating notification:", notifError);
+              console.error("Error creating notification for volunteer:", notifError);
+              // 不影響主要操作
             }
           } catch (logError) {
             console.error("Error creating activity log for application:", logError);
