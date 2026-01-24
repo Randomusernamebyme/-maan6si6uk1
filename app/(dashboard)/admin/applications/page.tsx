@@ -98,7 +98,7 @@ export default function AdminApplicationsPage() {
                       matchedAt: requestData.matchedAt ? convertTimestamp(requestData.matchedAt) : undefined,
                       completedAt: requestData.completedAt ? convertTimestamp(requestData.completedAt) : undefined,
                     } as Request;
-                    application.requestTitle = requestData.title || (Array.isArray(requestData.fields) && requestData.fields.length > 0 ? requestData.fields.join("、") : "未知委托");
+                    application.requestTitle = requestData.name || (Array.isArray(requestData.fields) && requestData.fields.length > 0 ? requestData.fields.join("、") : "未知委托");
                   } else {
                     application.requestTitle = "委托不存在";
                   }

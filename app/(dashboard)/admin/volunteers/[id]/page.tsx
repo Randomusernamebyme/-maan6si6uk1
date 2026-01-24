@@ -123,7 +123,7 @@ export default function AdminVolunteerDetailPage() {
                   const requestData = await response.json();
                   return {
                     ...application,
-                    requestTitle: requestData.fields?.join("、") || "未知",
+                    requestTitle: requestData.name || requestData.fields?.join("、") || "未知",
                   };
                 }
               }
@@ -132,7 +132,7 @@ export default function AdminVolunteerDetailPage() {
               return {
                 ...application,
                 requestTitle: requestDoc.exists()
-                  ? requestDoc.data()?.fields?.join("、") || "未知"
+                  ? requestDoc.data()?.name || requestDoc.data()?.fields?.join("、") || "未知"
                   : "未知",
               };
             } catch (error) {
