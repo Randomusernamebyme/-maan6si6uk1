@@ -93,9 +93,10 @@ export default function AdminExportPage() {
 
         rows = data.map((item) => [
           item.id.substring(0, 8),
+          item.name || (Array.isArray(item.fields) ? item.fields.join("、") : "未命名"),
           item.status,
           item.description?.replace(/[\n\r]/g, " ") || "",
-          item.name || (Array.isArray(item.fields) ? item.fields.join("、") : ""),
+          Array.isArray(item.fields) ? item.fields.join("、") : "",
           item.requester?.name || "",
           item.requester?.phone || "",
           item.requester?.age || "",
