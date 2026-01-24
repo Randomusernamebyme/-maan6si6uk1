@@ -126,6 +126,7 @@ export default function AdminRequestsPage() {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesSearch =
+          (request.name || "").toLowerCase().includes(query) ||
           (request.description || "").toLowerCase().includes(query) ||
           (request.requester?.name || "").toLowerCase().includes(query) ||
           (Array.isArray(request.fields) && request.fields.some((f) => String(f).toLowerCase().includes(query)));
