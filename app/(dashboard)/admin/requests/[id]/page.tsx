@@ -75,8 +75,10 @@ export default function RequestDetailPage() {
         const data = await response.json();
         setRequest({
           ...data,
-          createdAt: data.createdAt ? new Date(data.createdAt.seconds * 1000) : new Date(),
-          updatedAt: data.updatedAt ? new Date(data.updatedAt.seconds * 1000) : new Date(),
+          createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+          updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
+          matchedAt: data.matchedAt ? new Date(data.matchedAt) : undefined,
+          completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
         } as Request);
       } catch (err: any) {
         setError(err.message || "載入失敗");
@@ -88,6 +90,61 @@ export default function RequestDetailPage() {
     if (requestId) {
       fetchRequest();
     }
+  }, [requestId]);
+
+  // 加載報名數據
+  useEffect(() => {
+    if (!requestId) return;
+
+    const q = query(
+      collection(db, "applications"),
+      where("requestId", "==", requestId)
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      async (snapshot) => {
+        try {
+          const apps = await Promise.all(
+            snapshot.docs.map(async (doc) => {
+              const appData = doc.data();
+              let volunteerName = "未知義工";
+              
+              try {
+                const volunteerDoc = await getDoc(doc(db, "users", appData.volunteerId));
+                if (volunteerDoc.exists()) {
+                  volunteerName = volunteerDoc.data().displayName || volunteerName;
+                }
+              } catch (err) {
+                console.error("Error fetching volunteer:", err);
+              }
+
+              return {
+                id: doc.id,
+                ...appData,
+                createdAt: convertTimestamp(appData.createdAt) || new Date(),
+                updatedAt: convertTimestamp(appData.updatedAt) || new Date(),
+                matchedAt: appData.matchedAt ? convertTimestamp(appData.matchedAt) : undefined,
+                completedAt: appData.completedAt ? convertTimestamp(appData.completedAt) : undefined,
+                volunteerName,
+              } as Application & { volunteerName?: string };
+            })
+          );
+
+          setApplications(apps);
+          setApplicationsLoading(false);
+        } catch (err) {
+          console.error("Error processing applications:", err);
+          setApplicationsLoading(false);
+        }
+      },
+      (err) => {
+        console.error("Error fetching applications:", err);
+        setApplicationsLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
   }, [requestId]);
 
   const handleStatusChange = async (newStatus: string) => {
@@ -293,23 +350,122 @@ export default function RequestDetailPage() {
             <CardHeader>
               <CardTitle>狀態時間線</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="text-sm">
-                <span className="font-semibold">提交：</span>
-                <span className="text-muted-foreground ml-2">{formatDate(request.createdAt)}</span>
+            <CardContent className="space-y-3">
+              <div className="relative">
+                {/* 提交 */}
+                <div className="flex items-start gap-3 pb-3">
+                  <div className="flex flex-col items-center">
+                    <div className="w-3 h-3 rounded-full bg-blue-500 border-2 border-white dark:border-gray-900"></div>
+                    <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 mt-1"></div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold">提交（待審核）</div>
+                    <div className="text-xs text-muted-foreground">{formatDate(request.createdAt)}</div>
+                  </div>
+                </div>
+
+                {/* 已批准 */}
+                {request.status !== "pending" && (
+                  <div className="flex items-start gap-3 pb-3">
+                    <div className="flex flex-col items-center">
+                      <div className="w-3 h-3 rounded-full bg-green-500 border-2 border-white dark:border-gray-900"></div>
+                      {request.status !== "open" && (
+                        <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 mt-1"></div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold">已批准</div>
+                      <div className="text-xs text-muted-foreground">
+                        {request.updatedAt && request.status !== "pending" 
+                          ? formatDate(request.updatedAt) 
+                          : "時間未記錄"}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 已發布 */}
+                {(request.status === "published" || request.status === "matched" || request.status === "in-progress" || request.status === "completed") && (
+                  <div className="flex items-start gap-3 pb-3">
+                    <div className="flex flex-col items-center">
+                      <div className="w-3 h-3 rounded-full bg-purple-500 border-2 border-white dark:border-gray-900"></div>
+                      {request.status !== "published" && (
+                        <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 mt-1"></div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold">已發布</div>
+                      <div className="text-xs text-muted-foreground">
+                        {request.updatedAt && (request.status === "published" || request.status === "matched" || request.status === "in-progress" || request.status === "completed")
+                          ? formatDate(request.updatedAt) 
+                          : "時間未記錄"}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 已配對 */}
+                {request.matchedAt && (
+                  <div className="flex items-start gap-3 pb-3">
+                    <div className="flex flex-col items-center">
+                      <div className="w-3 h-3 rounded-full bg-orange-500 border-2 border-white dark:border-gray-900"></div>
+                      {request.status !== "matched" && (
+                        <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 mt-1"></div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold">已配對</div>
+                      <div className="text-xs text-muted-foreground">{formatDate(request.matchedAt)}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 進行中 */}
+                {request.status === "in-progress" && (
+                  <div className="flex items-start gap-3 pb-3">
+                    <div className="flex flex-col items-center">
+                      <div className="w-3 h-3 rounded-full bg-yellow-500 border-2 border-white dark:border-gray-900"></div>
+                      {request.status !== "in-progress" && (
+                        <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 mt-1"></div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold">進行中</div>
+                      <div className="text-xs text-muted-foreground">
+                        {request.updatedAt ? formatDate(request.updatedAt) : "時間未記錄"}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 已完成 */}
+                {request.completedAt && (
+                  <div className="flex items-start gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className="w-3 h-3 rounded-full bg-green-600 border-2 border-white dark:border-gray-900"></div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold">已完成</div>
+                      <div className="text-xs text-muted-foreground">{formatDate(request.completedAt)}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 已取消 */}
+                {request.status === "cancelled" && (
+                  <div className="flex items-start gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className="w-3 h-3 rounded-full bg-red-500 border-2 border-white dark:border-gray-900"></div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold">已取消</div>
+                      <div className="text-xs text-muted-foreground">
+                        {request.updatedAt ? formatDate(request.updatedAt) : "時間未記錄"}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              {request.matchedAt && (
-                <div className="text-sm">
-                  <span className="font-semibold">配對：</span>
-                  <span className="text-muted-foreground ml-2">{formatDate(request.matchedAt)}</span>
-                </div>
-              )}
-              {request.completedAt && (
-                <div className="text-sm">
-                  <span className="font-semibold">完成：</span>
-                  <span className="text-muted-foreground ml-2">{formatDate(request.completedAt)}</span>
-                </div>
-              )}
             </CardContent>
           </Card>
 

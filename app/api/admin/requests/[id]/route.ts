@@ -50,6 +50,8 @@ export async function GET(
       ...requestData,
       createdAt: requestData?.createdAt?.toDate?.()?.toISOString(),
       updatedAt: requestData?.updatedAt?.toDate?.()?.toISOString(),
+      matchedAt: requestData?.matchedAt?.toDate?.()?.toISOString(),
+      completedAt: requestData?.completedAt?.toDate?.()?.toISOString(),
     });
   } catch (error: any) {
     console.error("Error fetching request:", error);
