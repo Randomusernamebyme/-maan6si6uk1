@@ -106,8 +106,8 @@ export default function RequestDetailPage() {
       async (snapshot) => {
         try {
           const apps = await Promise.all(
-            snapshot.docs.map(async (doc) => {
-              const appData = doc.data();
+            snapshot.docs.map(async (docSnapshot) => {
+              const appData = docSnapshot.data();
               let volunteerName = "未知義工";
               
               try {
@@ -120,7 +120,7 @@ export default function RequestDetailPage() {
               }
 
               return {
-                id: doc.id,
+                id: docSnapshot.id,
                 ...appData,
                 createdAt: convertTimestamp(appData.createdAt) || new Date(),
                 updatedAt: convertTimestamp(appData.updatedAt) || new Date(),
