@@ -1,28 +1,60 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SERVICE_FIELD_IMAGES } from "@/lib/constants/serviceFields";
+import { getStorageDownloadURL } from "@/lib/utils/storage";
 
 export function ServicesSection() {
+  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    // 嘗試從 Firebase Storage 獲取圖片 URL
+    const loadImages = async () => {
+      const imagePaths = {
+        "生活助手": "service-fields/1.png",
+        "社區拍檔": "service-fields/3.png",
+        "街坊樹窿": "service-fields/2.png",
+      };
+
+      const urls: Record<string, string> = {};
+      
+      for (const [key, path] of Object.entries(imagePaths)) {
+        try {
+          const url = await getStorageDownloadURL(path);
+          urls[key] = url;
+        } catch (error) {
+          console.error(`Failed to load image for ${key}:`, error);
+          // 如果獲取失敗，使用硬編碼的 URL 作為備用
+          urls[key] = SERVICE_FIELD_IMAGES[key] || "";
+        }
+      }
+      
+      setImageUrls(urls);
+    };
+
+    loadImages();
+  }, []);
+
   const services = [
     {
       title: "生活助手",
       subtitle: "河裡 - 全能工具人",
       description: "幫助街坊解決生活難題：手機故障處理、修補舊衣舊鞋、執靚小窩、教用AI等",
-      imageUrl: SERVICE_FIELD_IMAGES["生活助手"],
+      imageUrl: imageUrls["生活助手"] || SERVICE_FIELD_IMAGES["生活助手"],
     },
     {
       title: "社區拍檔",
       subtitle: "小仙子拍檔",
       description: "聯繫社區形形色色的人，舉辦地區聯繫活動、保留社區特色文化，為堅尼地城增添色彩和溫情",
-      imageUrl: SERVICE_FIELD_IMAGES["社區拍檔"],
+      imageUrl: imageUrls["社區拍檔"] || SERVICE_FIELD_IMAGES["社區拍檔"],
     },
     {
       title: "街坊樹窿",
       subtitle: "小松鼠",
       description: "提供情緒價值，聆聽心底秘密：上門陪玩、陪行街、陪睇醫生，打從心底陪伴",
-      imageUrl: SERVICE_FIELD_IMAGES["街坊樹窿"],
+      imageUrl: imageUrls["街坊樹窿"] || SERVICE_FIELD_IMAGES["街坊樹窿"],
     },
   ];
 
