@@ -66,12 +66,12 @@ export async function GET(request: NextRequest) {
     }));
 
     // 獲取所有操作人的用戶信息
-    const userIds = [...new Set(logs.map((log: any) => log.userId).filter(Boolean))];
-    const userMap = new Map();
+    const userIds = [...new Set(logs.map((log: any) => log.userId).filter(Boolean))] as string[];
+    const userMap = new Map<string, string>();
     
     if (userIds.length > 0) {
       const userDocs = await Promise.all(
-        userIds.map((uid: string) => adminDb.collection("users").doc(uid).get())
+        userIds.map((uid) => adminDb.collection("users").doc(uid).get())
       );
       
       userDocs.forEach((userDoc) => {
