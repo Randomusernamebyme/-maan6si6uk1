@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loading } from "@/components/ui/loading";
+import { ErrorDisplay } from "@/components/ui/error";
 import Link from "next/link";
-import { RequestStatus, UserStatus } from "@/types";
+import { getAuthToken } from "@/lib/utils/auth";
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState({
@@ -17,47 +16,33 @@ export default function AdminDashboardPage() {
     totalVolunteers: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // 待審核委托數
-        const pendingRequestsQuery = query(
-          collection(db, "requests"),
-          where("status", "==", "pending")
-        );
-        const pendingRequestsSnapshot = await getDocs(pendingRequestsQuery);
+        const token = await getAuthToken();
+        if (!token) {
+          throw new Error("請先登入");
+        }
 
-        // 待審核義工數
-        const pendingVolunteersQuery = query(
-          collection(db, "users"),
-          where("role", "==", "volunteer"),
-          where("status", "==", "pending")
-        );
-        const pendingVolunteersSnapshot = await getDocs(pendingVolunteersQuery);
-
-        // 進行中委托數
-        const inProgressRequestsQuery = query(
-          collection(db, "requests"),
-          where("status", "==", "matched")
-        );
-        const inProgressRequestsSnapshot = await getDocs(inProgressRequestsQuery);
-
-        // 總義工人數
-        const totalVolunteersQuery = query(
-          collection(db, "users"),
-          where("role", "==", "volunteer")
-        );
-        const totalVolunteersSnapshot = await getDocs(totalVolunteersQuery);
-
-        setStats({
-          pendingRequests: pendingRequestsSnapshot.size,
-          pendingVolunteers: pendingVolunteersSnapshot.size,
-          inProgressRequests: inProgressRequestsSnapshot.size,
-          totalVolunteers: totalVolunteersSnapshot.size,
+        const response = await fetch("/api/admin/stats", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
-      } catch (error) {
-        console.error("Error fetching stats:", error);
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "獲取統計數據失敗");
+        }
+
+        const data = await response.json();
+        setStats(data);
+        setError(null);
+      } catch (err: any) {
+        console.error("Error fetching stats:", err);
+        setError(err.message || "載入統計數據時發生錯誤");
       } finally {
         setLoading(false);
       }
@@ -72,6 +57,10 @@ export default function AdminDashboardPage() {
         <Loading size="lg" />
       </div>
     );
+  }
+
+  if (error) {
+    return <ErrorDisplay message={error} />;
   }
 
   return (
@@ -95,6 +84,9 @@ export default function AdminDashboardPage() {
             <CardHeader className="pb-2">
               <CardDescription>進行中委托</CardDescription>
               <CardTitle className="text-3xl">{stats.inProgressRequests}</CardTitle>
+              <CardDescription className="text-xs mt-1">
+                已配對或進行中
+              </CardDescription>
             </CardHeader>
           </Card>
           <Card>
