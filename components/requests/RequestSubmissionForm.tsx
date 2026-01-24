@@ -254,6 +254,10 @@ export function RequestSubmissionForm() {
                           fill
                           className="object-cover"
                           sizes="64px"
+                          unoptimized
+                          onError={(e) => {
+                            console.error("Failed to load image for", field, ":", SERVICE_FIELD_IMAGES[field]);
+                          }}
                         />
                       </div>
                     )}

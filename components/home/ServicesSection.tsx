@@ -40,14 +40,23 @@ export function ServicesSection() {
             <Card key={service.title} className="border-2 hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden bg-muted">
-                  {service.imageUrl && (
+                  {service.imageUrl ? (
                     <Image
                       src={service.imageUrl}
                       alt={service.title}
                       fill
                       className="object-cover"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      unoptimized
+                      onError={(e) => {
+                        console.error("Failed to load image:", service.title, service.imageUrl);
+                        // 如果圖片加載失敗，可以顯示佔位符
+                      }}
                     />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-muted-foreground">
+                      <span>圖片加載中...</span>
+                    </div>
                   )}
                 </div>
                 <CardTitle className="text-xl">{service.title}</CardTitle>
