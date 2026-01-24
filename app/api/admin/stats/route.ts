@@ -45,10 +45,11 @@ export async function GET(request: NextRequest) {
       inProgressRequestsSnapshot,
       totalVolunteersSnapshot,
     ] = await Promise.all([
-      // 待審核委托數
+      // 待審核委托數（按創建時間降序）
       adminDb
         .collection("requests")
         .where("status", "==", "pending")
+        .orderBy("createdAt", "desc")
         .get(),
       
       // 待審核義工數
@@ -72,19 +73,26 @@ export async function GET(request: NextRequest) {
     ]);
 
     // 獲取待審核委托的詳細信息（包括名稱）
-    const pendingRequestsList = pendingRequestsSnapshot.docs.map((doc: any) => ({
-      id: doc.id,
-      name: doc.data().name || (Array.isArray(doc.data().fields) ? doc.data().fields.join("、") : "未命名委托"),
-      status: doc.data().status,
-      createdAt: doc.data().createdAt?.toDate?.()?.toISOString(),
-    }));
+    const pendingRequestsList = pendingRequestsSnapshot.docs
+      .map((doc: any) => ({
+        id: doc.id,
+        name: doc.data().name || (Array.isArray(doc.data().fields) ? doc.data().fields.join("、") : "未命名委托"),
+        status: doc.data().status,
+        createdAt: doc.data().createdAt?.toDate?.()?.toISOString(),
+      }))
+      .sort((a, b) => {
+        // 按創建時間降序排序（最新的在前）
+        if (!a.createdAt || !b.createdAt) return 0;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      })
+      .slice(0, 10); // 只返回最近10個
 
     return NextResponse.json({
       pendingRequests: pendingRequestsSnapshot.size,
       pendingVolunteers: pendingVolunteersSnapshot.size,
       inProgressRequests: inProgressRequestsSnapshot.size,
       totalVolunteers: totalVolunteersSnapshot.size,
-      pendingRequestsList: pendingRequestsList.slice(0, 10), // 只返回最近10個
+      pendingRequestsList: pendingRequestsList,
     });
   } catch (error: any) {
     console.error("Error fetching stats:", error);
