@@ -151,8 +151,8 @@ export async function GET(request: NextRequest) {
       const snapshot = await q.get();
       
       // 獲取相關的委托和義工信息
-      const requestIds = [...new Set(snapshot.docs.map((doc: any) => doc.data().requestId).filter(Boolean))];
-      const volunteerIds = [...new Set(snapshot.docs.map((doc: any) => doc.data().volunteerId).filter(Boolean))];
+      const requestIds: string[] = [...new Set(snapshot.docs.map((doc: any) => doc.data().requestId).filter((id: any): id is string => Boolean(id)))];
+      const volunteerIds: string[] = [...new Set(snapshot.docs.map((doc: any) => doc.data().volunteerId).filter((id: any): id is string => Boolean(id)))];
       
       const [requestDocs, volunteerDocs] = await Promise.all([
         Promise.all(requestIds.map((id: string) => adminDb.collection("requests").doc(id).get())),

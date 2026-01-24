@@ -87,10 +87,8 @@ export function useRequest(requestId: string | null) {
               }
             } catch (apiErr) {
               console.error("Error fetching request via API:", apiErr);
-              if (loading) {
-                setError(apiErr as Error);
-                setLoading(false);
-              }
+              setError(apiErr as Error);
+              setLoading(false);
             }
           };
 
