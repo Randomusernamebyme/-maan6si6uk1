@@ -73,13 +73,23 @@ export default function RequestDetailPage() {
         }
 
         const data = await response.json();
-        setRequest({
-          ...data,
-          createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
-          updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
-          matchedAt: data.matchedAt ? new Date(data.matchedAt) : undefined,
-          completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
-        } as Request);
+            // 處理 followUps 中的日期
+            let followUps = data.followUps;
+            if (Array.isArray(followUps)) {
+              followUps = followUps.map((followUp: any) => ({
+                ...followUp,
+                date: followUp.date ? new Date(followUp.date) : new Date(),
+              }));
+            }
+            
+            setRequest({
+              ...data,
+              createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+              updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
+              matchedAt: data.matchedAt ? new Date(data.matchedAt) : undefined,
+              completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
+              followUps: followUps,
+            } as Request);
       } catch (err: any) {
         setError(err.message || "載入失敗");
       } finally {
@@ -201,6 +211,7 @@ export default function RequestDetailPage() {
     }
 
     try {
+      setError(""); // 清除之前的錯誤
       const token = await getAuthToken();
       if (!token) {
         throw new Error("請先登入");
@@ -211,7 +222,7 @@ export default function RequestDetailPage() {
         date: new Date(),
         method: followUpMethod.trim(),
         content: followUpContent.trim(),
-        adminId: "", // 將從 token 中獲取
+        adminId: "", // 將從 API 中獲取
       };
 
       const response = await fetch(`/api/admin/requests/${requestId}`, {
@@ -230,11 +241,37 @@ export default function RequestDetailPage() {
         throw new Error(errorData.error || "添加跟進記錄失敗");
       }
 
+      // 重新獲取請求數據以更新 UI
+      const updatedResponse = await fetch(`/api/admin/requests/${requestId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (updatedResponse.ok) {
+        const data = await updatedResponse.json();
+        // 處理 followUps 中的日期
+        let followUps = data.followUps;
+        if (Array.isArray(followUps)) {
+          followUps = followUps.map((followUp: any) => ({
+            ...followUp,
+            date: followUp.date ? new Date(followUp.date) : new Date(),
+          }));
+        }
+        
+        setRequest({
+          ...data,
+          createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+          updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
+          matchedAt: data.matchedAt ? new Date(data.matchedAt) : undefined,
+          completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
+          followUps: followUps,
+        } as Request);
+      }
+
       setShowFollowUpDialog(false);
       setFollowUpMethod("");
       setFollowUpContent("");
-      router.refresh();
-      window.location.reload();
     } catch (err: any) {
       setError(err.message || "添加跟進記錄失敗");
     }

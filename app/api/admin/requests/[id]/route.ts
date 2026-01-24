@@ -45,6 +45,16 @@ export async function GET(
     }
 
     const requestData = requestDoc.data();
+    
+    // 處理 followUps 中的日期
+    let followUps = requestData?.followUps;
+    if (Array.isArray(followUps)) {
+      followUps = followUps.map((followUp: any) => ({
+        ...followUp,
+        date: followUp.date?.toDate?.()?.toISOString() || followUp.date,
+      }));
+    }
+    
     return NextResponse.json({
       id: requestDoc.id,
       ...requestData,
@@ -52,6 +62,7 @@ export async function GET(
       updatedAt: requestData?.updatedAt?.toDate?.()?.toISOString(),
       matchedAt: requestData?.matchedAt?.toDate?.()?.toISOString(),
       completedAt: requestData?.completedAt?.toDate?.()?.toISOString(),
+      followUps: followUps,
     });
   } catch (error: any) {
     console.error("Error fetching request:", error);
@@ -96,6 +107,17 @@ export async function PATCH(
       } else if (body.status === "completed") {
         updateData.completedAt = new Date();
       }
+    }
+
+    // 處理跟進記錄更新
+    if (body.followUps && Array.isArray(body.followUps)) {
+      // 轉換日期為 Firestore Timestamp
+      const followUpsWithTimestamps = body.followUps.map((followUp: any) => ({
+        ...followUp,
+        date: followUp.date instanceof Date ? followUp.date : new Date(followUp.date),
+        adminId: admin.uid, // 使用當前管理員 ID
+      }));
+      updateData.followUps = followUpsWithTimestamps;
     }
 
     await adminDb.collection("requests").doc(requestId).update(updateData);

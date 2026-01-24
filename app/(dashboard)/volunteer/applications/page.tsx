@@ -174,7 +174,15 @@ function ApplicationItem({
   }
 
   if (!request) {
-    return null;
+    return (
+      <Card>
+        <CardContent className="py-6">
+          <p className="text-sm text-muted-foreground text-center">
+            無法載入委托詳情（ID: {application.requestId?.substring(0, 8)}...）
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   const statusLabels: Record<string, string> = {

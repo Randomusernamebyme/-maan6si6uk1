@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
     // 篩選參數
     const userId = searchParams.get("userId");
     const action = searchParams.get("action");
+    const targetType = searchParams.get("targetType");
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
@@ -53,6 +54,9 @@ export async function GET(request: NextRequest) {
     if (action) {
       q = q.where("action", "==", action);
     }
+    if (targetType) {
+      q = q.where("targetType", "==", targetType);
+    }
 
     const snapshot = await q.get();
     const logs = snapshot.docs.map((doc: any) => ({
@@ -61,10 +65,33 @@ export async function GET(request: NextRequest) {
       createdAt: doc.data().createdAt?.toDate(),
     }));
 
+    // 獲取所有操作人的用戶信息
+    const userIds = [...new Set(logs.map((log: any) => log.userId).filter(Boolean))];
+    const userMap = new Map();
+    
+    if (userIds.length > 0) {
+      const userDocs = await Promise.all(
+        userIds.map((uid: string) => adminDb.collection("users").doc(uid).get())
+      );
+      
+      userDocs.forEach((userDoc) => {
+        if (userDoc.exists) {
+          const userData = userDoc.data();
+          userMap.set(userDoc.id, userData?.displayName || userData?.email || "未知用戶");
+        }
+      });
+    }
+
+    // 為每個日誌添加操作人名稱
+    const logsWithNames = logs.map((log: any) => ({
+      ...log,
+      adminName: userMap.get(log.userId) || "未知",
+    }));
+
     // 日期範圍篩選（在內存中處理，因為 Firestore 查詢限制）
-    let filteredLogs = logs;
+    let filteredLogs = logsWithNames;
     if (startDate || endDate) {
-      filteredLogs = logs.filter((log: any) => {
+      filteredLogs = logsWithNames.filter((log: any) => {
         const logDate = log.createdAt;
         if (!logDate) return false;
         if (startDate && logDate < new Date(startDate)) return false;

@@ -42,6 +42,20 @@ const TARGET_TYPE_LABELS: Record<string, string> = {
   notification: "通知",
 };
 
+// 改進描述格式的函數
+function formatDescription(log: ActivityLog & { adminName?: string }): string {
+  const actionLabel = ACTION_LABELS[log.action] || log.action;
+  const targetLabel = TARGET_TYPE_LABELS[log.targetType] || log.targetType;
+  
+  // 如果已經有自定義描述，直接使用
+  if (log.description && log.description !== `${log.action} ${log.targetType}`) {
+    return log.description;
+  }
+  
+  // 否則生成更易理解的描述
+  return `${actionLabel}了${targetLabel}（ID: ${log.targetId.substring(0, 8)}...）`;
+}
+
 export default function AdminLogsPage() {
   const [logs, setLogs] = useState<(ActivityLog & { adminName?: string })[]>([]);
   const [loading, setLoading] = useState(true);
@@ -276,7 +290,7 @@ export default function AdminLogsPage() {
                     </Badge>
                   </div>
                   <div className="col-span-4 flex items-center">
-                    <span>{log.description}</span>
+                    <span>{formatDescription(log)}</span>
                   </div>
                   <div className="col-span-2 flex items-center">
                     <code className="text-xs bg-muted px-2 py-1 rounded">

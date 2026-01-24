@@ -25,8 +25,9 @@ import { zhTW } from "date-fns/locale";
 import { getAuthToken } from "@/lib/utils/auth";
 import { useRouter } from "next/navigation";
 
-const STATUS_TABS: UserStatus[] = ["pending", "approved", "rejected", "suspended"];
-const STATUS_LABELS: Record<UserStatus, string> = {
+const STATUS_TABS: (UserStatus | "all")[] = ["all", "pending", "approved", "rejected", "suspended"];
+const STATUS_LABELS: Record<UserStatus | "all", string> = {
+  all: "全部",
   pending: "待審核",
   approved: "已批准",
   rejected: "已拒絕",
@@ -38,7 +39,7 @@ export default function AdminVolunteersPage() {
   const [volunteers, setVolunteers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [statusFilter, setStatusFilter] = useState<UserStatus>("pending");
+  const [statusFilter, setStatusFilter] = useState<UserStatus | "all">("pending");
   const [fieldFilter, setFieldFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedVolunteers, setSelectedVolunteers] = useState<Set<string>>(new Set());
@@ -109,7 +110,7 @@ export default function AdminVolunteersPage() {
   const filteredVolunteers = useMemo(() => {
     return volunteers.filter((volunteer) => {
       // 狀態篩選
-      if (volunteer.status !== statusFilter) return false;
+      if (statusFilter !== "all" && volunteer.status !== statusFilter) return false;
 
       // 領域篩選
       if (fieldFilter !== "all" && volunteer.fields && !volunteer.fields.includes(fieldFilter as ServiceField)) {
@@ -225,10 +226,12 @@ export default function AdminVolunteersPage() {
       </Card>
 
       {/* 狀態分頁 */}
-      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as UserStatus)}>
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as UserStatus | "all")}>
+        <TabsList className="grid w-full grid-cols-5">
           {STATUS_TABS.map((status) => {
-            const count = volunteers.filter((v) => v.status === status).length;
+            const count = status === "all" 
+              ? volunteers.length 
+              : volunteers.filter((v) => v.status === status).length;
             return (
               <TabsTrigger key={status} value={status}>
                 {STATUS_LABELS[status]} ({count})
