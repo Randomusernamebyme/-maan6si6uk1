@@ -376,7 +376,7 @@ export default function RequestDetailPage() {
                     <div className="flex-1">
                       <div className="text-sm font-semibold">已批准</div>
                       <div className="text-xs text-muted-foreground">
-                        {request.updatedAt && request.status !== "pending" 
+                        {request.updatedAt 
                           ? formatDate(request.updatedAt) 
                           : "時間未記錄"}
                       </div>
@@ -396,7 +396,7 @@ export default function RequestDetailPage() {
                     <div className="flex-1">
                       <div className="text-sm font-semibold">已發布</div>
                       <div className="text-xs text-muted-foreground">
-                        {request.updatedAt && (request.status === "published" || request.status === "matched" || request.status === "in-progress" || request.status === "completed")
+                        {request.updatedAt 
                           ? formatDate(request.updatedAt) 
                           : "時間未記錄"}
                       </div>
