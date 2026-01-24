@@ -39,8 +39,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const adminDb = getAdminDb();
-    let q: any = adminDb.collection("activity_logs").orderBy("createdAt", "desc");
-
+    
     // 篩選參數
     const userId = searchParams.get("userId");
     const action = searchParams.get("action");
@@ -48,22 +47,52 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
-    if (userId) {
-      q = q.where("userId", "==", userId);
+    // 為了避免需要複合索引，我們先獲取所有日誌，然後在內存中篩選和排序
+    // 如果只有一個篩選條件，可以使用 Firestore 查詢優化
+    let q: any = adminDb.collection("activity_logs");
+    
+    // 如果只有一個篩選條件，可以使用 where 查詢
+    // 否則獲取所有數據在內存中篩選
+    const filterCount = [userId, action, targetType].filter(Boolean).length;
+    
+    if (filterCount === 1) {
+      // 只有一個篩選條件，可以使用 where + orderBy
+      if (userId) {
+        q = q.where("userId", "==", userId);
+      } else if (action) {
+        q = q.where("action", "==", action);
+      } else if (targetType) {
+        q = q.where("targetType", "==", targetType);
+      }
+      q = q.orderBy("createdAt", "desc");
+    } else if (filterCount === 0) {
+      // 沒有篩選條件，直接排序
+      q = q.orderBy("createdAt", "desc");
     }
-    if (action) {
-      q = q.where("action", "==", action);
-    }
-    if (targetType) {
-      q = q.where("targetType", "==", targetType);
-    }
+    // 如果有多個篩選條件，不添加 where，在內存中處理
 
     const snapshot = await q.get();
-    const logs = snapshot.docs.map((doc: any) => ({
+    let logs = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate(),
     }));
+
+    // 在內存中進行多條件篩選（如果需要）
+    if (filterCount > 1) {
+      logs = logs.filter((log: any) => {
+        if (userId && log.userId !== userId) return false;
+        if (action && log.action !== action) return false;
+        if (targetType && log.targetType !== targetType) return false;
+        return true;
+      });
+      
+      // 在內存中排序
+      logs.sort((a: any, b: any) => {
+        if (!a.createdAt || !b.createdAt) return 0;
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      });
+    }
 
     // 獲取所有操作人的用戶信息
     const userIds = [...new Set(logs.map((log: any) => log.userId).filter(Boolean))] as string[];
