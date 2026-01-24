@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useRequests } from "@/lib/hooks/useRequests";
+import { useApplications } from "@/lib/hooks/useApplications";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,14 +78,19 @@ export default function VolunteerDashboardPage() {
   }, [requests, searchQuery, fieldFilter, urgencyFilter, sortBy]);
 
   // 統計數據
+  const { applications } = useApplications(user?.uid);
   const stats = useMemo(() => {
-    // 這裡需要從 applications 獲取數據，暫時使用占位符
+    const applicationsCount = applications.length;
+    const completedCount = applications.filter((app) => app.status === "completed").length;
+    // TODO: 獲取未讀通知數量
+    const unreadNotifications = 0;
+    
     return {
-      applicationsCount: 0,
-      completedCount: 0,
-      unreadNotifications: 0,
+      applicationsCount,
+      completedCount,
+      unreadNotifications,
     };
-  }, []);
+  }, [applications]);
 
   if (loading) {
     return (
