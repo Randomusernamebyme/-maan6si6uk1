@@ -240,6 +240,18 @@ function ApplicationItem({
                 <span>{formatDate(application.completedAt)}</span>
               </div>
             )}
+            {request.status && (
+              <div>
+                <span className="text-muted-foreground">委托狀態：</span>
+                <Badge variant="outline" className="ml-1">
+                  {request.status === "published" && "已發布"}
+                  {request.status === "matched" && "已配對"}
+                  {request.status === "in-progress" && "進行中"}
+                  {request.status === "completed" && "已完成"}
+                  {request.status === "cancelled" && "已取消"}
+                </Badge>
+              </div>
+            )}
           </div>
 
           {application.message && (
