@@ -94,58 +94,68 @@ export default function RequestDetailPage() {
 
   // 加載報名數據
   useEffect(() => {
-    if (!requestId) return;
+    if (!requestId) {
+      setApplicationsLoading(false);
+      return;
+    }
 
-    const q = query(
-      collection(db, "applications"),
-      where("requestId", "==", requestId)
-    );
+    // 只有在請求已發布給義工時才加載報名數據
+    if (request && (request.status === "published" || request.status === "matched" || request.status === "in-progress" || request.status === "completed")) {
+      const q = query(
+        collection(db, "applications"),
+        where("requestId", "==", requestId)
+      );
 
-    const unsubscribe = onSnapshot(
-      q,
-      async (snapshot) => {
-        try {
-          const apps = await Promise.all(
-            snapshot.docs.map(async (docSnapshot) => {
-              const appData = docSnapshot.data();
-              let volunteerName = "未知義工";
-              
-              try {
-                const volunteerDoc = await getDoc(doc(db, "users", appData.volunteerId));
-                if (volunteerDoc.exists()) {
-                  volunteerName = volunteerDoc.data().displayName || volunteerName;
+      const unsubscribe = onSnapshot(
+        q,
+        async (snapshot) => {
+          try {
+            const apps = await Promise.all(
+              snapshot.docs.map(async (docSnapshot) => {
+                const appData = docSnapshot.data();
+                let volunteerName = "未知義工";
+                
+                try {
+                  const volunteerDoc = await getDoc(doc(db, "users", appData.volunteerId));
+                  if (volunteerDoc.exists()) {
+                    volunteerName = volunteerDoc.data().displayName || volunteerName;
+                  }
+                } catch (err) {
+                  console.error("Error fetching volunteer:", err);
                 }
-              } catch (err) {
-                console.error("Error fetching volunteer:", err);
-              }
 
-              return {
-                id: docSnapshot.id,
-                ...appData,
-                createdAt: convertTimestamp(appData.createdAt) || new Date(),
-                updatedAt: convertTimestamp(appData.updatedAt) || new Date(),
-                matchedAt: appData.matchedAt ? convertTimestamp(appData.matchedAt) : undefined,
-                completedAt: appData.completedAt ? convertTimestamp(appData.completedAt) : undefined,
-                volunteerName,
-              } as Application & { volunteerName?: string };
-            })
-          );
+                return {
+                  id: docSnapshot.id,
+                  ...appData,
+                  createdAt: convertTimestamp(appData.createdAt) || new Date(),
+                  updatedAt: convertTimestamp(appData.updatedAt) || new Date(),
+                  matchedAt: appData.matchedAt ? convertTimestamp(appData.matchedAt) : undefined,
+                  completedAt: appData.completedAt ? convertTimestamp(appData.completedAt) : undefined,
+                  volunteerName,
+                } as Application & { volunteerName?: string };
+              })
+            );
 
-          setApplications(apps);
-          setApplicationsLoading(false);
-        } catch (err) {
-          console.error("Error processing applications:", err);
+            setApplications(apps);
+            setApplicationsLoading(false);
+          } catch (err) {
+            console.error("Error processing applications:", err);
+            setApplicationsLoading(false);
+          }
+        },
+        (err) => {
+          console.error("Error fetching applications:", err);
           setApplicationsLoading(false);
         }
-      },
-      (err) => {
-        console.error("Error fetching applications:", err);
-        setApplicationsLoading(false);
-      }
-    );
+      );
 
-    return () => unsubscribe();
-  }, [requestId]);
+      return () => unsubscribe();
+    } else {
+      // 如果請求尚未發布，直接設置為空數組並停止載入
+      setApplications([]);
+      setApplicationsLoading(false);
+    }
+  }, [requestId, request]);
 
   const handleStatusChange = async (newStatus: string) => {
     try {
@@ -355,7 +365,7 @@ export default function RequestDetailPage() {
                 {/* 提交 */}
                 <div className="flex items-start gap-3 pb-3">
                   <div className="flex flex-col items-center">
-                    <div className="w-3 h-3 rounded-full bg-blue-500 border-2 border-white dark:border-gray-900"></div>
+                    <div className="w-3 h-3 rounded-full bg-gray-500 border-2 border-white dark:border-gray-900"></div>
                     <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 mt-1"></div>
                   </div>
                   <div className="flex-1">
@@ -368,7 +378,7 @@ export default function RequestDetailPage() {
                 {request.status !== "pending" && (
                   <div className="flex items-start gap-3 pb-3">
                     <div className="flex flex-col items-center">
-                      <div className="w-3 h-3 rounded-full bg-green-500 border-2 border-white dark:border-gray-900"></div>
+                      <div className="w-3 h-3 rounded-full bg-gray-600 border-2 border-white dark:border-gray-900"></div>
                       {(request.status === "published" || request.status === "matched" || request.status === "in-progress" || request.status === "completed" || request.status === "cancelled") && (
                         <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 mt-1"></div>
                       )}
@@ -388,7 +398,7 @@ export default function RequestDetailPage() {
                 {(request.status === "published" || request.status === "matched" || request.status === "in-progress" || request.status === "completed") && (
                   <div className="flex items-start gap-3 pb-3">
                     <div className="flex flex-col items-center">
-                      <div className="w-3 h-3 rounded-full bg-purple-500 border-2 border-white dark:border-gray-900"></div>
+                      <div className="w-3 h-3 rounded-full bg-gray-700 border-2 border-white dark:border-gray-900"></div>
                       {(request.status === "matched" || request.status === "in-progress" || request.status === "completed") && (
                         <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 mt-1"></div>
                       )}
@@ -408,7 +418,7 @@ export default function RequestDetailPage() {
                 {request.matchedAt && (
                   <div className="flex items-start gap-3 pb-3">
                     <div className="flex flex-col items-center">
-                      <div className="w-3 h-3 rounded-full bg-orange-500 border-2 border-white dark:border-gray-900"></div>
+                      <div className="w-3 h-3 rounded-full bg-gray-800 border-2 border-white dark:border-gray-900"></div>
                       {(request.status === "in-progress" || request.status === "completed") && (
                         <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 mt-1"></div>
                       )}
@@ -424,7 +434,7 @@ export default function RequestDetailPage() {
                 {request.status === "in-progress" && (
                   <div className="flex items-start gap-3 pb-3">
                     <div className="flex flex-col items-center">
-                      <div className="w-3 h-3 rounded-full bg-yellow-500 border-2 border-white dark:border-gray-900"></div>
+                      <div className="w-3 h-3 rounded-full bg-gray-900 border-2 border-white dark:border-gray-900"></div>
                       {!request.completedAt && (
                         <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 mt-1"></div>
                       )}
@@ -442,7 +452,7 @@ export default function RequestDetailPage() {
                 {request.completedAt && (
                   <div className="flex items-start gap-3">
                     <div className="flex flex-col items-center">
-                      <div className="w-3 h-3 rounded-full bg-green-600 border-2 border-white dark:border-gray-900"></div>
+                      <div className="w-3 h-3 rounded-full bg-black border-2 border-white dark:border-gray-900"></div>
                     </div>
                     <div className="flex-1">
                       <div className="text-sm font-semibold">已完成</div>
@@ -455,7 +465,7 @@ export default function RequestDetailPage() {
                 {request.status === "cancelled" && (
                   <div className="flex items-start gap-3">
                     <div className="flex flex-col items-center">
-                      <div className="w-3 h-3 rounded-full bg-red-500 border-2 border-white dark:border-gray-900"></div>
+                      <div className="w-3 h-3 rounded-full bg-gray-400 border-2 border-white dark:border-gray-900"></div>
                     </div>
                     <div className="flex-1">
                       <div className="text-sm font-semibold">已取消</div>
@@ -486,6 +496,10 @@ export default function RequestDetailPage() {
                 <div className="flex items-center justify-center py-8">
                   <Loading size="sm" />
                 </div>
+              ) : request.status !== "published" && request.status !== "matched" && request.status !== "in-progress" && request.status !== "completed" ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  此委托尚未發布給義工，義工還無法申請
+                </p>
               ) : applications.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   目前沒有報名記錄
@@ -495,7 +509,7 @@ export default function RequestDetailPage() {
                   {/* 已選中 */}
                   {applications.filter((app) => app.status === "approved").length > 0 && (
                     <div>
-                      <h4 className="font-semibold text-sm mb-2 text-green-600">
+                      <h4 className="font-semibold text-sm mb-2">
                         已選中 ({applications.filter((app) => app.status === "approved").length})
                       </h4>
                       <div className="space-y-2">
@@ -504,7 +518,7 @@ export default function RequestDetailPage() {
                           .map((app) => (
                             <div
                               key={app.id}
-                              className="p-3 border rounded-md bg-green-50 dark:bg-green-900/20"
+                              className="p-3 border rounded-md bg-gray-50 dark:bg-gray-900/20"
                             >
                               <div className="flex items-center justify-between">
                                 <div className="flex-1">
@@ -646,7 +660,7 @@ export default function RequestDetailPage() {
                   {/* 未選中 */}
                   {applications.filter((app) => app.status === "rejected").length > 0 && (
                     <div>
-                      <h4 className="font-semibold text-sm mb-2 text-gray-500">
+                      <h4 className="font-semibold text-sm mb-2">
                         未選中 ({applications.filter((app) => app.status === "rejected").length})
                       </h4>
                       <div className="space-y-2">
@@ -688,24 +702,30 @@ export default function RequestDetailPage() {
           </Card>
 
           {/* 跟進記錄 */}
-          {Array.isArray(request.followUps) && request.followUps.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>跟進記錄</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {request.followUps.map((followUp, index) => (
-                  <div key={index} className="border-l-2 pl-4 py-2">
-                    <div className="text-sm text-muted-foreground">
-                      {formatDate(followUp.date instanceof Date ? followUp.date : new Date(followUp.date))}
+          <Card>
+            <CardHeader>
+              <CardTitle>跟進記錄</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {Array.isArray(request.followUps) && request.followUps.length > 0 ? (
+                <div className="space-y-4">
+                  {request.followUps.map((followUp, index) => (
+                    <div key={index} className="border-l-2 border-gray-300 dark:border-gray-700 pl-4 py-2">
+                      <div className="text-sm text-muted-foreground">
+                        {formatDate(followUp.date instanceof Date ? followUp.date : new Date(followUp.date))}
+                      </div>
+                      <div className="text-sm font-semibold mt-1">{followUp.method}</div>
+                      <div className="text-sm mt-1">{followUp.content}</div>
                     </div>
-                    <div className="text-sm font-semibold mt-1">{followUp.method}</div>
-                    <div className="text-sm mt-1">{followUp.content}</div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  目前沒有跟進記錄
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* 右側：操作面板 */}

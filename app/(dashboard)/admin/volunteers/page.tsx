@@ -227,11 +227,14 @@ export default function AdminVolunteersPage() {
       {/* 狀態分頁 */}
       <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as UserStatus)}>
         <TabsList className="grid w-full grid-cols-4">
-          {STATUS_TABS.map((status) => (
-            <TabsTrigger key={status} value={status}>
-              {STATUS_LABELS[status]}
-            </TabsTrigger>
-          ))}
+          {STATUS_TABS.map((status) => {
+            const count = volunteers.filter((v) => v.status === status).length;
+            return (
+              <TabsTrigger key={status} value={status}>
+                {STATUS_LABELS[status]} ({count})
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
 
         <TabsContent value={statusFilter} className="mt-6">
