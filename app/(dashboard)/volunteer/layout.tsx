@@ -21,6 +21,7 @@ export default function VolunteerLayout({
   const navItems = [
     { href: "/volunteer/dashboard", label: "看板" },
     { href: "/volunteer/applications", label: "我的報名" },
+    { href: "/volunteer/notifications", label: "通知" },
     { href: "/volunteer/profile", label: "個人資料" },
   ];
 

@@ -3,6 +3,7 @@
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useRequests } from "@/lib/hooks/useRequests";
 import { useApplications } from "@/lib/hooks/useApplications";
+import { useNotifications } from "@/lib/hooks/useNotifications";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RequestDetailDialog } from "@/components/requests/RequestDetailDialog";
+import Link from "next/link";
 
 export default function VolunteerDashboardPage() {
   const { user } = useAuth();
@@ -80,18 +82,19 @@ export default function VolunteerDashboardPage() {
 
   // 統計數據
   const { applications } = useApplications(user?.uid);
+  const { unreadCount: unreadNotifications } = useNotifications(user?.uid || null, {
+    read: false,
+  });
   const stats = useMemo(() => {
     const applicationsCount = applications.length;
     const completedCount = applications.filter((app) => app.status === "completed").length;
-    // TODO: 獲取未讀通知數量
-    const unreadNotifications = 0;
     
     return {
       applicationsCount,
       completedCount,
       unreadNotifications,
     };
-  }, [applications]);
+  }, [applications, unreadNotifications]);
 
   if (loading) {
     return (
@@ -125,12 +128,14 @@ export default function VolunteerDashboardPage() {
               <CardTitle className="text-2xl">{stats.completedCount}</CardTitle>
             </CardHeader>
           </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>未讀通知</CardDescription>
-              <CardTitle className="text-2xl">{stats.unreadNotifications}</CardTitle>
-            </CardHeader>
-          </Card>
+          <Link href="/volunteer/notifications">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardHeader className="pb-2">
+                <CardDescription>未讀通知</CardDescription>
+                <CardTitle className="text-2xl">{stats.unreadNotifications}</CardTitle>
+              </CardHeader>
+            </Card>
+          </Link>
         </div>
       </div>
 

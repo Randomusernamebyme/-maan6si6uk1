@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase/admin";
+import { createNotification } from "@/lib/utils/notifications";
 
 async function verifyAdmin(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -128,7 +129,7 @@ export async function PATCH(
             updatedAt: completedAt,
           });
           
-          // 為每個報名記錄創建活動日誌
+          // 為每個報名記錄創建活動日誌和通知
           try {
             const volunteerDoc = await adminDb.collection("users").doc(appData.volunteerId).get();
             const volunteerName = volunteerDoc.exists ? (volunteerDoc.data()?.displayName || volunteerDoc.data()?.email || "未知義工") : "未知義工";
@@ -148,6 +149,22 @@ export async function PATCH(
               },
               createdAt: completedAt,
             });
+
+            // 創建通知給義工
+            try {
+              await createNotification(
+                appData.volunteerId,
+                "委托已完成",
+                `您參與的委托「${requestName}」已完成。感謝您的服務！`,
+                "success",
+                {
+                  relatedRequestId: requestId,
+                  relatedApplicationId: appDoc.id,
+                }
+              );
+            } catch (notifError) {
+              console.error("Error creating notification:", notifError);
+            }
           } catch (logError) {
             console.error("Error creating activity log for application:", logError);
             // 不影響主要操作
