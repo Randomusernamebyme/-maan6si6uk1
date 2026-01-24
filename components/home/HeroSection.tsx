@@ -24,7 +24,7 @@ export function HeroSection() {
               <Button asChild size="lg" className="bg-foreground text-background hover:bg-foreground/90">
                 <Link href="/request">提交委托請求</Link>
               </Button>
-              {(!user || user.role !== "volunteer") && (
+              {!user && (
                 <Button asChild size="lg" variant="outline" className="border-2">
                   <Link href="/register">成為義工</Link>
                 </Button>
