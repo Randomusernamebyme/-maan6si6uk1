@@ -99,10 +99,10 @@ export default function AdminVolunteerDetailPage() {
         const applicationsSnapshot = await getDocs(applicationsQuery);
 
         const applicationsData = await Promise.all(
-          applicationsSnapshot.docs.map(async (doc) => {
-            const data = doc.data();
+          applicationsSnapshot.docs.map(async (docSnapshot) => {
+            const data = docSnapshot.data();
             const application = {
-              id: doc.id,
+              id: docSnapshot.id,
               ...data,
               createdAt: convertTimestamp(data.createdAt),
               updatedAt: convertTimestamp(data.updatedAt),
@@ -156,10 +156,10 @@ export default function AdminVolunteerDetailPage() {
         const logsSnapshot = await getDocs(logsQuery);
 
         const logsData = await Promise.all(
-          logsSnapshot.docs.map(async (doc) => {
-            const data = doc.data();
+          logsSnapshot.docs.map(async (docSnapshot) => {
+            const data = docSnapshot.data();
             const log = {
-              id: doc.id,
+              id: docSnapshot.id,
               ...data,
               createdAt: convertTimestamp(data.createdAt),
             } as ActivityLog;
