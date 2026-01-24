@@ -20,59 +20,49 @@ type ExportType = "requests" | "volunteers" | "applications";
 
 export default function AdminExportPage() {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [exportType, setExportType] = useState<ExportType>("requests");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  const [previewCount, setPreviewCount] = useState<number>(0);
 
   const handleExportCSV = async () => {
     try {
       setLoading(true);
+      setError(null);
       const token = await getAuthToken();
       if (!token) {
         throw new Error("請先登入");
       }
 
-      let data: any[] = [];
+      // 使用 API 端點獲取數據（使用 Admin SDK）
+      const params = new URLSearchParams({
+        type: exportType,
+        status: statusFilter,
+      });
+      if (startDate) params.append("startDate", startDate);
+      if (endDate) params.append("endDate", endDate);
+
+      const response = await fetch(`/api/admin/export?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "獲取數據失敗");
+      }
+
+      const { data, count } = await response.json();
+      setPreviewCount(count);
+
       let headers: string[] = [];
       let rows: string[][] = [];
 
-      // 根據類型獲取數據
+      // 根據類型生成 CSV 格式
       if (exportType === "requests") {
-        let q = query(collection(db, "requests"));
-        
-        if (statusFilter !== "all") {
-          q = query(collection(db, "requests"), where("status", "==", statusFilter));
-        }
-
-        const snapshot = await getDocs(q);
-        data = snapshot.docs.map((doc) => {
-          const docData = doc.data();
-          return {
-            id: doc.id,
-            ...docData,
-            createdAt: convertTimestamp(docData.createdAt),
-            updatedAt: convertTimestamp(docData.updatedAt),
-          };
-        });
-        
-        // 手動排序
-        data.sort((a, b) => {
-          if (!a.createdAt || !b.createdAt) return 0;
-          return b.createdAt.getTime() - a.createdAt.getTime();
-        });
-
-        // 日期篩選
-        if (startDate || endDate) {
-          data = data.filter((item) => {
-            const itemDate = item.createdAt;
-            if (!itemDate) return false;
-            if (startDate && itemDate < new Date(startDate)) return false;
-            if (endDate && itemDate > new Date(endDate)) return false;
-            return true;
-          });
-        }
-
         headers = [
           "編號",
           "委托名稱",
@@ -86,14 +76,17 @@ export default function AdminExportPage() {
           "緊急程度",
           "服務形式",
           "預計時長",
+          "配對時間",
+          "完成時間",
           "提交時間",
+          "最後更新",
         ];
 
-        rows = data.map((item) => [
+        rows = data.map((item: any) => [
           item.id.substring(0, 8),
           item.name || (Array.isArray(item.fields) ? item.fields.join("、") : "未命名"),
-          item.status,
-          item.description?.replace(/[\n\r]/g, " ") || "",
+          item.status || "",
+          (item.description || "").replace(/[\n\r]/g, " "),
           Array.isArray(item.fields) ? item.fields.join("、") : "",
           item.requester?.name || "",
           item.requester?.phone || "",
@@ -102,42 +95,12 @@ export default function AdminExportPage() {
           item.urgency || "",
           item.serviceType || "",
           item.estimatedDuration || "",
+          item.matchedAt ? item.matchedAt.toLocaleString("zh-TW") : "",
+          item.completedAt ? item.completedAt.toLocaleString("zh-TW") : "",
           item.createdAt ? item.createdAt.toLocaleString("zh-TW") : "",
+          item.updatedAt ? item.updatedAt.toLocaleString("zh-TW") : "",
         ]);
       } else if (exportType === "volunteers") {
-        let q = query(collection(db, "users"), where("role", "==", "volunteer"));
-        
-        if (statusFilter !== "all") {
-          q = query(collection(db, "users"), where("role", "==", "volunteer"), where("status", "==", statusFilter));
-        }
-
-        const snapshot = await getDocs(q);
-        data = snapshot.docs.map((doc) => {
-          const docData = doc.data();
-          return {
-            uid: doc.id,
-            ...docData,
-            createdAt: convertTimestamp(docData.createdAt),
-          };
-        });
-        
-        // 手動排序
-        data.sort((a, b) => {
-          if (!a.createdAt || !b.createdAt) return 0;
-          return b.createdAt.getTime() - a.createdAt.getTime();
-        });
-
-        // 日期篩選
-        if (startDate || endDate) {
-          data = data.filter((item) => {
-            const itemDate = item.createdAt;
-            if (!itemDate) return false;
-            if (startDate && itemDate < new Date(startDate)) return false;
-            if (endDate && itemDate > new Date(endDate)) return false;
-            return true;
-          });
-        }
-
         headers = [
           "用戶ID",
           "姓名",
@@ -151,96 +114,55 @@ export default function AdminExportPage() {
           "想服務的對象",
           "完成委托數",
           "註冊時間",
+          "最後更新",
         ];
 
-        rows = data.map((item) => [
+        rows = data.map((item: any) => [
           item.uid.substring(0, 12),
           item.displayName || "",
           item.email || "",
           item.phone || "",
           item.age || "",
           item.status || "",
-          item.name || (Array.isArray(item.fields) ? item.fields.join("、") : ""),
+          Array.isArray(item.fields) ? item.fields.join("、") : "",
           Array.isArray(item.skills) ? item.skills.join("、") : "",
           Array.isArray(item.availability) ? item.availability.join("、") : "",
           Array.isArray(item.targetAudience) ? item.targetAudience.join("、") : "",
           item.completedTasks?.toString() || "0",
           item.createdAt ? item.createdAt.toLocaleString("zh-TW") : "",
+          item.updatedAt ? item.updatedAt.toLocaleString("zh-TW") : "",
         ]);
       } else if (exportType === "applications") {
-        let q = query(collection(db, "applications"));
-        
-        if (statusFilter !== "all") {
-          q = query(collection(db, "applications"), where("status", "==", statusFilter));
-        }
-
-        const snapshot = await getDocs(q);
-        data = snapshot.docs.map((doc) => {
-          const docData = doc.data();
-          return {
-            id: doc.id,
-            ...docData,
-            createdAt: convertTimestamp(docData.createdAt),
-          };
-        });
-        
-        // 手動排序
-        data.sort((a, b) => {
-          if (!a.createdAt || !b.createdAt) return 0;
-          return b.createdAt.getTime() - a.createdAt.getTime();
-        });
-
-        // 日期篩選
-        if (startDate || endDate) {
-          data = data.filter((item) => {
-            const itemDate = item.createdAt;
-            if (!itemDate) return false;
-            if (startDate && itemDate < new Date(startDate)) return false;
-            if (endDate && itemDate > new Date(endDate)) return false;
-            return true;
-          });
-        }
-
         headers = [
           "報名ID",
-          "委托ID",
-          "義工ID",
+          "委托名稱",
+          "委托領域",
+          "義工姓名",
+          "義工Email",
           "狀態",
           "留言",
           "可服務時間",
+          "配對時間",
+          "完成時間",
           "報名時間",
+          "最後更新",
         ];
 
-        rows = data.map((item) => [
+        rows = data.map((item: any) => [
           item.id.substring(0, 8),
-          item.requestId?.substring(0, 8) || "",
-          item.volunteerId?.substring(0, 12) || "",
+          item.requestName || "未知委托",
+          Array.isArray(item.requestFields) ? item.requestFields.join("、") : "",
+          item.volunteerName || "未知義工",
+          item.volunteerEmail || "",
           item.status || "",
-          item.message?.replace(/[\n\r]/g, " ") || "",
+          (item.message || "").replace(/[\n\r]/g, " "),
           item.availableTime || "",
+          item.matchedAt ? item.matchedAt.toLocaleString("zh-TW") : "",
+          item.completedAt ? item.completedAt.toLocaleString("zh-TW") : "",
           item.createdAt ? item.createdAt.toLocaleString("zh-TW") : "",
+          item.updatedAt ? item.updatedAt.toLocaleString("zh-TW") : "",
         ]);
       }
-
-      // 生成 CSV
-      const csvContent = [
-        headers.join(","),
-        ...rows.map((row) =>
-          row.map((cell) => `"${cell.toString().replace(/"/g, '""')}"`).join(",")
-        ),
-      ].join("\n");
-
-      // 添加 BOM 以支援中文
-      const BOM = "\uFEFF";
-      const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${exportType}_${new Date().toISOString().split("T")[0]}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
 
       // 生成 CSV
       const csvContent = [
