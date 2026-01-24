@@ -8,6 +8,13 @@ import { ErrorDisplay } from "@/components/ui/error";
 import Link from "next/link";
 import { getAuthToken } from "@/lib/utils/auth";
 
+interface PendingRequest {
+  id: string;
+  name: string;
+  status: string;
+  createdAt?: string;
+}
+
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState({
     pendingRequests: 0,
@@ -15,6 +22,7 @@ export default function AdminDashboardPage() {
     inProgressRequests: 0,
     totalVolunteers: 0,
   });
+  const [pendingRequestsList, setPendingRequestsList] = useState<PendingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +46,13 @@ export default function AdminDashboardPage() {
         }
 
         const data = await response.json();
-        setStats(data);
+        setStats({
+          pendingRequests: data.pendingRequests || 0,
+          pendingVolunteers: data.pendingVolunteers || 0,
+          inProgressRequests: data.inProgressRequests || 0,
+          totalVolunteers: data.totalVolunteers || 0,
+        });
+        setPendingRequestsList(data.pendingRequestsList || []);
         setError(null);
       } catch (err: any) {
         console.error("Error fetching stats:", err);
@@ -97,6 +111,40 @@ export default function AdminDashboardPage() {
           </Card>
         </div>
       </div>
+
+      {/* 待審核委托列表 */}
+      {pendingRequestsList.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold">待審核委托</h2>
+            <Button asChild variant="outline">
+              <Link href="/admin/requests?status=pending">查看全部</Link>
+            </Button>
+          </div>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-2">
+                {pendingRequestsList.map((request) => (
+                  <div
+                    key={request.id}
+                    className="flex items-center justify-between p-3 border rounded-md hover:bg-muted/30 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium">{request.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        編號：{request.id.substring(0, 8)}
+                      </p>
+                    </div>
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={`/admin/requests/${request.id}`}>查看詳情</Link>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div>
         <h2 className="text-2xl font-bold mb-4">快捷操作</h2>
