@@ -74,7 +74,7 @@ export default function VolunteerDashboardPage() {
     });
 
     return filtered;
-  }, [requests, user?.fields, searchQuery, fieldFilter, urgencyFilter, sortBy]);
+  }, [requests, searchQuery, fieldFilter, urgencyFilter, sortBy]);
 
   // 統計數據
   const stats = useMemo(() => {

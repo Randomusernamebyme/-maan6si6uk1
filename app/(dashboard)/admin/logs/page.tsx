@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { ActivityLog } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,11 +54,7 @@ export default function AdminLogsPage() {
   const [endDate, setEndDate] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    fetchLogs();
-  }, []);
-
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       setLoading(true);
       const token = await getAuthToken();
@@ -99,7 +95,11 @@ export default function AdminLogsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [actionFilter, targetTypeFilter, startDate, endDate]);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
 
   const filteredLogs = useMemo(() => {
     if (!searchQuery) return logs;

@@ -68,10 +68,10 @@ export default function AdminApplicationsPage() {
       async (snapshot) => {
         try {
           const applicationsData = await Promise.all(
-            snapshot.docs.map(async (doc) => {
-              const docData = doc.data();
+            snapshot.docs.map(async (docSnapshot) => {
+              const docData = docSnapshot.data();
               const application: ApplicationWithDetails = {
-                id: doc.id,
+                id: docSnapshot.id,
                 ...docData,
                 createdAt: convertTimestamp(docData.createdAt) || new Date(),
                 updatedAt: convertTimestamp(docData.updatedAt) || new Date(),
