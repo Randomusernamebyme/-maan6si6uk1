@@ -33,6 +33,7 @@ const ACTION_LABELS: Record<string, string> = {
   complete: "完成",
   cancel: "取消",
   match: "配對",
+  withdraw: "撤回",
   update_request_status: "更新委托狀態",
   update_volunteer_status: "更新義工狀態",
   update_application_status: "更新報名狀態",

@@ -79,12 +79,54 @@ export async function PATCH(
     const body = await request.json();
     const adminDb = getAdminDb();
     const userRef = adminDb.collection("users").doc(params.id);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return NextResponse.json(
+        { error: "義工不存在" },
+        { status: 404 }
+      );
+    }
+
+    const oldData = userDoc.data();
+    const oldStatus = oldData?.status;
 
     // 更新文檔
     await userRef.update({
       ...body,
       updatedAt: new Date(),
     });
+
+    // 如果狀態有變化，創建活動日誌
+    if (body.status && body.status !== oldStatus) {
+      try {
+        const volunteerName = oldData?.displayName || oldData?.email || "未知義工";
+        
+        const statusLabels: Record<string, string> = {
+          pending: "待審核",
+          approved: "已批准",
+          rejected: "已拒絕",
+          suspended: "已暫停",
+        };
+
+        await adminDb.collection("activity_logs").add({
+          userId: decodedToken.uid,
+          action: "update_volunteer_status",
+          targetType: "user",
+          targetId: params.id,
+          description: `將義工 ${volunteerName} 的狀態從 ${statusLabels[oldStatus] || oldStatus} 更改為 ${statusLabels[body.status] || body.status}`,
+          changes: {
+            oldStatus,
+            newStatus: body.status,
+            volunteerId: params.id,
+          },
+          createdAt: new Date(),
+        });
+      } catch (logError) {
+        console.error("Error creating activity log:", logError);
+        // 不影響主要操作
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
