@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase/admin";
 
+// 安全地轉換 Firestore Timestamp 為 Date
+function convertTimestamp(ts: any): Date | undefined {
+  if (!ts) return undefined;
+  if (ts.toDate && typeof ts.toDate === 'function') {
+    return ts.toDate();
+  }
+  if (ts instanceof Date) {
+    return ts;
+  }
+  return undefined;
+}
+
 // 驗證管理員權限
 async function verifyAdmin(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -55,18 +67,6 @@ export async function GET(request: NextRequest) {
       const snapshot = await q.get();
       data = snapshot.docs.map((doc: any) => {
         const docData = doc.data();
-        // 安全地轉換 Firestore Timestamp 為 Date
-        const convertTimestamp = (ts: any) => {
-          if (!ts) return undefined;
-          if (ts.toDate && typeof ts.toDate === 'function') {
-            return ts.toDate();
-          }
-          if (ts instanceof Date) {
-            return ts;
-          }
-          return undefined;
-        };
-        
         return {
           id: doc.id,
           ...docData,
@@ -115,18 +115,6 @@ export async function GET(request: NextRequest) {
       const snapshot = await q.get();
       data = snapshot.docs.map((doc: any) => {
         const docData = doc.data();
-        // 安全地轉換 Firestore Timestamp 為 Date
-        const convertTimestamp = (ts: any) => {
-          if (!ts) return undefined;
-          if (ts.toDate && typeof ts.toDate === 'function') {
-            return ts.toDate();
-          }
-          if (ts instanceof Date) {
-            return ts;
-          }
-          return undefined;
-        };
-        
         return {
           uid: doc.id,
           ...docData,
@@ -221,18 +209,6 @@ export async function GET(request: NextRequest) {
         const docData = doc.data();
         const requestInfo = requestMap.get(docData.requestId) || { name: "未知委托", fields: [] };
         const volunteerInfo = volunteerMap.get(docData.volunteerId) || { name: "未知義工", email: "" };
-        
-        // 安全地轉換 Firestore Timestamp 為 Date
-        const convertTimestamp = (ts: any) => {
-          if (!ts) return undefined;
-          if (ts.toDate && typeof ts.toDate === 'function') {
-            return ts.toDate();
-          }
-          if (ts instanceof Date) {
-            return ts;
-          }
-          return undefined;
-        };
         
         return {
           id: doc.id,
