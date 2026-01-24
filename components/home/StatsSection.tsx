@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
 
 export function StatsSection() {
   const [stats, setStats] = useState({
@@ -15,31 +13,22 @@ export function StatsSection() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // 獲取已完成的委托數
-        const completedRequestsQuery = query(
-          collection(db, "requests"),
-          where("status", "==", "completed")
-        );
-        const completedRequestsSnapshot = await getDocs(completedRequestsQuery);
+        // 使用 API 端點獲取統計數據（使用 Admin SDK，不受權限限制）
+        const response = await fetch("/api/stats");
 
-        // 獲取已批准的義工數
-        const approvedVolunteersQuery = query(
-          collection(db, "users"),
-          where("role", "==", "volunteer"),
-          where("status", "==", "approved")
-        );
-        const approvedVolunteersSnapshot = await getDocs(approvedVolunteersQuery);
+        if (!response.ok) {
+          throw new Error("獲取統計數據失敗");
+        }
 
-        // 獲取總報名數
-        const applicationsSnapshot = await getDocs(collection(db, "applications"));
-
+        const data = await response.json();
         setStats({
-          completedRequests: completedRequestsSnapshot.size,
-          activeVolunteers: approvedVolunteersSnapshot.size,
-          totalApplications: applicationsSnapshot.size,
+          completedRequests: data.completedRequests || 0,
+          activeVolunteers: data.activeVolunteers || 0,
+          totalApplications: data.totalApplications || 0,
         });
       } catch (error) {
         console.error("Error fetching stats:", error);
+        // 如果獲取失敗，保持默認值 0
       } finally {
         setLoading(false);
       }

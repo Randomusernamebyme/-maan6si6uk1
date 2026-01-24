@@ -26,9 +26,11 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="text-xl font-bold">堅城萬事屋</span>
-          </Link>
+          <Button asChild variant="ghost" className="text-xl font-bold p-0 h-auto hover:bg-transparent">
+            <Link href="/" className="flex items-center space-x-2">
+              堅城萬事屋
+            </Link>
+          </Button>
           
           {user && (
             <nav className="hidden md:flex items-center gap-4">
