@@ -13,10 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loading } from "@/components/ui/loading";
+import { ErrorDisplay } from "@/components/ui/error";
 import { getAuthToken } from "@/lib/utils/auth";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
-import { convertTimestamp } from "@/lib/firebase/firestore";
 
 type ExportType = "requests" | "volunteers" | "applications";
 
@@ -244,25 +242,57 @@ export default function AdminExportPage() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
+      // 生成 CSV
+      const csvContent = [
+        headers.join(","),
+        ...rows.map((row) =>
+          row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+        ),
+      ].join("\n");
+
+      // 添加 BOM 以支援中文
+      const BOM = "\uFEFF";
+      const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      
+      const dateStr = new Date().toISOString().split("T")[0];
+      const typeLabels: Record<ExportType, string> = {
+        requests: "委托",
+        volunteers: "義工",
+        applications: "報名",
+      };
+      link.download = `${typeLabels[exportType]}_${dateStr}.csv`;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      // 顯示成功訊息
       alert(`成功匯出 ${rows.length} 條記錄！`);
     } catch (err: any) {
       console.error("Export error:", err);
-      alert("匯出失敗：" + (err.message || "請稍後再試"));
+      setError(err.message || "匯出失敗，請稍後再試");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleExportExcel = () => {
-    alert("Excel 匯出功能開發中，請先使用 CSV 格式。");
+  const handleExportExcel = async () => {
+    // Excel 匯出功能（使用 CSV 格式，Excel 可以打開）
+    await handleExportCSV();
   };
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold mb-2">數據匯出</h2>
-        <p className="text-muted-foreground">匯出委托列表、義工列表或報名記錄為 CSV/Excel 格式</p>
+        <p className="text-muted-foreground">匯出委托列表、義工列表或報名記錄為 CSV 格式（可用 Excel 打開）</p>
       </div>
+
+      {error && <ErrorDisplay message={error} />}
 
       <Card>
         <CardHeader>
@@ -345,6 +375,13 @@ export default function AdminExportPage() {
             </div>
           </div>
 
+          {/* 預覽統計 */}
+          {previewCount > 0 && (
+            <div className="rounded-md bg-muted p-4 text-sm">
+              <p className="font-semibold">將匯出 {previewCount} 條記錄</p>
+            </div>
+          )}
+
           {/* 匯出按鈕 */}
           <div className="flex gap-4">
             <Button onClick={handleExportCSV} disabled={loading} className="flex-1">
@@ -357,17 +394,25 @@ export default function AdminExportPage() {
                 "匯出為 CSV"
               )}
             </Button>
-            <Button onClick={handleExportExcel} variant="outline" disabled className="flex-1">
-              匯出為 Excel (開發中)
+            <Button onClick={handleExportExcel} variant="outline" disabled={loading} className="flex-1">
+              {loading ? (
+                <>
+                  <Loading size="sm" className="mr-2" />
+                  匯出中...
+                </>
+              ) : (
+                "匯出為 Excel"
+              )}
             </Button>
           </div>
 
           <div className="text-sm text-muted-foreground">
             <p className="font-semibold mb-2">注意事項：</p>
             <ul className="list-disc list-inside space-y-1">
-              <li>CSV 文件可使用 Excel 或 Google Sheets 打開</li>
-              <li>匯出的數據包含敏感信息，請妥善保管</li>
+              <li>CSV 文件可使用 Excel、Google Sheets 或其他表格軟件打開</li>
+              <li>匯出的數據包含敏感信息（如委托者電話），請妥善保管</li>
               <li>日期範圍為選填，不填寫則匯出所有符合條件的記錄</li>
+              <li>報名記錄匯出包含委托名稱和義工姓名，方便查看</li>
             </ul>
           </div>
         </CardContent>
@@ -382,10 +427,13 @@ export default function AdminExportPage() {
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Button
             variant="outline"
-            onClick={() => {
+            onClick={async () => {
               setExportType("requests");
               setStatusFilter("pending");
-              setTimeout(handleExportCSV, 100);
+              setStartDate("");
+              setEndDate("");
+              await new Promise(resolve => setTimeout(resolve, 100));
+              handleExportCSV();
             }}
             disabled={loading}
           >
@@ -393,10 +441,13 @@ export default function AdminExportPage() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => {
+            onClick={async () => {
               setExportType("volunteers");
               setStatusFilter("approved");
-              setTimeout(handleExportCSV, 100);
+              setStartDate("");
+              setEndDate("");
+              await new Promise(resolve => setTimeout(resolve, 100));
+              handleExportCSV();
             }}
             disabled={loading}
           >
@@ -404,10 +455,13 @@ export default function AdminExportPage() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => {
+            onClick={async () => {
               setExportType("applications");
               setStatusFilter("pending");
-              setTimeout(handleExportCSV, 100);
+              setStartDate("");
+              setEndDate("");
+              await new Promise(resolve => setTimeout(resolve, 100));
+              handleExportCSV();
             }}
             disabled={loading}
           >
