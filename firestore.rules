@@ -19,10 +19,10 @@ service cloud.firestore {
     // 用戶集合
     match /users/{userId} {
       // 用戶只能讀取和更新自己的資料
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, update: if request.auth != null && request.auth.uid == userId;
       // 管理員可以讀取所有用戶資料
       allow read: if isAdmin();
-      // 管理員可以更新所有用戶資料
+      // 管理員可以更新和刪除所有用戶資料
       allow write: if isAdmin();
     }
     
@@ -32,6 +32,7 @@ service cloud.firestore {
       allow create: if request.resource.data.status == 'pending';
       
       // 已登入用戶可以讀取公開的委托（status='published' 或 'open'）
+      // 已登入用戶也可以讀取進行中的委托（status='matched', 'in-progress', 'completed'）
       // 管理員可以讀取所有委托
       allow read: if request.auth != null && 
         (resource.data.status == 'published' || 
@@ -53,6 +54,7 @@ service cloud.firestore {
         request.resource.data.status == 'pending';
       
       // 義工可以讀取自己的報名記錄
+      // 管理員可以讀取所有報名記錄
       allow read: if request.auth != null && 
         (resource.data.volunteerId == request.auth.uid || isAdmin());
       
@@ -64,10 +66,13 @@ service cloud.firestore {
     match /notifications/{notificationId} {
       // 用戶只能讀取自己的通知
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      
       // 用戶可以更新自己的通知（標記為已讀）
+      // 只允許更新 read, readAt, updatedAt 字段
       allow update: if request.auth != null && 
         resource.data.userId == request.auth.uid &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt', 'updatedAt']);
+      
       // 只有管理員可以創建和刪除通知
       allow create, delete: if isAdmin();
     }
@@ -85,5 +90,3 @@ service cloud.firestore {
     }
   }
 }
-
-
