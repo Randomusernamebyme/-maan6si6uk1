@@ -369,7 +369,7 @@ export default function RequestDetailPage() {
                   <div className="flex items-start gap-3 pb-3">
                     <div className="flex flex-col items-center">
                       <div className="w-3 h-3 rounded-full bg-green-500 border-2 border-white dark:border-gray-900"></div>
-                      {request.status !== "open" && (
+                      {(request.status === "published" || request.status === "matched" || request.status === "in-progress" || request.status === "completed" || request.status === "cancelled") && (
                         <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 mt-1"></div>
                       )}
                     </div>
@@ -389,7 +389,7 @@ export default function RequestDetailPage() {
                   <div className="flex items-start gap-3 pb-3">
                     <div className="flex flex-col items-center">
                       <div className="w-3 h-3 rounded-full bg-purple-500 border-2 border-white dark:border-gray-900"></div>
-                      {request.status !== "published" && (
+                      {(request.status === "matched" || request.status === "in-progress" || request.status === "completed") && (
                         <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 mt-1"></div>
                       )}
                     </div>
@@ -409,7 +409,7 @@ export default function RequestDetailPage() {
                   <div className="flex items-start gap-3 pb-3">
                     <div className="flex flex-col items-center">
                       <div className="w-3 h-3 rounded-full bg-orange-500 border-2 border-white dark:border-gray-900"></div>
-                      {request.status !== "matched" && (
+                      {(request.status === "in-progress" || request.status === "completed") && (
                         <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 mt-1"></div>
                       )}
                     </div>
