@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useAuth } from "@/lib/hooks/useAuth";
 import { useNotifications } from "@/lib/hooks/useNotifications";
 import { useRequireAuth } from "@/lib/hooks/useRequireAuth";
 import { LoadingPage } from "@/components/ui/loading";
