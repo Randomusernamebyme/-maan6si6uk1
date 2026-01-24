@@ -94,8 +94,23 @@ export async function GET(request: NextRequest) {
       filteredLogs = logsWithNames.filter((log: any) => {
         const logDate = log.createdAt;
         if (!logDate) return false;
-        if (startDate && logDate < new Date(startDate)) return false;
-        if (endDate && logDate > new Date(endDate)) return false;
+        
+        // 處理開始日期（只比較日期部分，不包含時間）
+        if (startDate) {
+          const start = new Date(startDate);
+          start.setHours(0, 0, 0, 0);
+          const logDateStart = new Date(logDate);
+          logDateStart.setHours(0, 0, 0, 0);
+          if (logDateStart < start) return false;
+        }
+        
+        // 處理結束日期（包含當天的最後一刻）
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          if (logDate > end) return false;
+        }
+        
         return true;
       });
     }

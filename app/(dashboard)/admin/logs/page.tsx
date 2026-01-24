@@ -33,6 +33,9 @@ const ACTION_LABELS: Record<string, string> = {
   complete: "完成",
   cancel: "取消",
   match: "配對",
+  update_request_status: "更新委托狀態",
+  update_volunteer_status: "更新義工狀態",
+  update_application_status: "更新報名狀態",
 };
 
 const TARGET_TYPE_LABELS: Record<string, string> = {
@@ -44,16 +47,54 @@ const TARGET_TYPE_LABELS: Record<string, string> = {
 
 // 改進描述格式的函數
 function formatDescription(log: ActivityLog & { adminName?: string }): string {
-  const actionLabel = ACTION_LABELS[log.action] || log.action;
-  const targetLabel = TARGET_TYPE_LABELS[log.targetType] || log.targetType;
-  
-  // 如果已經有自定義描述，直接使用
-  if (log.description && log.description !== `${log.action} ${log.targetType}`) {
+  // 如果已經有自定義描述，直接使用（通常是中文描述）
+  if (log.description && log.description.trim()) {
     return log.description;
   }
   
   // 否則生成更易理解的描述
-  return `${actionLabel}了${targetLabel}（ID: ${log.targetId.substring(0, 8)}...）`;
+  const actionLabel = ACTION_LABELS[log.action] || log.action;
+  const targetLabel = TARGET_TYPE_LABELS[log.targetType] || log.targetType;
+  
+  return `${actionLabel}了${targetLabel}`;
+}
+
+// 格式化變更詳情
+function formatChanges(changes: any): string {
+  if (!changes) return "";
+  
+  try {
+    // 如果是狀態變更
+    if (changes.oldStatus && changes.newStatus) {
+      const statusLabels: Record<string, string> = {
+        pending: "待審核",
+        approved: "已批准",
+        rejected: "已拒絕",
+        suspended: "已暫停",
+        open: "已批准",
+        published: "已發布",
+        matched: "已配對",
+        "in-progress": "進行中",
+        completed: "已完成",
+        cancelled: "已取消",
+      };
+      
+      const oldLabel = statusLabels[changes.oldStatus] || changes.oldStatus;
+      const newLabel = statusLabels[changes.newStatus] || changes.newStatus;
+      return `狀態：${oldLabel} → ${newLabel}`;
+    }
+    
+    // 其他變更，格式化為易讀的文本
+    const parts: string[] = [];
+    for (const [key, value] of Object.entries(changes)) {
+      if (key !== "oldStatus" && key !== "newStatus") {
+        parts.push(`${key}: ${JSON.stringify(value)}`);
+      }
+    }
+    return parts.join(", ");
+  } catch {
+    return JSON.stringify(changes);
+  }
 }
 
 export default function AdminLogsPage() {
@@ -116,15 +157,22 @@ export default function AdminLogsPage() {
   }, [fetchLogs]);
 
   const filteredLogs = useMemo(() => {
-    if (!searchQuery) return logs;
+    let filtered = logs;
 
-    const query = searchQuery.toLowerCase();
-    return logs.filter(
-      (log) =>
-        log.description.toLowerCase().includes(query) ||
-        log.adminName?.toLowerCase().includes(query) ||
-        log.targetId.toLowerCase().includes(query)
-    );
+    // 搜尋篩選
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (log) =>
+          formatDescription(log).toLowerCase().includes(query) ||
+          log.adminName?.toLowerCase().includes(query) ||
+          log.targetId.toLowerCase().includes(query) ||
+          (ACTION_LABELS[log.action] || log.action).toLowerCase().includes(query) ||
+          (TARGET_TYPE_LABELS[log.targetType] || log.targetType).toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
   }, [logs, searchQuery]);
 
   // 獲取所有唯一的操作類型
@@ -139,7 +187,7 @@ export default function AdminLogsPage() {
     setStartDate("");
     setEndDate("");
     setSearchQuery("");
-    fetchLogs();
+    // fetchLogs 會自動觸發，因為依賴項改變了
   };
 
   if (loading) {
@@ -237,10 +285,12 @@ export default function AdminLogsPage() {
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={fetchLogs}>套用篩選</Button>
             <Button variant="outline" onClick={handleReset}>
-              重置
+              重置篩選
             </Button>
+            <p className="text-sm text-muted-foreground flex items-center">
+              篩選條件會自動套用
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -258,12 +308,11 @@ export default function AdminLogsPage() {
             <div className="space-y-2">
               {/* 表格標題 */}
               <div className="grid grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-semibold text-sm">
-                <div className="col-span-2">時間</div>
-                <div className="col-span-1">操作人</div>
-                <div className="col-span-1">操作類型</div>
-                <div className="col-span-1">目標類型</div>
-                <div className="col-span-4">操作描述</div>
-                <div className="col-span-2">目標ID</div>
+                <div className="col-span-2">操作時間</div>
+                <div className="col-span-2">操作人</div>
+                <div className="col-span-2">操作類型</div>
+                <div className="col-span-1">目標</div>
+                <div className="col-span-4">操作內容</div>
                 <div className="col-span-1">詳情</div>
               </div>
 
@@ -275,13 +324,13 @@ export default function AdminLogsPage() {
                 >
                   <div className="col-span-2 flex items-center text-muted-foreground">
                     {log.createdAt && log.createdAt instanceof Date && !isNaN(log.createdAt.getTime())
-                      ? format(log.createdAt, "yyyy-MM-dd HH:mm:ss", { locale: zhTW })
+                      ? format(log.createdAt, "yyyy年MM月dd日 HH:mm", { locale: zhTW })
                       : "無效日期"}
                   </div>
-                  <div className="col-span-1 flex items-center">
-                    <span className="font-medium">{log.adminName || "未知"}</span>
+                  <div className="col-span-2 flex items-center">
+                    <span className="font-medium">{log.adminName || "未知操作人"}</span>
                   </div>
-                  <div className="col-span-1 flex items-center">
+                  <div className="col-span-2 flex items-center">
                     <Badge variant="outline">{ACTION_LABELS[log.action] || log.action}</Badge>
                   </div>
                   <div className="col-span-1 flex items-center">
@@ -290,23 +339,31 @@ export default function AdminLogsPage() {
                     </Badge>
                   </div>
                   <div className="col-span-4 flex items-center">
-                    <span>{formatDescription(log)}</span>
-                  </div>
-                  <div className="col-span-2 flex items-center">
-                    <code className="text-xs bg-muted px-2 py-1 rounded">
-                      {log.targetId.substring(0, 12)}...
-                    </code>
+                    <div className="flex flex-col gap-1">
+                      <span>{formatDescription(log)}</span>
+                      {log.changes && (
+                        <span className="text-xs text-muted-foreground">
+                          {formatChanges(log.changes)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="col-span-1 flex items-center">
-                    {log.changes && (
+                    {log.changes && Object.keys(log.changes).length > 0 && (
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          alert(JSON.stringify(log.changes, null, 2));
+                          const changesText = formatChanges(log.changes);
+                          if (changesText) {
+                            alert(`變更詳情：\n${changesText}`);
+                          } else {
+                            alert(`變更詳情：\n${JSON.stringify(log.changes, null, 2)}`);
+                          }
                         }}
+                        className="text-xs"
                       >
-                        查看
+                        詳情
                       </Button>
                     )}
                   </div>
