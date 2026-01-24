@@ -118,7 +118,7 @@ export function useRequest(requestId: string | null) {
         pollingIntervalRef.current = null;
       }
     };
-  }, [requestId, loading]);
+  }, [requestId]);
 
   return { request, loading, error };
 }
