@@ -226,17 +226,10 @@ function ApplicationItem({
           </div>
 
           <div className="flex flex-wrap gap-4 text-sm">
-            <div>
             {application.availableTime && (
               <div>
                 <span className="text-muted-foreground">可服務時間：</span>
                 <span>{application.availableTime}</span>
-              </div>
-            )}
-            {application.completedAt && (
-              <div>
-                <span className="text-muted-foreground">完成時間：</span>
-                <span>{formatDate(application.completedAt)}</span>
               </div>
             )}
             {request.status && (
