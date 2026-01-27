@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
       pendingVolunteersSnapshot,
       inProgressRequestsSnapshot,
       totalVolunteersSnapshot,
+      recentApplicationsSnapshot,
     ] = await Promise.all([
       // 待審核委托數（按創建時間降序）
       adminDb
@@ -70,6 +71,13 @@ export async function GET(request: NextRequest) {
         .collection("users")
         .where("role", "==", "volunteer")
         .get(),
+      
+      // 最近24小時的報名數
+      adminDb
+        .collection("applications")
+        .orderBy("createdAt", "desc")
+        .limit(100)
+        .get(),
     ]);
 
     // 獲取待審核委托的詳細信息（包括名稱）
@@ -87,11 +95,21 @@ export async function GET(request: NextRequest) {
       })
       .slice(0, 10); // 只返回最近10個
 
+    // 計算最近24小時的報名數
+    const now = new Date();
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const recentApplicationsCount = recentApplicationsSnapshot.docs.filter((doc: any) => {
+      const createdAt = doc.data().createdAt?.toDate?.();
+      return createdAt && createdAt >= oneDayAgo;
+    }).length;
+
     return NextResponse.json({
       pendingRequests: pendingRequestsSnapshot.size,
       pendingVolunteers: pendingVolunteersSnapshot.size,
       inProgressRequests: inProgressRequestsSnapshot.size,
       totalVolunteers: totalVolunteersSnapshot.size,
+      recentApplicationsCount: recentApplicationsCount,
+      totalApplications: recentApplicationsSnapshot.size,
       pendingRequestsList: pendingRequestsList,
     });
   } catch (error: any) {

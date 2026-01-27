@@ -5,8 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { getAuthToken } from "@/lib/utils/auth";
+import { FileText, Users, ClipboardList, ArrowRight } from "lucide-react";
 
 interface PendingRequest {
   id: string;
@@ -21,6 +23,8 @@ export default function AdminDashboardPage() {
     pendingVolunteers: 0,
     inProgressRequests: 0,
     totalVolunteers: 0,
+    recentApplicationsCount: 0,
+    totalApplications: 0,
   });
   const [pendingRequestsList, setPendingRequestsList] = useState<PendingRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +55,8 @@ export default function AdminDashboardPage() {
           pendingVolunteers: data.pendingVolunteers || 0,
           inProgressRequests: data.inProgressRequests || 0,
           totalVolunteers: data.totalVolunteers || 0,
+          recentApplicationsCount: data.recentApplicationsCount || 0,
+          totalApplications: data.totalApplications || 0,
         });
         setPendingRequestsList(data.pendingRequestsList || []);
         setError(null);
@@ -152,34 +158,107 @@ export default function AdminDashboardPage() {
       <div>
         <h2 className="text-2xl font-bold mb-4">快捷操作</h2>
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-            <Link href="/admin/requests?status=pending">
-              <CardHeader>
-                <CardTitle>查看待審核委托</CardTitle>
-                <CardDescription>
-                  目前有 {stats.pendingRequests} 個委托待審核
-                </CardDescription>
+          <Link href="/admin/requests?status=pending" className="block">
+            <Card className="h-full hover:shadow-lg transition-all hover:border-primary/50 cursor-pointer group">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                      <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg mb-1">查看待審核委托</CardTitle>
+                      <CardDescription className="text-sm">
+                        {stats.pendingRequests > 0 ? (
+                          <span>
+                            目前有 <span className="font-semibold text-foreground">{stats.pendingRequests}</span> 個委托待審核
+                          </span>
+                        ) : (
+                          "目前沒有待審核的委托"
+                        )}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                </div>
+                {stats.pendingRequests > 0 && (
+                  <div className="mt-3">
+                    <Badge variant="secondary" className="text-xs">
+                      {stats.pendingRequests} 個待處理
+                    </Badge>
+                  </div>
+                )}
               </CardHeader>
-            </Link>
-          </Card>
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-            <Link href="/admin/volunteers?status=pending">
-              <CardHeader>
-                <CardTitle>查看待審核義工</CardTitle>
-                <CardDescription>
-                  目前有 {stats.pendingVolunteers} 位義工待審核
-                </CardDescription>
+            </Card>
+          </Link>
+
+          <Link href="/admin/volunteers?status=pending" className="block">
+            <Card className="h-full hover:shadow-lg transition-all hover:border-primary/50 cursor-pointer group">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 group-hover:bg-green-200 dark:group-hover:bg-green-900/50 transition-colors">
+                      <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg mb-1">查看待審核義工</CardTitle>
+                      <CardDescription className="text-sm">
+                        {stats.pendingVolunteers > 0 ? (
+                          <span>
+                            目前有 <span className="font-semibold text-foreground">{stats.pendingVolunteers}</span> 位義工待審核
+                          </span>
+                        ) : (
+                          "目前沒有待審核的義工"
+                        )}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                </div>
+                {stats.pendingVolunteers > 0 && (
+                  <div className="mt-3">
+                    <Badge variant="secondary" className="text-xs">
+                      {stats.pendingVolunteers} 位待處理
+                    </Badge>
+                  </div>
+                )}
               </CardHeader>
-            </Link>
-          </Card>
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-            <Link href="/admin/applications">
-              <CardHeader>
-                <CardTitle>查看最新報名</CardTitle>
-                <CardDescription>查看所有義工的報名記錄</CardDescription>
+            </Card>
+          </Link>
+
+          <Link href="/admin/applications" className="block">
+            <Card className="h-full hover:shadow-lg transition-all hover:border-primary/50 cursor-pointer group">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition-colors">
+                      <ClipboardList className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg mb-1">查看最新報名</CardTitle>
+                      <CardDescription className="text-sm">
+                        {stats.recentApplicationsCount > 0 ? (
+                          <span>
+                            最近24小時有 <span className="font-semibold text-foreground">{stats.recentApplicationsCount}</span> 個新報名
+                          </span>
+                        ) : (
+                          "查看所有義工的報名記錄"
+                        )}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                </div>
+                {stats.recentApplicationsCount > 0 && (
+                  <div className="mt-3">
+                    <Badge variant="secondary" className="text-xs">
+                      共 {stats.totalApplications} 個報名記錄
+                    </Badge>
+                  </div>
+                )}
               </CardHeader>
-            </Link>
-          </Card>
+            </Card>
+          </Link>
         </div>
       </div>
     </div>
