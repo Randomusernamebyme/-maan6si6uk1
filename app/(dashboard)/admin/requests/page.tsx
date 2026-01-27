@@ -130,6 +130,7 @@ export default function AdminRequestsPage() {
           (request.name || "").toLowerCase().includes(query) ||
           (request.description || "").toLowerCase().includes(query) ||
           (request.requester?.name || "").toLowerCase().includes(query) ||
+          (request.id || "").toLowerCase().includes(query) ||
           (Array.isArray(request.fields) && request.fields.some((f) => String(f).toLowerCase().includes(query)));
         if (!matchesSearch) return false;
       }
@@ -282,7 +283,7 @@ export default function AdminRequestsPage() {
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4">
             <Input
-              placeholder="搜尋標題/描述/委托者姓名..."
+              placeholder="搜尋標題/描述/委托者姓名/編號..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1"

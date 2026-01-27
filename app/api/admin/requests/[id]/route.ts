@@ -78,8 +78,8 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const admin = await verifyAdmin(request);
-    if (!admin) {
+    const decodedToken = await verifyAdmin(request);
+    if (!decodedToken) {
       return NextResponse.json({ error: "未授權" }, { status: 401 });
     }
 
@@ -99,7 +99,41 @@ export async function PATCH(
     };
 
     if (body.status) {
+      const oldStatus = requestDoc.data()?.status;
       updateData.status = body.status;
+      
+      // 如果狀態有變化，創建活動日誌
+      if (oldStatus !== body.status) {
+        try {
+          const requestName = requestDoc.data()?.name || "未知委托";
+          const statusLabels: Record<string, string> = {
+            pending: "待審核",
+            open: "已批准",
+            published: "已發布",
+            matched: "已配對",
+            "in-progress": "進行中",
+            completed: "已完成",
+            cancelled: "已取消",
+          };
+          
+          await adminDb.collection("activity_logs").add({
+            userId: decodedToken.uid,
+            action: "update_request_status",
+            targetType: "request",
+            targetId: requestId,
+            description: `將委托「${requestName}」的狀態從 ${statusLabels[oldStatus] || oldStatus} 更改為 ${statusLabels[body.status] || body.status}`,
+            changes: {
+              oldStatus,
+              newStatus: body.status,
+              requestId: requestId,
+            },
+            createdAt: new Date(),
+          });
+        } catch (logError) {
+          console.error("Error creating activity log:", logError);
+          // 不影響主要操作
+        }
+      }
       
       // 根據狀態更新相關時間戳
       if (body.status === "matched") {
@@ -134,7 +168,7 @@ export async function PATCH(
             const volunteerName = volunteerDoc.exists ? (volunteerDoc.data()?.displayName || volunteerDoc.data()?.email || "未知義工") : "未知義工";
             
             await adminDb.collection("activity_logs").add({
-              userId: admin.uid,
+              userId: decodedToken.uid,
               action: "update_application_status",
               targetType: "application",
               targetId: appDoc.id,
