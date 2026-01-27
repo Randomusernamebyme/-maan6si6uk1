@@ -304,14 +304,14 @@ export default function AdminRequestsPage() {
 
       {/* 狀態分頁 */}
       <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v)}>
-        <TabsList className="grid w-full grid-cols-8">
-          <TabsTrigger value="all">
+        <TabsList className="grid w-full grid-cols-4 md:grid-cols-8 overflow-x-auto">
+          <TabsTrigger value="all" className="whitespace-nowrap">
             全部 ({requests.filter(r => !r.isMerged).length})
           </TabsTrigger>
           {STATUS_TABS.map((status) => {
             const count = requests.filter(r => !r.isMerged && r.status === status).length;
             return (
-              <TabsTrigger key={status} value={status}>
+              <TabsTrigger key={status} value={status} className="whitespace-nowrap">
                 {STATUS_LABELS[status]} ({count})
               </TabsTrigger>
             );
