@@ -1,10 +1,12 @@
 "use client";
 
 import { useRequireAuth } from "@/lib/hooks/useRequireAuth";
+import { useNotifications } from "@/lib/hooks/useNotifications";
 import { LoadingPage } from "@/components/ui/loading";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 export default function VolunteerLayout({
   children,
@@ -12,6 +14,7 @@ export default function VolunteerLayout({
   children: React.ReactNode;
 }) {
   const { user, loading } = useRequireAuth("volunteer");
+  const { unreadCount } = useNotifications({ read: false });
   const pathname = usePathname();
 
   if (loading) {
@@ -21,6 +24,7 @@ export default function VolunteerLayout({
   const navItems = [
     { href: "/volunteer/dashboard", label: "看板" },
     { href: "/volunteer/applications", label: "我的報名" },
+    { href: "/volunteer/notifications", label: "通知", badge: unreadCount > 0 ? unreadCount : undefined },
     { href: "/volunteer/profile", label: "個人資料" },
   ];
 
@@ -46,13 +50,21 @@ export default function VolunteerLayout({
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "block px-4 py-2 rounded-md text-sm font-medium transition-colors",
+                    "flex items-center justify-between px-4 py-2 rounded-md text-sm font-medium transition-colors",
                     isActive
                       ? "bg-primary text-primary-foreground"
                       : "text-foreground/60 hover:bg-accent hover:text-accent-foreground"
                   )}
                 >
-                  {item.label}
+                  <span>{item.label}</span>
+                  {item.badge !== undefined && item.badge > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="ml-2 h-5 min-w-5 flex items-center justify-center px-1.5 text-xs"
+                    >
+                      {item.badge > 99 ? "99+" : item.badge}
+                    </Badge>
+                  )}
                 </Link>
               );
             })}
