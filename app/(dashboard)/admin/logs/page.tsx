@@ -109,6 +109,10 @@ export default function AdminLogsPage() {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // 分頁狀態
+  const [currentPage, setCurrentPage] = useState(1);
+  const logsPerPage = 15;
 
   const fetchLogs = useCallback(async () => {
     try {
@@ -176,6 +180,17 @@ export default function AdminLogsPage() {
     return filtered;
   }, [logs, searchQuery]);
 
+  // 分頁計算
+  const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
+  const startIndex = (currentPage - 1) * logsPerPage;
+  const endIndex = startIndex + logsPerPage;
+  const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
+
+  // 當篩選條件改變時，重置到第一頁
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [actionFilter, targetTypeFilter, startDate, endDate, searchQuery]);
+
   // 獲取所有唯一的操作類型
   const uniqueActions = useMemo(() => {
     const actions = new Set(logs.map((log) => log.action));
@@ -188,6 +203,7 @@ export default function AdminLogsPage() {
     setStartDate("");
     setEndDate("");
     setSearchQuery("");
+    setCurrentPage(1);
     // fetchLogs 會自動觸發，因為依賴項改變了
   };
 
@@ -300,13 +316,20 @@ export default function AdminLogsPage() {
       <Card>
         <CardHeader>
           <CardTitle>日誌記錄</CardTitle>
-          <CardDescription>共 {filteredLogs.length} 條記錄</CardDescription>
+          <CardDescription>
+            共 {filteredLogs.length} 條記錄
+            {filteredLogs.length > logsPerPage && (
+              <span className="ml-2">
+                （第 {startIndex + 1}-{Math.min(endIndex, filteredLogs.length)} 條，共 {totalPages} 頁）
+              </span>
+            )}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {filteredLogs.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">沒有符合條件的日誌記錄</div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-4">
               {/* 表格標題 */}
               <div className="grid grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-semibold text-sm">
                 <div className="col-span-2">操作時間</div>
@@ -318,7 +341,7 @@ export default function AdminLogsPage() {
               </div>
 
               {/* 日誌列表 */}
-              {filteredLogs.map((log) => (
+              {paginatedLogs.map((log) => (
                 <div
                   key={log.id}
                   className="grid grid-cols-12 gap-4 p-4 border rounded-md hover:bg-muted/30 transition-colors text-sm"
@@ -370,6 +393,63 @@ export default function AdminLogsPage() {
                   </div>
                 </div>
               ))}
+
+              {/* 分頁控件 */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    顯示第 {startIndex + 1}-{Math.min(endIndex, filteredLogs.length)} 條，共 {filteredLogs.length} 條
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      上一頁
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter((page) => {
+                          // 顯示當前頁、第一頁、最後一頁，以及當前頁前後各一頁
+                          return (
+                            page === 1 ||
+                            page === totalPages ||
+                            (page >= currentPage - 1 && page <= currentPage + 1)
+                          );
+                        })
+                        .map((page, index, array) => {
+                          // 如果當前頁和前一頁之間有間隔，顯示省略號
+                          const showEllipsisBefore = index > 0 && array[index - 1] < page - 1;
+                          return (
+                            <div key={page} className="flex items-center gap-1">
+                              {showEllipsisBefore && (
+                                <span className="px-2 text-muted-foreground">...</span>
+                              )}
+                              <Button
+                                variant={currentPage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(page)}
+                                className="min-w-[2.5rem]"
+                              >
+                                {page}
+                              </Button>
+                            </div>
+                          );
+                        })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      下一頁
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
