@@ -227,19 +227,10 @@ function ApplicationItem({
 
           <div className="flex flex-wrap gap-4 text-sm">
             <div>
-              <span className="text-muted-foreground">報名時間：</span>
-              <span>{formatDate(application.createdAt)}</span>
-            </div>
             {application.availableTime && (
               <div>
                 <span className="text-muted-foreground">可服務時間：</span>
                 <span>{application.availableTime}</span>
-              </div>
-            )}
-            {application.matchedAt && (
-              <div>
-                <span className="text-muted-foreground">配對時間：</span>
-                <span>{formatDate(application.matchedAt)}</span>
               </div>
             )}
             {application.completedAt && (
