@@ -22,6 +22,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { createActivityLog } from "@/lib/utils/admin";
 import { collection, query, where, onSnapshot, getDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
@@ -168,6 +175,10 @@ export default function RequestDetailPage() {
   }, [requestId, request]);
 
   const handleStatusChange = async (newStatus: string) => {
+    if (!newStatus || newStatus === request?.status) {
+      return;
+    }
+
     try {
       const token = await getAuthToken();
       if (!token) {
@@ -188,14 +199,20 @@ export default function RequestDetailPage() {
         throw new Error(errorData.error || "更新失敗");
       }
 
-      // 創建操作日誌
-      await createActivityLog(
-        "update_request_status",
-        "request",
-        requestId,
-        `將委托狀態從 ${request?.status} 更改為 ${newStatus}`,
-        { oldStatus: request?.status, newStatus }
-      );
+      // 活動日誌已在 API 路由中創建，這裡不需要重複創建
+      // 但為了向後兼容，如果 API 沒有創建，這裡會創建
+      try {
+        await createActivityLog(
+          "update_request_status",
+          "request",
+          requestId,
+          `將委托狀態從 ${STATUS_LABELS[request?.status || ""] || request?.status} 更改為 ${STATUS_LABELS[newStatus] || newStatus}`,
+          { oldStatus: request?.status, newStatus }
+        );
+      } catch (logError) {
+        // 如果 API 已經創建了日誌，這裡可能會失敗，但不影響主要操作
+        console.log("Activity log may already be created by API");
+      }
 
       router.refresh();
       window.location.reload();
@@ -782,63 +799,29 @@ export default function RequestDetailPage() {
                 </Badge>
               </div>
 
-              {request.status === "pending" && (
-                <div className="space-y-2">
-                  <Button
-                    onClick={() => handleStatusChange("open")}
-                    className="w-full"
-                  >
-                    批准
-                  </Button>
-                  <Button
-                    onClick={() => handleStatusChange("cancelled")}
-                    variant="destructive"
-                    className="w-full"
-                  >
-                    拒絕
-                  </Button>
-                </div>
-              )}
-
-              {request.status === "open" && (
-                <div className="space-y-2">
-                  <Button
-                    onClick={() => handleStatusChange("published")}
-                    className="w-full"
-                  >
-                    發布給義工
-                  </Button>
-                </div>
-              )}
-
-              {request.status === "published" && (
-                <div className="space-y-2">
-                  <Button
-                    onClick={() => handleStatusChange("in-progress")}
-                    className="w-full"
-                  >
-                    標記為進行中
-                  </Button>
-                </div>
-              )}
-
-              {request.status === "in-progress" && (
-                <div className="space-y-2">
-                  <Button
-                    onClick={() => handleStatusChange("completed")}
-                    className="w-full"
-                  >
-                    標記為已完成
-                  </Button>
-                  <Button
-                    onClick={() => handleStatusChange("cancelled")}
-                    variant="destructive"
-                    className="w-full"
-                  >
-                    取消
-                  </Button>
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="status-select">更改狀態</Label>
+                <Select
+                  value={request.status}
+                  onValueChange={(value) => handleStatusChange(value)}
+                >
+                  <SelectTrigger id="status-select" className="w-full">
+                    <SelectValue placeholder="選擇新狀態" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">待審核</SelectItem>
+                    <SelectItem value="open">已批准</SelectItem>
+                    <SelectItem value="published">已發布</SelectItem>
+                    <SelectItem value="matched">已配對</SelectItem>
+                    <SelectItem value="in-progress">進行中</SelectItem>
+                    <SelectItem value="completed">已完成</SelectItem>
+                    <SelectItem value="cancelled">已取消</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  選擇任意狀態進行更改
+                </p>
+              </div>
 
               <div className="pt-4 border-t">
                 <Button
