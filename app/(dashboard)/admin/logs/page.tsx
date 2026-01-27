@@ -134,10 +134,10 @@ function formatDescriptionWithBold(log: ActivityLog & { adminName?: string; chan
   // 匹配狀態詞（避免與已匹配的部分重疊）
   statusWords.forEach(statusWord => {
     const regex = new RegExp(statusWord, 'g');
-    let statusMatch;
+    let statusMatch: RegExpExecArray | null;
     while ((statusMatch = regex.exec(description)) !== null) {
       const isOverlapping = matches.some(m => 
-        statusMatch.index >= m.index && statusMatch.index < m.index + m.length
+        statusMatch!.index >= m.index && statusMatch!.index < m.index + m.length
       );
       if (!isOverlapping) {
         matches.push({
