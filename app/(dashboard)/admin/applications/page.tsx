@@ -23,6 +23,17 @@ import { zhTW } from "date-fns/locale";
 import { getAuthToken } from "@/lib/utils/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Loading } from "@/components/ui/loading";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
   pending: "待處理",
@@ -51,6 +62,10 @@ export default function AdminApplicationsPage() {
   const [highlightApplicationId, setHighlightApplicationId] = useState<string | null>(
     initialApplicationId || null
   );
+  const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
+  const [showBatchEditDialog, setShowBatchEditDialog] = useState(false);
+  const [batchStatus, setBatchStatus] = useState<string>("");
+  const [batchProcessing, setBatchProcessing] = useState(false);
 
   useEffect(() => {
     if (initialRequestId) {
@@ -162,6 +177,73 @@ export default function AdminApplicationsPage() {
     });
   }, [applications, statusFilter, requestFilter, volunteerFilter]);
 
+  const toggleSelectApplication = (applicationId: string) => {
+    const newSelected = new Set(selectedApplications);
+    if (newSelected.has(applicationId)) {
+      newSelected.delete(applicationId);
+    } else {
+      newSelected.add(applicationId);
+    }
+    setSelectedApplications(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedApplications.size === filteredApplications.length) {
+      setSelectedApplications(new Set());
+    } else {
+      setSelectedApplications(new Set(filteredApplications.map((a) => a.id)));
+    }
+  };
+
+  const handleBatchEdit = async () => {
+    if (selectedApplications.size === 0) return;
+    if (!batchStatus) {
+      alert("請選擇要更改的狀態");
+      return;
+    }
+
+    try {
+      setBatchProcessing(true);
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("請先登入");
+      }
+
+      const newStatus = batchStatus as ApplicationStatus;
+      if (!["pending", "approved", "rejected", "completed"].includes(newStatus)) {
+        throw new Error("無效的狀態");
+      }
+
+      const updatePromises = Array.from(selectedApplications).map(async (applicationId) => {
+        const response = await fetch(`/api/applications/${applicationId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: newStatus }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "更新失敗");
+        }
+      });
+
+      await Promise.all(updatePromises);
+
+      setSelectedApplications(new Set());
+      setShowBatchEditDialog(false);
+      setBatchStatus("");
+      router.refresh();
+      alert(`成功更新 ${selectedApplications.size} 個報名的狀態！`);
+    } catch (err: any) {
+      alert("批量操作失敗：" + (err.message || "請稍後再試"));
+    } finally {
+      setBatchProcessing(false);
+    }
+  };
+
   const handleStatusChange = async (applicationId: string, newStatus: ApplicationStatus) => {
     try {
       const token = await getAuthToken();
@@ -222,8 +304,17 @@ export default function AdminApplicationsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-4">報名管理</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">報名管理</h2>
+        {selectedApplications.size > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowBatchEditDialog(true)}
+          >
+            批量編輯 ({selectedApplications.size})
+          </Button>
+        )}
       </div>
 
       {/* 篩選 */}
@@ -254,23 +345,47 @@ export default function AdminApplicationsPage() {
         {Object.entries(groupedByRequest).map(([requestId, apps]) => (
           <Card key={requestId}>
             <CardHeader>
-              <CardTitle>{apps[0]?.requestTitle || "未知委托"}</CardTitle>
-              <CardDescription>
-                委托 ID: {requestId.substring(0, 8)}
-                <Button asChild variant="link" className="p-0 h-auto ml-2">
-                  <Link href={`/admin/requests/${requestId}`}>查看委托詳情</Link>
-                </Button>
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>{apps[0]?.requestTitle || "未知委托"}</CardTitle>
+                  <CardDescription>
+                    委托 ID: {requestId.substring(0, 8)}
+                    <Button asChild variant="link" className="p-0 h-auto ml-2">
+                      <Link href={`/admin/requests/${requestId}`}>查看委托詳情</Link>
+                    </Button>
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={apps.every((app) => selectedApplications.has(app.id)) && apps.length > 0}
+                    onCheckedChange={() => {
+                      const allSelected = apps.every((app) => selectedApplications.has(app.id));
+                      const newSelected = new Set(selectedApplications);
+                      if (allSelected) {
+                        apps.forEach((app) => newSelected.delete(app.id));
+                      } else {
+                        apps.forEach((app) => newSelected.add(app.id));
+                      }
+                      setSelectedApplications(newSelected);
+                    }}
+                  />
+                  <span className="text-sm text-muted-foreground">全選此委托</span>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {apps.map((app) => (
                   <div
                     key={app.id}
-                    className={`flex items-center justify-between p-4 border rounded-md ${
+                    className={`flex items-center gap-4 p-4 border rounded-md ${
                       highlightApplicationId === app.id ? "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20" : ""
                     }`}
                   >
+                    <Checkbox
+                      checked={selectedApplications.has(app.id)}
+                      onCheckedChange={() => toggleSelectApplication(app.id)}
+                    />
                     <div className="flex-1">
                       <div className="flex items-center gap-4">
                         <div>
@@ -331,6 +446,62 @@ export default function AdminApplicationsPage() {
           </Card>
         ))}
       </div>
+
+      {/* 批量編輯對話框 */}
+      <Dialog open={showBatchEditDialog} onOpenChange={setShowBatchEditDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>批量編輯報名</DialogTitle>
+            <DialogDescription>
+              已選擇 {selectedApplications.size} 個報名，請選擇要更改的狀態
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>選擇新狀態 *</Label>
+              <Select value={batchStatus} onValueChange={setBatchStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="請選擇狀態" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">待處理</SelectItem>
+                  <SelectItem value="approved">已選中</SelectItem>
+                  <SelectItem value="rejected">未選中</SelectItem>
+                  <SelectItem value="completed">已完成</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                將把選中的 {selectedApplications.size} 個報名的狀態更改為所選狀態
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowBatchEditDialog(false);
+                setBatchStatus("");
+              }}
+              disabled={batchProcessing}
+            >
+              取消
+            </Button>
+            <Button
+              onClick={handleBatchEdit}
+              disabled={batchProcessing || !batchStatus}
+            >
+              {batchProcessing ? (
+                <>
+                  <Loading size="sm" className="mr-2" />
+                  處理中...
+                </>
+              ) : (
+                "確認執行"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

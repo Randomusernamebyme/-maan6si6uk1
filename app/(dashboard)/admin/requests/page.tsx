@@ -56,6 +56,7 @@ export default function AdminRequestsPage() {
   const [selectedRequests, setSelectedRequests] = useState<Set<string>>(new Set());
   const [showBatchEditDialog, setShowBatchEditDialog] = useState(false);
   const [batchAction, setBatchAction] = useState<string>("");
+  const [batchStatus, setBatchStatus] = useState<string>("");
   const [batchProcessing, setBatchProcessing] = useState(false);
 
   useEffect(() => {
@@ -203,17 +204,12 @@ export default function AdminRequestsPage() {
           const errorData = await response.json();
           throw new Error(errorData.error || "合併失敗");
         }
-      } else {
+      } else if (batchAction === "status" && batchStatus) {
         // 批量更新狀態
-        const statusMap: Record<string, string> = {
-          approve: "open",
-          publish: "published",
-          cancel: "cancelled",
-        };
-
-        const newStatus = statusMap[batchAction];
-        if (!newStatus) {
-          throw new Error("無效的操作");
+        const newStatus = batchStatus as RequestStatus;
+        
+        if (!["pending", "open", "published", "matched", "in-progress", "completed", "cancelled"].includes(newStatus)) {
+          throw new Error("無效的狀態");
         }
 
         const updatePromises = Array.from(selectedRequests).map(async (requestId) => {
@@ -233,12 +229,16 @@ export default function AdminRequestsPage() {
         });
 
         await Promise.all(updatePromises);
+      } else {
+        throw new Error("請選擇完整的操作選項");
       }
 
       setSelectedRequests(new Set());
       setShowBatchEditDialog(false);
       setBatchAction("");
+      setBatchStatus("");
       router.refresh();
+      alert(`成功更新 ${selectedRequests.size} 個委托！`);
     } catch (err: any) {
       alert("批量操作失敗：" + (err.message || "請稍後再試"));
     } finally {
@@ -410,30 +410,67 @@ export default function AdminRequestsPage() {
 
       {/* 批量編輯對話框 */}
       <Dialog open={showBatchEditDialog} onOpenChange={setShowBatchEditDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>批量編輯</DialogTitle>
+            <DialogTitle>批量編輯委托</DialogTitle>
             <DialogDescription>
               已選擇 {selectedRequests.size} 個委托，請選擇要執行的操作
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>選擇操作</Label>
-              <Select value={batchAction} onValueChange={setBatchAction}>
+              <Label>選擇操作類型</Label>
+              <Select value={batchAction} onValueChange={(value) => {
+                setBatchAction(value);
+                if (value !== "status") {
+                  setBatchStatus("");
+                }
+              }}>
                 <SelectTrigger>
-                  <SelectValue placeholder="請選擇操作" />
+                  <SelectValue placeholder="請選擇操作類型" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="approve">批量審核（改為已批准）</SelectItem>
-                  <SelectItem value="publish">批量發布（改為已發布）</SelectItem>
-                  <SelectItem value="cancel">批量取消</SelectItem>
+                  <SelectItem value="status">批量更改狀態</SelectItem>
                   <SelectItem value="merge" disabled={selectedRequests.size < 2}>
                     批量合併 {selectedRequests.size < 2 && "（需要至少2個委托）"}
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            
+            {batchAction === "status" && (
+              <div className="space-y-2">
+                <Label>選擇新狀態 *</Label>
+                <Select value={batchStatus} onValueChange={setBatchStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="請選擇狀態" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">待審核</SelectItem>
+                    <SelectItem value="open">已批准</SelectItem>
+                    <SelectItem value="published">已發布</SelectItem>
+                    <SelectItem value="matched">已配對</SelectItem>
+                    <SelectItem value="in-progress">進行中</SelectItem>
+                    <SelectItem value="completed">已完成</SelectItem>
+                    <SelectItem value="cancelled">已取消</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  將把選中的 {selectedRequests.size} 個委托的狀態更改為所選狀態
+                </p>
+              </div>
+            )}
+            
+            {batchAction === "merge" && (
+              <div className="rounded-md bg-muted p-4 text-sm">
+                <p className="font-semibold mb-2">合併說明：</p>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>第一個選中的委托將作為主委托</li>
+                  <li>其他委托的數據將合併到主委托</li>
+                  <li>合併後其他委托將被標記為已合併</li>
+                </ul>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -441,13 +478,24 @@ export default function AdminRequestsPage() {
               onClick={() => {
                 setShowBatchEditDialog(false);
                 setBatchAction("");
+                setBatchStatus("");
               }}
               disabled={batchProcessing}
             >
               取消
             </Button>
-            <Button onClick={handleBatchEdit} disabled={batchProcessing || !batchAction}>
-              {batchProcessing ? <Loading size="sm" /> : "確認執行"}
+            <Button 
+              onClick={handleBatchEdit} 
+              disabled={batchProcessing || !batchAction || (batchAction === "status" && !batchStatus)}
+            >
+              {batchProcessing ? (
+                <>
+                  <Loading size="sm" className="mr-2" />
+                  處理中...
+                </>
+              ) : (
+                "確認執行"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

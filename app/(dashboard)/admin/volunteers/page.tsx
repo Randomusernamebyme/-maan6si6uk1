@@ -19,6 +19,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Loading } from "@/components/ui/loading";
 import Link from "next/link";
 import { format } from "date-fns";
 import { zhTW } from "date-fns/locale";
@@ -43,6 +53,9 @@ export default function AdminVolunteersPage() {
   const [fieldFilter, setFieldFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedVolunteers, setSelectedVolunteers] = useState<Set<string>>(new Set());
+  const [showBatchEditDialog, setShowBatchEditDialog] = useState(false);
+  const [batchStatus, setBatchStatus] = useState<string>("");
+  const [batchProcessing, setBatchProcessing] = useState(false);
 
   useEffect(() => {
     const fetchVolunteers = async () => {
@@ -131,6 +144,73 @@ export default function AdminVolunteersPage() {
     });
   }, [volunteers, statusFilter, fieldFilter, searchQuery]);
 
+  const toggleSelectVolunteer = (volunteerId: string) => {
+    const newSelected = new Set(selectedVolunteers);
+    if (newSelected.has(volunteerId)) {
+      newSelected.delete(volunteerId);
+    } else {
+      newSelected.add(volunteerId);
+    }
+    setSelectedVolunteers(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedVolunteers.size === filteredVolunteers.length) {
+      setSelectedVolunteers(new Set());
+    } else {
+      setSelectedVolunteers(new Set(filteredVolunteers.map((v) => v.uid)));
+    }
+  };
+
+  const handleBatchEdit = async () => {
+    if (selectedVolunteers.size === 0) return;
+    if (!batchStatus) {
+      alert("請選擇要更改的狀態");
+      return;
+    }
+
+    try {
+      setBatchProcessing(true);
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("請先登入");
+      }
+
+      const newStatus = batchStatus as UserStatus;
+      if (!["pending", "approved", "rejected", "suspended"].includes(newStatus)) {
+        throw new Error("無效的狀態");
+      }
+
+      const updatePromises = Array.from(selectedVolunteers).map(async (volunteerId) => {
+        const response = await fetch(`/api/admin/volunteers/${volunteerId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: newStatus }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "更新失敗");
+        }
+      });
+
+      await Promise.all(updatePromises);
+
+      setSelectedVolunteers(new Set());
+      setShowBatchEditDialog(false);
+      setBatchStatus("");
+      router.refresh();
+      alert(`成功更新 ${selectedVolunteers.size} 個義工的狀態！`);
+    } catch (err: any) {
+      alert("批量操作失敗：" + (err.message || "請稍後再試"));
+    } finally {
+      setBatchProcessing(false);
+    }
+  };
+
   const handleStatusChange = async (volunteerId: string, newStatus: UserStatus, notes?: string) => {
     try {
       const token = await getAuthToken();
@@ -191,8 +271,12 @@ export default function AdminVolunteersPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">義工管理</h2>
         {selectedVolunteers.size > 0 && (
-          <Button variant="outline" size="sm">
-            批量批准
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowBatchEditDialog(true)}
+          >
+            批量編輯 ({selectedVolunteers.size})
           </Button>
         )}
       </div>
@@ -249,7 +333,14 @@ export default function AdminVolunteersPage() {
             <div className="space-y-4">
               {/* 表格標題 */}
               <div className="grid grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-semibold text-sm">
-                <div className="col-span-1">選擇</div>
+                <div className="col-span-1">
+                  <input
+                    type="checkbox"
+                    checked={selectedVolunteers.size === filteredVolunteers.length && filteredVolunteers.length > 0}
+                    onChange={toggleSelectAll}
+                    className="h-4 w-4"
+                  />
+                </div>
                 <div className="col-span-2">姓名</div>
                 <div className="col-span-2">Email</div>
                 <div className="col-span-2">領域</div>
@@ -268,15 +359,7 @@ export default function AdminVolunteersPage() {
                     <input
                       type="checkbox"
                       checked={selectedVolunteers.has(volunteer.uid)}
-                      onChange={() => {
-                        const newSelected = new Set(selectedVolunteers);
-                        if (newSelected.has(volunteer.uid)) {
-                          newSelected.delete(volunteer.uid);
-                        } else {
-                          newSelected.add(volunteer.uid);
-                        }
-                        setSelectedVolunteers(newSelected);
-                      }}
+                      onChange={() => toggleSelectVolunteer(volunteer.uid)}
                       className="h-4 w-4"
                     />
                   </div>
@@ -328,6 +411,62 @@ export default function AdminVolunteersPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* 批量編輯對話框 */}
+      <Dialog open={showBatchEditDialog} onOpenChange={setShowBatchEditDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>批量編輯義工</DialogTitle>
+            <DialogDescription>
+              已選擇 {selectedVolunteers.size} 個義工，請選擇要更改的狀態
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>選擇新狀態 *</Label>
+              <Select value={batchStatus} onValueChange={setBatchStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="請選擇狀態" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">待審核</SelectItem>
+                  <SelectItem value="approved">已批准</SelectItem>
+                  <SelectItem value="rejected">已拒絕</SelectItem>
+                  <SelectItem value="suspended">已暫停</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                將把選中的 {selectedVolunteers.size} 個義工的狀態更改為所選狀態
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowBatchEditDialog(false);
+                setBatchStatus("");
+              }}
+              disabled={batchProcessing}
+            >
+              取消
+            </Button>
+            <Button
+              onClick={handleBatchEdit}
+              disabled={batchProcessing || !batchStatus}
+            >
+              {batchProcessing ? (
+                <>
+                  <Loading size="sm" className="mr-2" />
+                  處理中...
+                </>
+              ) : (
+                "確認執行"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
