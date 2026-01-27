@@ -130,14 +130,16 @@ export default function AdminDashboardPage() {
                     className="flex items-center justify-between p-3 border rounded-md hover:bg-muted/30 transition-colors"
                   >
                     <div className="flex-1">
-                      <p className="font-medium">{request.name}</p>
+                      <Link 
+                        href={`/admin/requests/${request.id}`}
+                        className="font-medium hover:underline text-primary"
+                      >
+                        {request.name}
+                      </Link>
                       <p className="text-sm text-muted-foreground">
                         編號：{request.id.substring(0, 8)}
                       </p>
                     </div>
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/admin/requests/${request.id}`}>查看詳情</Link>
-                    </Button>
                   </div>
                 ))}
               </div>

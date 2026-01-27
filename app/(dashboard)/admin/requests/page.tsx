@@ -338,11 +338,11 @@ export default function AdminRequestsPage() {
                   />
                 </div>
                 <div className="col-span-1">編號</div>
+                <div className="col-span-3">委托名稱</div>
                 <div className="col-span-2">委托者</div>
                 <div className="col-span-2">領域</div>
                 <div className="col-span-2">提交時間</div>
-                <div className="col-span-2">狀態</div>
-                <div className="col-span-2">操作</div>
+                <div className="col-span-1">狀態</div>
               </div>
 
               {/* 表格內容 */}
@@ -361,6 +361,14 @@ export default function AdminRequestsPage() {
                   </div>
                   <div className="col-span-1 flex items-center text-sm font-mono">
                     {request.id.substring(0, 8)}
+                  </div>
+                  <div className="col-span-3 flex items-center">
+                    <Link 
+                      href={`/admin/requests/${request.id}`}
+                      className="font-medium hover:underline text-primary"
+                    >
+                      {request.name || request.fields?.join("、") || "未命名委托"}
+                    </Link>
                   </div>
                   <div className="col-span-2 flex items-center text-sm">
                     {request.requester?.name || "未知"}
@@ -381,7 +389,7 @@ export default function AdminRequestsPage() {
                   <div className="col-span-2 flex items-center text-sm text-muted-foreground">
                     {formatDate(request.createdAt)}
                   </div>
-                  <div className="col-span-2 flex items-center">
+                  <div className="col-span-1 flex items-center">
                     <Badge
                       variant={
                         request.status === "pending"
@@ -395,11 +403,6 @@ export default function AdminRequestsPage() {
                     >
                       {STATUS_LABELS[request.status]}
                     </Badge>
-                  </div>
-                  <div className="col-span-2 flex items-center gap-2">
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/admin/requests/${request.id}`}>查看詳情</Link>
-                    </Button>
                   </div>
                 </div>
               ))}

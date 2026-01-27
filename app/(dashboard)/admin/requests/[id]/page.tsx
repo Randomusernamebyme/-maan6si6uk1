@@ -564,17 +564,12 @@ export default function RequestDetailPage() {
                               <div className="flex items-center justify-between">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2">
-                                    <p className="font-semibold">{app.volunteerName}</p>
-                                    <Button asChild variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                                      <Link href={`/admin/volunteers/${app.volunteerId}`}>
-                                        查看義工資料
-                                      </Link>
-                                    </Button>
-                                    <Button asChild variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                                      <Link href={`/admin/applications?application=${app.id}`}>
-                                        查看報名詳情
-                                      </Link>
-                                    </Button>
+                                    <Link 
+                                      href={`/admin/volunteers/${app.volunteerId}`}
+                                      className="font-semibold hover:underline text-primary"
+                                    >
+                                      {app.volunteerName}
+                                    </Link>
                                   </div>
                                   <p className="text-xs text-muted-foreground mt-1">
                                     報名時間：{formatDate(app.createdAt)}
@@ -614,17 +609,12 @@ export default function RequestDetailPage() {
                               <div className="flex items-center justify-between">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2">
-                                    <p className="font-semibold">{app.volunteerName}</p>
-                                    <Button asChild variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                                      <Link href={`/admin/volunteers/${app.volunteerId}`}>
-                                        查看義工資料
-                                      </Link>
-                                    </Button>
-                                    <Button asChild variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                                      <Link href={`/admin/applications?application=${app.id}`}>
-                                        查看報名詳情
-                                      </Link>
-                                    </Button>
+                                    <Link 
+                                      href={`/admin/volunteers/${app.volunteerId}`}
+                                      className="font-semibold hover:underline text-primary"
+                                    >
+                                      {app.volunteerName}
+                                    </Link>
                                   </div>
                                   <p className="text-xs text-muted-foreground mt-1">
                                     報名時間：{formatDate(app.createdAt)}
@@ -715,17 +705,12 @@ export default function RequestDetailPage() {
                               <div className="flex items-center justify-between">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2">
-                                    <p className="font-semibold">{app.volunteerName}</p>
-                                    <Button asChild variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                                      <Link href={`/admin/volunteers/${app.volunteerId}`}>
-                                        查看義工資料
-                                      </Link>
-                                    </Button>
-                                    <Button asChild variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                                      <Link href={`/admin/applications?application=${app.id}`}>
-                                        查看報名詳情
-                                      </Link>
-                                    </Button>
+                                    <Link 
+                                      href={`/admin/volunteers/${app.volunteerId}`}
+                                      className="font-semibold hover:underline text-primary"
+                                    >
+                                      {app.volunteerName}
+                                    </Link>
                                   </div>
                                   <p className="text-xs text-muted-foreground mt-1">
                                     報名時間：{formatDate(app.createdAt)}

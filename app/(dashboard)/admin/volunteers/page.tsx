@@ -344,8 +344,7 @@ export default function AdminVolunteersPage() {
                 <div className="col-span-2">Email</div>
                 <div className="col-span-2">領域</div>
                 <div className="col-span-2">報名時間</div>
-                <div className="col-span-1">狀態</div>
-                <div className="col-span-2">操作</div>
+                <div className="col-span-3">狀態</div>
               </div>
 
               {/* 表格內容 */}
@@ -362,8 +361,13 @@ export default function AdminVolunteersPage() {
                       className="h-4 w-4"
                     />
                   </div>
-                  <div className="col-span-2 flex items-center text-sm font-medium">
-                    {volunteer.displayName}
+                  <div className="col-span-2 flex items-center">
+                    <Link 
+                      href={`/admin/volunteers/${volunteer.uid}`}
+                      className="text-sm font-medium hover:underline text-primary"
+                    >
+                      {volunteer.displayName}
+                    </Link>
                   </div>
                   <div className="col-span-2 flex items-center text-sm text-muted-foreground">
                     {volunteer.email}
@@ -398,11 +402,6 @@ export default function AdminVolunteersPage() {
                     >
                       {STATUS_LABELS[volunteer.status]}
                     </Badge>
-                  </div>
-                  <div className="col-span-2 flex items-center gap-2">
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/admin/volunteers/${volunteer.uid}`}>查看詳情</Link>
-                    </Button>
                   </div>
                 </div>
               ))}
