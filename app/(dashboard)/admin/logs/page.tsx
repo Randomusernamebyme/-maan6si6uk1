@@ -19,6 +19,7 @@ import {
 import { format } from "date-fns";
 import { zhTW } from "date-fns/locale";
 import { getAuthToken } from "@/lib/utils/auth";
+import Link from "next/link";
 
 const ACTION_LABELS: Record<string, string> = {
   approve: "批准",
@@ -46,18 +47,144 @@ const TARGET_TYPE_LABELS: Record<string, string> = {
   notification: "通知",
 };
 
-// 改進描述格式的函數
-function formatDescription(log: ActivityLog & { adminName?: string }): string {
-  // 如果已經有自定義描述，直接使用（通常是中文描述）
-  if (log.description && log.description.trim()) {
-    return log.description;
+// 改進描述格式的函數，返回加粗關鍵字和鏈接的 JSX
+function formatDescriptionWithBold(log: ActivityLog & { adminName?: string; changes?: Record<string, any> }): React.ReactNode {
+  let description = log.description;
+  
+  // 如果沒有描述，生成一個
+  if (!description || !description.trim()) {
+    const actionLabel = ACTION_LABELS[log.action] || log.action;
+    const targetLabel = TARGET_TYPE_LABELS[log.targetType] || log.targetType;
+    description = `${actionLabel}了${targetLabel}`;
   }
   
-  // 否則生成更易理解的描述
-  const actionLabel = ACTION_LABELS[log.action] || log.action;
-  const targetLabel = TARGET_TYPE_LABELS[log.targetType] || log.targetType;
+  // 獲取目標鏈接（用於委托和義工）
+  const getRequestLink = (requestId?: string) => {
+    if (log.targetType === 'request') {
+      return `/admin/requests/${log.targetId}`;
+    } else if (log.targetType === 'application' && log.changes?.requestId) {
+      return `/admin/requests/${log.changes.requestId}`;
+    } else if (requestId) {
+      return `/admin/requests/${requestId}`;
+    }
+    return null;
+  };
   
-  return `${actionLabel}了${targetLabel}`;
+  const getVolunteerLink = (volunteerId?: string) => {
+    if (log.targetType === 'user') {
+      return `/admin/volunteers/${log.targetId}`;
+    } else if (log.targetType === 'application' && log.changes?.volunteerId) {
+      return `/admin/volunteers/${log.changes.volunteerId}`;
+    } else if (volunteerId) {
+      return `/admin/volunteers/${volunteerId}`;
+    }
+    return null;
+  };
+  
+  // 加粗關鍵字並創建鏈接
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  
+  // 匹配委托名稱（委托「...」）
+  const requestPattern = /委托「([^」]+)」/g;
+  // 匹配義工名稱（義工 ...）
+  const volunteerPattern = /義工\s+([^\s，。]+)/g;
+  // 匹配狀態變更（狀態：... → ...）
+  const statusPattern = /狀態[：:]\s*([^→]+)\s*→\s*([^，。\n]+)/g;
+  // 匹配其他狀態詞
+  const statusWords = ["待審核", "已批准", "已發布", "已配對", "進行中", "已完成", "已取消", "已拒絕", "已暫停", "待處理", "已選中", "未選中"];
+  
+  // 收集所有匹配位置（避免重複）
+  const matches: Array<{ index: number; length: number; type: string; content: string; link?: string }> = [];
+  
+  let match;
+  while ((match = requestPattern.exec(description)) !== null) {
+    const requestName = match[1];
+    const requestLink = getRequestLink();
+    matches.push({
+      index: match.index,
+      length: match[0].length,
+      type: 'request',
+      content: match[0],
+      link: requestLink || undefined,
+    });
+  }
+  
+  while ((match = volunteerPattern.exec(description)) !== null) {
+    const volunteerName = match[1];
+    const volunteerLink = getVolunteerLink();
+    matches.push({
+      index: match.index,
+      length: match[0].length,
+      type: 'volunteer',
+      content: match[0],
+      link: volunteerLink || undefined,
+    });
+  }
+  
+  while ((match = statusPattern.exec(description)) !== null) {
+    matches.push({
+      index: match.index,
+      length: match[0].length,
+      type: 'status',
+      content: match[0],
+    });
+  }
+  
+  // 匹配狀態詞（避免與已匹配的部分重疊）
+  statusWords.forEach(statusWord => {
+    const regex = new RegExp(statusWord, 'g');
+    let statusMatch;
+    while ((statusMatch = regex.exec(description)) !== null) {
+      const isOverlapping = matches.some(m => 
+        statusMatch.index >= m.index && statusMatch.index < m.index + m.length
+      );
+      if (!isOverlapping) {
+        matches.push({
+          index: statusMatch.index,
+          length: statusWord.length,
+          type: 'statusWord',
+          content: statusWord,
+        });
+      }
+    }
+  });
+  
+  // 按位置排序
+  matches.sort((a, b) => a.index - b.index);
+  
+  // 構建結果
+  matches.forEach((match) => {
+    // 添加匹配前的文本
+    if (match.index > lastIndex) {
+      parts.push(description.substring(lastIndex, match.index));
+    }
+    
+    // 如果是委托或義工，且可以鏈接，則包裝在 Link 中
+    if (match.link && (match.type === 'request' || match.type === 'volunteer')) {
+      parts.push(
+        <Link key={`link-${match.index}`} href={match.link} className="font-semibold hover:underline text-primary">
+          {match.content}
+        </Link>
+      );
+    } else {
+      // 其他情況加粗顯示
+      parts.push(
+        <span key={`bold-${match.index}`} className="font-semibold">
+          {match.content}
+        </span>
+      );
+    }
+    
+    lastIndex = match.index + match.length;
+  });
+  
+  // 添加剩餘文本
+  if (lastIndex < description.length) {
+    parts.push(description.substring(lastIndex));
+  }
+  
+  return parts.length > 0 ? <>{parts}</> : description;
 }
 
 // 格式化變更詳情
@@ -99,7 +226,7 @@ function formatChanges(changes: any): string {
 }
 
 export default function AdminLogsPage() {
-  const [logs, setLogs] = useState<(ActivityLog & { adminName?: string })[]>([]);
+  const [logs, setLogs] = useState<(ActivityLog & { adminName?: string; changes?: any })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -146,6 +273,7 @@ export default function AdminLogsPage() {
       const logsWithDates = logsArray.map((log: any) => ({
         ...log,
         createdAt: log.createdAt ? new Date(log.createdAt) : new Date(),
+        changes: log.changes || undefined,
       }));
       setLogs(logsWithDates);
       setError(null);
@@ -169,7 +297,7 @@ export default function AdminLogsPage() {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (log) =>
-          formatDescription(log).toLowerCase().includes(query) ||
+          (log.description || "").toLowerCase().includes(query) ||
           log.adminName?.toLowerCase().includes(query) ||
           log.targetId.toLowerCase().includes(query) ||
           (ACTION_LABELS[log.action] || log.action).toLowerCase().includes(query) ||
@@ -336,8 +464,7 @@ export default function AdminLogsPage() {
                 <div className="col-span-2">操作人</div>
                 <div className="col-span-2">操作類型</div>
                 <div className="col-span-1">目標</div>
-                <div className="col-span-4">操作內容</div>
-                <div className="col-span-1">詳情</div>
+                <div className="col-span-5">操作內容</div>
               </div>
 
               {/* 日誌列表 */}
@@ -362,34 +489,15 @@ export default function AdminLogsPage() {
                       {TARGET_TYPE_LABELS[log.targetType] || log.targetType}
                     </Badge>
                   </div>
-                  <div className="col-span-4 flex items-center">
+                  <div className="col-span-5 flex items-center">
                     <div className="flex flex-col gap-1">
-                      <span>{formatDescription(log)}</span>
+                      <div>{formatDescriptionWithBold(log)}</div>
                       {log.changes && (
                         <span className="text-xs text-muted-foreground">
                           {formatChanges(log.changes)}
                         </span>
                       )}
                     </div>
-                  </div>
-                  <div className="col-span-1 flex items-center">
-                    {log.changes && Object.keys(log.changes).length > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          const changesText = formatChanges(log.changes);
-                          if (changesText) {
-                            alert(`變更詳情：\n${changesText}`);
-                          } else {
-                            alert(`變更詳情：\n${JSON.stringify(log.changes, null, 2)}`);
-                          }
-                        }}
-                        className="text-xs"
-                      >
-                        詳情
-                      </Button>
-                    )}
                   </div>
                 </div>
               ))}
