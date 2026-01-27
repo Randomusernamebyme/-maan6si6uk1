@@ -28,7 +28,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Loading } from "@/components/ui/loading";
 import Link from "next/link";
 import { format } from "date-fns";
 import { zhTW } from "date-fns/locale";

@@ -32,7 +32,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Loading } from "@/components/ui/loading";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
