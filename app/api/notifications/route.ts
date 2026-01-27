@@ -36,15 +36,12 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get("limit");
 
     // 構建查詢
-    let query = adminDb
+    // 注意：只在 Firestore 中查詢 userId 和 createdAt，避免需要複合索引
+    // read 和 type 篩選在內存中進行
+    const query = adminDb
       .collection("notifications")
       .where("userId", "==", decodedToken.uid)
       .orderBy("createdAt", "desc");
-
-    // 如果指定了 read 篩選
-    if (read === "true" || read === "false") {
-      query = query.where("read", "==", read === "true");
-    }
 
     const snapshot = await query.get();
     let notifications = snapshot.docs.map((doc) => {
@@ -56,6 +53,11 @@ export async function GET(request: NextRequest) {
         readAt: data.readAt?.toDate?.()?.toISOString() || undefined,
       } as Notification;
     });
+
+    // 在內存中篩選 read 狀態（避免需要複合索引）
+    if (read === "true" || read === "false") {
+      notifications = notifications.filter((n) => n.read === (read === "true"));
+    }
 
     // 如果指定了 type 篩選（在內存中篩選，避免需要複合索引）
     if (type) {

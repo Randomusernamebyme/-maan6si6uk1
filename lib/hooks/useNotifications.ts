@@ -26,22 +26,14 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
     }
 
     // 嘗試使用 Firestore 實時監聽
+    // 注意：只在 Firestore 中查詢 userId 和 createdAt，避免需要複合索引
+    // read 和 type 篩選在內存中進行
     try {
-      let q = query(
+      const q = query(
         collection(db, "notifications"),
         where("userId", "==", user.uid),
         orderBy("createdAt", "desc")
       );
-
-      // 如果指定了 read 篩選
-      if (options.read !== undefined) {
-        q = query(
-          collection(db, "notifications"),
-          where("userId", "==", user.uid),
-          where("read", "==", options.read),
-          orderBy("createdAt", "desc")
-        );
-      }
 
       const unsubscribe = onSnapshot(
         q,
@@ -56,6 +48,11 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
                 readAt: docData.readAt ? convertTimestamp(docData.readAt) : undefined,
               } as Notification;
             });
+
+            // 在內存中篩選 read 狀態（避免需要複合索引）
+            if (options.read !== undefined) {
+              data = data.filter((n) => n.read === options.read);
+            }
 
             // 如果指定了 type 篩選
             if (options.type) {
