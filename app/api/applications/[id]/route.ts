@@ -116,6 +116,8 @@ export async function DELETE(
           requestId: applicationData?.requestId,
           volunteerId: applicationData?.volunteerId,
           status: applicationData?.status,
+          requestName: requestName,
+          volunteerName: volunteerName,
         },
         createdAt: new Date(),
       });
@@ -203,6 +205,8 @@ export async function PATCH(
             newStatus,
             requestId: oldData?.requestId,
             volunteerId: oldData?.volunteerId,
+            requestName: requestName,
+            volunteerName: volunteerName,
           },
           createdAt: new Date(),
         });

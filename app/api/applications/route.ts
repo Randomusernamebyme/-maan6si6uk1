@@ -98,6 +98,8 @@ export async function POST(request: NextRequest) {
           requestId: body.requestId,
           volunteerId: body.volunteerId,
           status: "pending",
+          requestName: requestName,
+          volunteerName: volunteerName,
         },
         createdAt: new Date(),
       });

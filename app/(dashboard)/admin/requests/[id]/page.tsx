@@ -95,8 +95,11 @@ export default function RequestDetailPage() {
               updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
               matchedAt: data.matchedAt ? new Date(data.matchedAt) : undefined,
               completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
+              openAt: data.openAt ? new Date(data.openAt) : undefined,
+              publishedAt: data.publishedAt ? new Date(data.publishedAt) : undefined,
+              inProgressAt: data.inProgressAt ? new Date(data.inProgressAt) : undefined,
               followUps: followUps,
-            } as Request);
+            } as Request & { openAt?: Date; publishedAt?: Date; inProgressAt?: Date });
       } catch (err: any) {
         setError(err.message || "載入失敗");
       } finally {
@@ -199,20 +202,8 @@ export default function RequestDetailPage() {
         throw new Error(errorData.error || "更新失敗");
       }
 
-      // 活動日誌已在 API 路由中創建，這裡不需要重複創建
-      // 但為了向後兼容，如果 API 沒有創建，這裡會創建
-      try {
-        await createActivityLog(
-          "update_request_status",
-          "request",
-          requestId,
-          `將委托狀態從 ${STATUS_LABELS[request?.status || ""] || request?.status} 更改為 ${STATUS_LABELS[newStatus] || newStatus}`,
-          { oldStatus: request?.status, newStatus }
-        );
-      } catch (logError) {
-        // 如果 API 已經創建了日誌，這裡可能會失敗，但不影響主要操作
-        console.log("Activity log may already be created by API");
-      }
+      // 活動日誌已在 API 路由中創建，使用統一的格式（委托「名稱」）
+      // 不需要在這裡重複創建
 
       router.refresh();
       window.location.reload();
@@ -282,8 +273,11 @@ export default function RequestDetailPage() {
           updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
           matchedAt: data.matchedAt ? new Date(data.matchedAt) : undefined,
           completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
+          openAt: data.openAt ? new Date(data.openAt) : undefined,
+          publishedAt: data.publishedAt ? new Date(data.publishedAt) : undefined,
+          inProgressAt: data.inProgressAt ? new Date(data.inProgressAt) : undefined,
           followUps: followUps,
-        } as Request);
+        } as Request & { openAt?: Date; publishedAt?: Date; inProgressAt?: Date });
       }
 
       setShowFollowUpDialog(false);
@@ -320,11 +314,11 @@ export default function RequestDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-2xl font-bold truncate" title={request.name || "委托詳情"}>
             {request.name || "委托詳情"}
           </h2>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1 font-mono">
             編號：{request.id.substring(0, 8)}
           </p>
         </div>
@@ -444,7 +438,9 @@ export default function RequestDetailPage() {
                     <div className="flex-1">
                       <div className="text-sm font-semibold">已批准</div>
                       <div className="text-xs text-muted-foreground">
-                        {request.updatedAt 
+                        {(request as any).openAt 
+                          ? formatDate((request as any).openAt) 
+                          : request.updatedAt 
                           ? formatDate(request.updatedAt) 
                           : "時間未記錄"}
                       </div>
@@ -464,7 +460,9 @@ export default function RequestDetailPage() {
                     <div className="flex-1">
                       <div className="text-sm font-semibold">已發布</div>
                       <div className="text-xs text-muted-foreground">
-                        {request.updatedAt 
+                        {(request as any).publishedAt 
+                          ? formatDate((request as any).publishedAt) 
+                          : request.updatedAt 
                           ? formatDate(request.updatedAt) 
                           : "時間未記錄"}
                       </div>
@@ -500,7 +498,11 @@ export default function RequestDetailPage() {
                     <div className="flex-1">
                       <div className="text-sm font-semibold">進行中</div>
                       <div className="text-xs text-muted-foreground">
-                        {request.updatedAt ? formatDate(request.updatedAt) : "時間未記錄"}
+                        {(request as any).inProgressAt 
+                          ? formatDate((request as any).inProgressAt) 
+                          : request.updatedAt 
+                          ? formatDate(request.updatedAt) 
+                          : "時間未記錄"}
                       </div>
                     </div>
                   </div>

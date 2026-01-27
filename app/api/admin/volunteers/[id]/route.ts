@@ -119,6 +119,7 @@ export async function PATCH(
             oldStatus,
             newStatus: body.status,
             volunteerId: params.id,
+            volunteerName: volunteerName,
           },
           createdAt: new Date(),
         });

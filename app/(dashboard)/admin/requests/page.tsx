@@ -362,13 +362,13 @@ export default function AdminRequestsPage() {
                         className="h-4 w-4"
                       />
                     </div>
-                    <div className="col-span-1 flex items-center text-sm font-mono">
-                      {request.id.substring(0, 8)}
+                    <div className="col-span-1 flex items-center text-sm font-mono min-w-0">
+                      <span className="truncate">{request.id.substring(0, 8)}</span>
                     </div>
                     <div className="col-span-3 flex items-center min-w-0">
                       <Link 
                         href={`/admin/requests/${request.id}`}
-                        className="font-medium hover:underline text-primary truncate"
+                        className="text-sm font-mono hover:underline text-primary truncate"
                         title={request.name || request.fields?.join("、") || "未命名委托"}
                       >
                         {request.name || request.fields?.join("、") || "未命名委托"}

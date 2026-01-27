@@ -62,6 +62,9 @@ export async function GET(
       updatedAt: requestData?.updatedAt?.toDate?.()?.toISOString(),
       matchedAt: requestData?.matchedAt?.toDate?.()?.toISOString(),
       completedAt: requestData?.completedAt?.toDate?.()?.toISOString(),
+      openAt: requestData?.openAt?.toDate?.()?.toISOString(),
+      publishedAt: requestData?.publishedAt?.toDate?.()?.toISOString(),
+      inProgressAt: requestData?.inProgressAt?.toDate?.()?.toISOString(),
       followUps: followUps,
     });
   } catch (error: any) {
@@ -126,6 +129,7 @@ export async function PATCH(
               oldStatus,
               newStatus: body.status,
               requestId: requestId,
+              requestName: requestName,
             },
             createdAt: new Date(),
           });
@@ -136,10 +140,20 @@ export async function PATCH(
       }
       
       // 根據狀態更新相關時間戳
-      if (body.status === "matched") {
-        updateData.matchedAt = new Date();
+      const now = new Date();
+      if (body.status === "open" && oldStatus === "pending") {
+        // 從待審核變為已批准
+        updateData.openAt = now;
+      } else if (body.status === "published" && oldStatus !== "published") {
+        // 變為已發布
+        updateData.publishedAt = now;
+      } else if (body.status === "matched") {
+        updateData.matchedAt = now;
+      } else if (body.status === "in-progress" && oldStatus !== "in-progress") {
+        // 變為進行中
+        updateData.inProgressAt = now;
       } else if (body.status === "completed") {
-        updateData.completedAt = new Date();
+        updateData.completedAt = now;
         
         // 當請求標記為完成時，自動更新相關的已批准報名記錄為 completed
         const completedAt = new Date();
@@ -178,6 +192,8 @@ export async function PATCH(
                 newStatus: "completed",
                 requestId: requestId,
                 volunteerId: appData.volunteerId,
+                requestName: requestName,
+                volunteerName: volunteerName,
                 autoUpdated: true,
               },
               createdAt: completedAt,
