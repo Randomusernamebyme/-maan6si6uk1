@@ -64,12 +64,8 @@ service cloud.firestore {
     match /notifications/{notificationId} {
       // 用戶只能讀取自己的通知
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      // 用戶可以更新自己的通知（標記為已讀）
-      allow update: if request.auth != null && 
-        resource.data.userId == request.auth.uid &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt', 'updatedAt']);
-      // 只有管理員可以創建和刪除通知
-      allow create, delete: if isAdmin();
+      // 只有管理員可以創建通知
+      allow write: if isAdmin();
     }
     
     // 操作日誌集合

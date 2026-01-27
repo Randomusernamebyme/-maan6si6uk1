@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase/admin";
-import { createNotification } from "@/lib/utils/notifications";
 
 // 驗證用戶 token（義工或管理員）
 async function verifyAuth(request: NextRequest) {
@@ -175,7 +174,7 @@ export async function PATCH(
     // 獲取更新後的狀態
     const newStatus = body.status || oldStatus;
 
-    // 如果狀態有變化，創建活動日誌和通知
+    // 如果狀態有變化，創建活動日誌
     if (body.status && body.status !== oldStatus) {
       try {
         // 獲取義工信息
@@ -193,7 +192,6 @@ export async function PATCH(
           completed: "已完成",
         };
 
-        // 創建活動日誌
         await adminDb.collection("activity_logs").add({
           userId: decodedToken.uid,
           action: "update_application_status",
@@ -208,45 +206,8 @@ export async function PATCH(
           },
           createdAt: new Date(),
         });
-
-        // 創建通知給義工
-        let notificationTitle = "";
-        let notificationMessage = "";
-        let notificationType: "info" | "success" | "warning" | "error" = "info";
-
-        if (newStatus === "approved") {
-          notificationTitle = "報名已獲批准";
-          notificationMessage = `恭喜！您對委托「${requestName}」的報名已被選中。`;
-          notificationType = "success";
-        } else if (newStatus === "rejected") {
-          notificationTitle = "報名未被選中";
-          notificationMessage = `很抱歉，您對委托「${requestName}」的報名未被選中。感謝您的參與！`;
-          notificationType = "info";
-        } else if (newStatus === "completed") {
-          notificationTitle = "委托已完成";
-          notificationMessage = `您參與的委托「${requestName}」已完成。感謝您的服務！`;
-          notificationType = "success";
-        }
-
-        if (notificationTitle && oldData?.volunteerId) {
-          try {
-            await createNotification(
-              oldData.volunteerId,
-              notificationTitle,
-              notificationMessage,
-              notificationType,
-              {
-                relatedRequestId: oldData?.requestId,
-                relatedApplicationId: params.id,
-              }
-            );
-          } catch (notifError) {
-            console.error("Error creating notification:", notifError);
-            // 不影響主要操作
-          }
-        }
       } catch (logError) {
-        console.error("Error creating activity log or notification:", logError);
+        console.error("Error creating activity log:", logError);
         // 不影響主要操作
       }
     }

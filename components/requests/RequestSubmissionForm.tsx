@@ -229,44 +229,41 @@ export function RequestSubmissionForm() {
             <p className="text-sm text-muted-foreground mb-2">
               請選擇您需要的幫助範疇（可多選）
             </p>
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {SERVICE_FIELDS.map((field) => (
                 <div
                   key={field}
-                  className={`flex items-start space-x-3 p-3 rounded-lg border-2 transition-colors ${
+                  className={`relative border-2 rounded-lg p-4 cursor-pointer transition-all ${
                     selectedFields.includes(field)
-                      ? "border-foreground bg-muted"
-                      : "border-border hover:border-foreground/50"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
                   }`}
+                  onClick={() => toggleField(field)}
                 >
-                  <Checkbox
-                    id={`field-${field}`}
-                    checked={selectedFields.includes(field)}
-                    onCheckedChange={() => toggleField(field)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1 flex items-center space-x-3">
-                    {SERVICE_FIELD_IMAGES[field] && (
-                      <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id={`field-${field}`}
+                      checked={selectedFields.includes(field)}
+                      onCheckedChange={() => toggleField(field)}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <Label
+                        htmlFor={`field-${field}`}
+                        className="font-normal cursor-pointer block mb-2"
+                      >
+                        {field}
+                      </Label>
+                      <div className="relative w-full h-32 rounded-md overflow-hidden bg-muted">
                         <Image
                           src={SERVICE_FIELD_IMAGES[field]}
                           alt={field}
                           fill
                           className="object-cover"
-                          sizes="64px"
-                          unoptimized
-                          onError={(e) => {
-                            console.error("Failed to load image for", field, ":", SERVICE_FIELD_IMAGES[field]);
-                          }}
+                          sizes="(max-width: 768px) 100vw, 33vw"
                         />
                       </div>
-                    )}
-                    <Label
-                      htmlFor={`field-${field}`}
-                      className="font-normal cursor-pointer flex-1"
-                    >
-                      {field}
-                    </Label>
+                    </div>
                   </div>
                 </div>
               ))}
