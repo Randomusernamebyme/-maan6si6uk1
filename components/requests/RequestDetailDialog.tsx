@@ -21,6 +21,7 @@ import { ErrorDisplay } from "@/components/ui/error";
 import { format } from "date-fns";
 import { zhTW } from "date-fns/locale";
 import { useApplications } from "@/lib/hooks/useApplications";
+import Link from "next/link";
 
 interface RequestDetailDialogProps {
   request: Request;
@@ -113,28 +114,55 @@ export function RequestDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] md:w-full">
         <DialogHeader>
-          <DialogTitle className="text-2xl">
-            {request.name || (Array.isArray(request.fields) && request.fields.length > 0
-              ? request.fields.join("、")
-              : "委托")}
-          </DialogTitle>
-          <DialogDescription>
-            發布時間：{formatDate(request.createdAt)}
-            {request.urgency === "urgent" && (
-              <Badge variant="destructive" className="ml-2">
-                緊急
-              </Badge>
-            )}
-          </DialogDescription>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="text-xl md:text-2xl break-words">
+                <Link 
+                  href={`/volunteer/requests/${request.id}`}
+                  className="hover:underline text-primary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenChange(false);
+                  }}
+                >
+                  {request.name || (Array.isArray(request.fields) && request.fields.length > 0
+                    ? request.fields.join("、")
+                    : "委托")}
+                </Link>
+              </DialogTitle>
+              <DialogDescription className="mt-2 break-words">
+                發布時間：{formatDate(request.createdAt)}
+                {request.urgency === "urgent" && (
+                  <Badge variant="destructive" className="ml-2">
+                    緊急
+                  </Badge>
+                )}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* 查看完整詳情鏈接 */}
+          <div className="pb-2 border-b">
+            <Link 
+              href={`/volunteer/requests/${request.id}`}
+              className="text-sm text-primary hover:underline"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenChange(false);
+              }}
+            >
+              查看完整詳情 →
+            </Link>
+          </div>
+
           {/* 需求描述 */}
           <div>
             <h3 className="font-semibold mb-2">需求描述</h3>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
               {request.description}
             </p>
           </div>
@@ -143,7 +171,7 @@ export function RequestDetailDialog({
           {request.serviceType && (
             <div>
               <h3 className="font-semibold mb-2">服務形式</h3>
-              <p className="text-sm text-muted-foreground">{request.serviceType}</p>
+              <p className="text-sm text-muted-foreground break-words">{request.serviceType}</p>
             </div>
           )}
 
@@ -151,7 +179,7 @@ export function RequestDetailDialog({
           {request.estimatedDuration && (
             <div>
               <h3 className="font-semibold mb-2">預計時長</h3>
-              <p className="text-sm text-muted-foreground">{request.estimatedDuration}</p>
+              <p className="text-sm text-muted-foreground break-words">{request.estimatedDuration}</p>
             </div>
           )}
 
@@ -166,7 +194,7 @@ export function RequestDetailDialog({
                     <Badge
                       key={skill}
                       variant={isMatching ? "default" : "secondary"}
-                      className={isMatching ? "bg-green-600" : ""}
+                      className={`${isMatching ? "bg-green-600" : ""} flex-shrink-0`}
                     >
                       {skill}
                       {isMatching && " ✓"}
@@ -224,7 +252,7 @@ export function RequestDetailDialog({
                       onChange={(e) => setMessage(e.target.value)}
                       placeholder="請輸入您的留言..."
                       rows={4}
-                      className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                     />
                   </div>
 

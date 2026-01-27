@@ -147,10 +147,10 @@ export default function VolunteerDashboardPage() {
                 placeholder="搜尋委托標題或描述..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
+                className="flex-1 min-w-0"
               />
               <Select value={fieldFilter} onValueChange={setFieldFilter}>
-                <SelectTrigger className="w-full md:w-[180px]">
+                <SelectTrigger className="w-full md:w-[180px] flex-shrink-0">
                   <SelectValue placeholder="選擇領域" />
                 </SelectTrigger>
                 <SelectContent>
@@ -161,7 +161,7 @@ export default function VolunteerDashboardPage() {
                 </SelectContent>
               </Select>
               <Select value={urgencyFilter} onValueChange={setUrgencyFilter}>
-                <SelectTrigger className="w-full md:w-[180px]">
+                <SelectTrigger className="w-full md:w-[180px] flex-shrink-0">
                   <SelectValue placeholder="緊急程度" />
                 </SelectTrigger>
                 <SelectContent>
@@ -171,7 +171,7 @@ export default function VolunteerDashboardPage() {
                 </SelectContent>
               </Select>
               <Select value={sortBy} onValueChange={(v) => setSortBy(v as "latest" | "urgent")}>
-                <SelectTrigger className="w-full md:w-[180px]">
+                <SelectTrigger className="w-full md:w-[180px] flex-shrink-0">
                   <SelectValue placeholder="排序方式" />
                 </SelectTrigger>
                 <SelectContent>
@@ -239,35 +239,35 @@ function RequestCard({
   return (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={onClick}>
       <CardHeader>
-        <div className="flex items-start justify-between">
-          <CardTitle className="text-lg line-clamp-2">
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="text-lg line-clamp-2 min-w-0 flex-1">
             {request.name || (Array.isArray(request.fields) && request.fields.length > 0
               ? request.fields.join("、")
               : "委托")}
           </CardTitle>
           {request.urgency === "urgent" && (
-            <Badge variant="destructive">緊急</Badge>
+            <Badge variant="destructive" className="flex-shrink-0">緊急</Badge>
           )}
         </div>
-        <CardDescription>發布時間：{formatDate(request.createdAt)}</CardDescription>
+        <CardDescription className="break-words">發布時間：{formatDate(request.createdAt)}</CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
+        <p className="text-sm text-muted-foreground line-clamp-3 mb-3 break-words">
           {request.description || "無描述"}
         </p>
         <div className="flex flex-wrap gap-2">
           {Array.isArray(request.fields) && request.fields.length > 0 ? (
             request.fields.map((field) => (
-              <Badge key={field} variant="secondary">
+              <Badge key={field} variant="secondary" className="flex-shrink-0">
                 {field}
               </Badge>
             ))
           ) : (
-            <Badge variant="secondary">未分類</Badge>
+            <Badge variant="secondary" className="flex-shrink-0">未分類</Badge>
           )}
         </div>
         {hasMatchingSkills && (
-          <Badge variant="outline" className="mt-2">
+          <Badge variant="outline" className="mt-2 flex-shrink-0">
             匹配您的技能
           </Badge>
         )}
