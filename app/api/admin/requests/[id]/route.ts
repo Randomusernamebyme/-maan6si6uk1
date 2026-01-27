@@ -198,7 +198,7 @@ export async function PATCH(
       const followUpsWithTimestamps = body.followUps.map((followUp: any) => ({
         ...followUp,
         date: followUp.date instanceof Date ? followUp.date : new Date(followUp.date),
-        adminId: admin.uid, // 使用當前管理員 ID
+        adminId: decodedToken.uid, // 使用當前管理員 ID
       }));
       updateData.followUps = followUpsWithTimestamps;
     }
