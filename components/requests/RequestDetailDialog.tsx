@@ -133,9 +133,8 @@ export function RequestDetailDialog({
                 </Link>
               </DialogTitle>
               <DialogDescription className="mt-2 break-words">
-                發布時間：{formatDate(request.createdAt)}
                 {request.urgency === "urgent" && (
-                  <Badge variant="destructive" className="ml-2">
+                  <Badge variant="destructive">
                     緊急
                   </Badge>
                 )}

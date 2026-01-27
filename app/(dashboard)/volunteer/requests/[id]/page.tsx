@@ -204,29 +204,6 @@ export default function VolunteerRequestDetailPage() {
               <p className="text-sm text-muted-foreground">{request.appreciation}</p>
             </div>
           )}
-
-          {/* 時間信息 */}
-          <div>
-            <h3 className="font-semibold mb-2">時間信息</h3>
-            <div className="space-y-1 text-sm">
-              <div>
-                <span className="text-muted-foreground">提交時間：</span>
-                <span>{formatDate(request.createdAt)}</span>
-              </div>
-              {request.matchedAt && (
-                <div>
-                  <span className="text-muted-foreground">配對時間：</span>
-                  <span>{formatDate(request.matchedAt)}</span>
-                </div>
-              )}
-              {request.completedAt && (
-                <div>
-                  <span className="text-muted-foreground">完成時間：</span>
-                  <span>{formatDate(request.completedAt)}</span>
-                </div>
-              )}
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
