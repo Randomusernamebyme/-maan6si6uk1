@@ -362,22 +362,25 @@ export default function AdminRequestsPage() {
                   <div className="col-span-1 flex items-center text-sm font-mono">
                     {request.id.substring(0, 8)}
                   </div>
-                  <div className="col-span-3 flex items-center">
+                  <div className="col-span-3 flex items-center min-w-0">
                     <Link 
                       href={`/admin/requests/${request.id}`}
-                      className="font-medium hover:underline text-primary"
+                      className="font-medium hover:underline text-primary truncate"
+                      title={request.name || request.fields?.join("、") || "未命名委托"}
                     >
                       {request.name || request.fields?.join("、") || "未命名委托"}
                     </Link>
                   </div>
-                  <div className="col-span-2 flex items-center text-sm">
-                    {request.requester?.name || "未知"}
+                  <div className="col-span-2 flex items-center text-sm min-w-0">
+                    <span className="truncate" title={request.requester?.name || "未知"}>
+                      {request.requester?.name || "未知"}
+                    </span>
                   </div>
-                  <div className="col-span-2 flex items-center">
-                    <div className="flex flex-wrap gap-1">
+                  <div className="col-span-2 flex items-center min-w-0">
+                    <div className="flex flex-wrap gap-1 max-w-full">
                       {Array.isArray(request.fields) && request.fields.length > 0 ? (
                         request.fields.map((field) => (
-                          <Badge key={field} variant="secondary" className="text-xs">
+                          <Badge key={field} variant="secondary" className="text-xs flex-shrink-0">
                             {field}
                           </Badge>
                         ))

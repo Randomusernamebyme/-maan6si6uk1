@@ -341,10 +341,10 @@ export default function AdminVolunteersPage() {
                   />
                 </div>
                 <div className="col-span-2">姓名</div>
-                <div className="col-span-2">Email</div>
-                <div className="col-span-2">領域</div>
+                <div className="col-span-3">Email</div>
+                <div className="col-span-3">領域</div>
                 <div className="col-span-2">報名時間</div>
-                <div className="col-span-3">狀態</div>
+                <div className="col-span-1">狀態</div>
               </div>
 
               {/* 表格內容 */}
@@ -361,22 +361,25 @@ export default function AdminVolunteersPage() {
                       className="h-4 w-4"
                     />
                   </div>
-                  <div className="col-span-2 flex items-center">
+                  <div className="col-span-2 flex items-center min-w-0">
                     <Link 
                       href={`/admin/volunteers/${volunteer.uid}`}
-                      className="text-sm font-medium hover:underline text-primary"
+                      className="text-sm font-medium hover:underline text-primary truncate"
+                      title={volunteer.displayName}
                     >
                       {volunteer.displayName}
                     </Link>
                   </div>
-                  <div className="col-span-2 flex items-center text-sm text-muted-foreground">
-                    {volunteer.email}
+                  <div className="col-span-3 flex items-center min-w-0">
+                    <span className="text-sm text-muted-foreground truncate" title={volunteer.email}>
+                      {volunteer.email}
+                    </span>
                   </div>
-                  <div className="col-span-2 flex items-center">
-                    <div className="flex flex-wrap gap-1">
+                  <div className="col-span-3 flex items-center min-w-0">
+                    <div className="flex flex-wrap gap-1 max-w-full">
                       {Array.isArray(volunteer.fields) && volunteer.fields.length > 0 ? (
                         volunteer.fields.map((field) => (
-                          <Badge key={field} variant="secondary" className="text-xs">
+                          <Badge key={field} variant="secondary" className="text-xs flex-shrink-0">
                             {field}
                           </Badge>
                         ))

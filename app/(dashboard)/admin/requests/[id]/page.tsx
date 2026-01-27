@@ -562,11 +562,12 @@ export default function RequestDetailPage() {
                               className="p-3 border rounded-md bg-gray-50 dark:bg-gray-900/20"
                             >
                               <div className="flex items-center justify-between">
-                                <div className="flex-1">
+                                <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
                                     <Link 
                                       href={`/admin/volunteers/${app.volunteerId}`}
-                                      className="font-semibold hover:underline text-primary"
+                                      className="font-semibold hover:underline text-primary truncate"
+                                      title={app.volunteerName}
                                     >
                                       {app.volunteerName}
                                     </Link>
@@ -607,11 +608,12 @@ export default function RequestDetailPage() {
                               className="p-3 border rounded-md"
                             >
                               <div className="flex items-center justify-between">
-                                <div className="flex-1">
+                                <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
                                     <Link 
                                       href={`/admin/volunteers/${app.volunteerId}`}
-                                      className="font-semibold hover:underline text-primary"
+                                      className="font-semibold hover:underline text-primary truncate"
+                                      title={app.volunteerName}
                                     >
                                       {app.volunteerName}
                                     </Link>
@@ -703,11 +705,12 @@ export default function RequestDetailPage() {
                               className="p-3 border rounded-md bg-gray-50 dark:bg-gray-900/20"
                             >
                               <div className="flex items-center justify-between">
-                                <div className="flex-1">
+                                <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
                                     <Link 
                                       href={`/admin/volunteers/${app.volunteerId}`}
-                                      className="font-semibold hover:underline text-primary"
+                                      className="font-semibold hover:underline text-primary truncate"
+                                      title={app.volunteerName}
                                     >
                                       {app.volunteerName}
                                     </Link>

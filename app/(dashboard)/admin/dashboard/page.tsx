@@ -129,10 +129,11 @@ export default function AdminDashboardPage() {
                     key={request.id}
                     className="flex items-center justify-between p-3 border rounded-md hover:bg-muted/30 transition-colors"
                   >
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <Link 
                         href={`/admin/requests/${request.id}`}
-                        className="font-medium hover:underline text-primary"
+                        className="font-medium hover:underline text-primary truncate block"
+                        title={request.name}
                       >
                         {request.name}
                       </Link>

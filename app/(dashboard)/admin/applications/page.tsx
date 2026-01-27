@@ -369,7 +369,6 @@ export default function AdminApplicationsPage() {
                       setSelectedApplications(newSelected);
                     }}
                   />
-                  <span className="text-sm text-muted-foreground">全選此委托</span>
                 </div>
               </div>
             </CardHeader>
@@ -384,10 +383,11 @@ export default function AdminApplicationsPage() {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-4 mb-2">
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <Link 
                             href={`/admin/volunteers/${app.volunteerId}`}
-                            className="font-semibold hover:underline text-primary"
+                            className="font-semibold hover:underline text-primary truncate block"
+                            title={app.volunteerName || "未知義工"}
                           >
                             {app.volunteerName || "未知義工"}
                           </Link>
@@ -405,15 +405,16 @@ export default function AdminApplicationsPage() {
                               ? "destructive"
                               : "secondary"
                           }
+                          className="flex-shrink-0"
                         >
                           {STATUS_LABELS[app.status]}
                         </Badge>
                       </div>
                       {app.message && (
-                        <p className="text-sm text-muted-foreground mt-2">{app.message}</p>
+                        <p className="text-sm text-muted-foreground mt-2 break-words">{app.message}</p>
                       )}
                       {app.availableTime && (
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-sm text-muted-foreground mt-1 break-words">
                           可服務時間：{app.availableTime}
                         </p>
                       )}

@@ -478,22 +478,26 @@ export default function AdminLogsPage() {
                       ? format(log.createdAt, "yyyy年MM月dd日 HH:mm", { locale: zhTW })
                       : "無效日期"}
                   </div>
-                  <div className="col-span-2 flex items-center">
-                    <span className="font-medium">{log.adminName || "未知操作人"}</span>
+                  <div className="col-span-2 flex items-center min-w-0">
+                    <span className="font-medium truncate" title={log.adminName || "未知操作人"}>
+                      {log.adminName || "未知操作人"}
+                    </span>
                   </div>
-                  <div className="col-span-2 flex items-center">
-                    <Badge variant="outline">{ACTION_LABELS[log.action] || log.action}</Badge>
+                  <div className="col-span-2 flex items-center min-w-0">
+                    <Badge variant="outline" className="truncate">
+                      {ACTION_LABELS[log.action] || log.action}
+                    </Badge>
                   </div>
-                  <div className="col-span-1 flex items-center">
-                    <Badge variant="secondary">
+                  <div className="col-span-1 flex items-center min-w-0">
+                    <Badge variant="secondary" className="truncate">
                       {TARGET_TYPE_LABELS[log.targetType] || log.targetType}
                     </Badge>
                   </div>
-                  <div className="col-span-5 flex items-center">
-                    <div className="flex flex-col gap-1">
-                      <div>{formatDescriptionWithBold(log)}</div>
+                  <div className="col-span-5 flex items-center min-w-0">
+                    <div className="flex flex-col gap-1 min-w-0 w-full">
+                      <div className="truncate">{formatDescriptionWithBold(log)}</div>
                       {log.changes && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground truncate">
                           {formatChanges(log.changes)}
                         </span>
                       )}
