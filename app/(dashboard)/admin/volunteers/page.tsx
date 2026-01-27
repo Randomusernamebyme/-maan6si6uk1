@@ -310,13 +310,13 @@ export default function AdminVolunteersPage() {
 
       {/* 狀態分頁 */}
       <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as UserStatus | "all")}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-5 overflow-x-auto">
           {STATUS_TABS.map((status) => {
             const count = status === "all" 
               ? volunteers.length 
               : volunteers.filter((v) => v.status === status).length;
             return (
-              <TabsTrigger key={status} value={status}>
+              <TabsTrigger key={status} value={status} className="whitespace-nowrap">
                 {STATUS_LABELS[status]} ({count})
               </TabsTrigger>
             );
@@ -330,8 +330,8 @@ export default function AdminVolunteersPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {/* 表格標題 */}
-              <div className="grid grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-semibold text-sm">
+              {/* 桌面版表格標題 - 隱藏在小屏幕 */}
+              <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-semibold text-sm">
                 <div className="col-span-1">
                   <input
                     type="checkbox"
@@ -351,60 +351,124 @@ export default function AdminVolunteersPage() {
               {filteredVolunteers.map((volunteer) => (
                 <div
                   key={volunteer.uid}
-                  className="grid grid-cols-12 gap-4 p-4 border rounded-md hover:bg-muted/30 transition-colors"
+                  className="border rounded-md hover:bg-muted/30 transition-colors"
                 >
-                  <div className="col-span-1 flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedVolunteers.has(volunteer.uid)}
-                      onChange={() => toggleSelectVolunteer(volunteer.uid)}
-                      className="h-4 w-4"
-                    />
-                  </div>
-                  <div className="col-span-2 flex items-center min-w-0">
-                    <Link 
-                      href={`/admin/volunteers/${volunteer.uid}`}
-                      className="text-sm font-medium hover:underline text-primary truncate"
-                      title={volunteer.displayName}
-                    >
-                      {volunteer.displayName}
-                    </Link>
-                  </div>
-                  <div className="col-span-3 flex items-center min-w-0">
-                    <span className="text-sm text-muted-foreground truncate" title={volunteer.email}>
-                      {volunteer.email}
-                    </span>
-                  </div>
-                  <div className="col-span-3 flex items-center min-w-0">
-                    <div className="flex flex-wrap gap-1 max-w-full">
-                      {Array.isArray(volunteer.fields) && volunteer.fields.length > 0 ? (
-                        volunteer.fields.map((field) => (
-                          <Badge key={field} variant="secondary" className="text-xs flex-shrink-0">
-                            {field}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-sm text-muted-foreground">無</span>
-                      )}
+                  {/* 桌面版布局 */}
+                  <div className="hidden md:grid grid-cols-12 gap-4 p-4">
+                    <div className="col-span-1 flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedVolunteers.has(volunteer.uid)}
+                        onChange={() => toggleSelectVolunteer(volunteer.uid)}
+                        className="h-4 w-4"
+                      />
+                    </div>
+                    <div className="col-span-2 flex items-center min-w-0">
+                      <Link 
+                        href={`/admin/volunteers/${volunteer.uid}`}
+                        className="text-sm font-medium hover:underline text-primary truncate"
+                        title={volunteer.displayName}
+                      >
+                        {volunteer.displayName}
+                      </Link>
+                    </div>
+                    <div className="col-span-3 flex items-center min-w-0">
+                      <span className="text-sm text-muted-foreground truncate" title={volunteer.email}>
+                        {volunteer.email}
+                      </span>
+                    </div>
+                    <div className="col-span-3 flex items-center min-w-0">
+                      <div className="flex flex-wrap gap-1 max-w-full">
+                        {Array.isArray(volunteer.fields) && volunteer.fields.length > 0 ? (
+                          volunteer.fields.map((field) => (
+                            <Badge key={field} variant="secondary" className="text-xs flex-shrink-0">
+                              {field}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-sm text-muted-foreground">無</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-span-2 flex items-center text-sm text-muted-foreground">
+                      {formatDate(volunteer.createdAt)}
+                    </div>
+                    <div className="col-span-1 flex items-center">
+                      <Badge
+                        variant={
+                          volunteer.status === "pending"
+                            ? "outline"
+                            : volunteer.status === "approved"
+                            ? "default"
+                            : volunteer.status === "rejected"
+                            ? "destructive"
+                            : "secondary"
+                        }
+                      >
+                        {STATUS_LABELS[volunteer.status]}
+                      </Badge>
                     </div>
                   </div>
-                  <div className="col-span-2 flex items-center text-sm text-muted-foreground">
-                    {formatDate(volunteer.createdAt)}
-                  </div>
-                  <div className="col-span-1 flex items-center">
-                    <Badge
-                      variant={
-                        volunteer.status === "pending"
-                          ? "outline"
-                          : volunteer.status === "approved"
-                          ? "default"
-                          : volunteer.status === "rejected"
-                          ? "destructive"
-                          : "secondary"
-                      }
-                    >
-                      {STATUS_LABELS[volunteer.status]}
-                    </Badge>
+
+                  {/* 移動版卡片布局 */}
+                  <div className="md:hidden p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={selectedVolunteers.has(volunteer.uid)}
+                          onChange={() => toggleSelectVolunteer(volunteer.uid)}
+                          className="h-4 w-4 flex-shrink-0"
+                        />
+                        <Link 
+                          href={`/admin/volunteers/${volunteer.uid}`}
+                          className="text-sm font-medium hover:underline text-primary truncate"
+                          title={volunteer.displayName}
+                        >
+                          {volunteer.displayName}
+                        </Link>
+                      </div>
+                      <Badge
+                        variant={
+                          volunteer.status === "pending"
+                            ? "outline"
+                            : volunteer.status === "approved"
+                            ? "default"
+                            : volunteer.status === "rejected"
+                            ? "destructive"
+                            : "secondary"
+                        }
+                        className="flex-shrink-0"
+                      >
+                        {STATUS_LABELS[volunteer.status]}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Email：</span>
+                        <span className="truncate block" title={volunteer.email}>
+                          {volunteer.email}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">領域：</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {Array.isArray(volunteer.fields) && volunteer.fields.length > 0 ? (
+                            volunteer.fields.map((field) => (
+                              <Badge key={field} variant="secondary" className="text-xs">
+                                {field}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-xs text-muted-foreground">無</span>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">報名時間：</span>
+                        <span>{formatDate(volunteer.createdAt)}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}

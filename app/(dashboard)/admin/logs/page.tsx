@@ -458,8 +458,8 @@ export default function AdminLogsPage() {
             <div className="text-center py-8 text-muted-foreground">沒有符合條件的日誌記錄</div>
           ) : (
             <div className="space-y-4">
-              {/* 表格標題 */}
-              <div className="grid grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-semibold text-sm">
+              {/* 桌面版表格標題 - 隱藏在小屏幕 */}
+              <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-semibold text-sm">
                 <div className="col-span-2">操作時間</div>
                 <div className="col-span-2">操作人</div>
                 <div className="col-span-2">操作類型</div>
@@ -471,35 +471,70 @@ export default function AdminLogsPage() {
               {paginatedLogs.map((log) => (
                 <div
                   key={log.id}
-                  className="grid grid-cols-12 gap-4 p-4 border rounded-md hover:bg-muted/30 transition-colors text-sm"
+                  className="border rounded-md hover:bg-muted/30 transition-colors text-sm"
                 >
-                  <div className="col-span-2 flex items-center text-muted-foreground">
-                    {log.createdAt && log.createdAt instanceof Date && !isNaN(log.createdAt.getTime())
-                      ? format(log.createdAt, "yyyy年MM月dd日 HH:mm", { locale: zhTW })
-                      : "無效日期"}
+                  {/* 桌面版布局 */}
+                  <div className="hidden md:grid grid-cols-12 gap-4 p-4">
+                    <div className="col-span-2 flex items-center text-muted-foreground">
+                      {log.createdAt && log.createdAt instanceof Date && !isNaN(log.createdAt.getTime())
+                        ? format(log.createdAt, "yyyy年MM月dd日 HH:mm", { locale: zhTW })
+                        : "無效日期"}
+                    </div>
+                    <div className="col-span-2 flex items-center min-w-0">
+                      <span className="font-medium truncate" title={log.adminName || "未知操作人"}>
+                        {log.adminName || "未知操作人"}
+                      </span>
+                    </div>
+                    <div className="col-span-2 flex items-center min-w-0">
+                      <Badge variant="outline" className="truncate">
+                        {ACTION_LABELS[log.action] || log.action}
+                      </Badge>
+                    </div>
+                    <div className="col-span-1 flex items-center min-w-0">
+                      <Badge variant="secondary" className="truncate">
+                        {TARGET_TYPE_LABELS[log.targetType] || log.targetType}
+                      </Badge>
+                    </div>
+                    <div className="col-span-5 flex items-center min-w-0">
+                      <div className="flex flex-col gap-1 min-w-0 w-full">
+                        <div className="truncate">{formatDescriptionWithBold(log)}</div>
+                        {log.changes && (
+                          <span className="text-xs text-muted-foreground truncate">
+                            {formatChanges(log.changes)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="col-span-2 flex items-center min-w-0">
-                    <span className="font-medium truncate" title={log.adminName || "未知操作人"}>
-                      {log.adminName || "未知操作人"}
-                    </span>
-                  </div>
-                  <div className="col-span-2 flex items-center min-w-0">
-                    <Badge variant="outline" className="truncate">
-                      {ACTION_LABELS[log.action] || log.action}
-                    </Badge>
-                  </div>
-                  <div className="col-span-1 flex items-center min-w-0">
-                    <Badge variant="secondary" className="truncate">
-                      {TARGET_TYPE_LABELS[log.targetType] || log.targetType}
-                    </Badge>
-                  </div>
-                  <div className="col-span-5 flex items-center min-w-0">
-                    <div className="flex flex-col gap-1 min-w-0 w-full">
-                      <div className="truncate">{formatDescriptionWithBold(log)}</div>
+
+                  {/* 移動版卡片布局 */}
+                  <div className="md:hidden p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-muted-foreground mb-1">
+                          {log.createdAt && log.createdAt instanceof Date && !isNaN(log.createdAt.getTime())
+                            ? format(log.createdAt, "yyyy年MM月dd日 HH:mm", { locale: zhTW })
+                            : "無效日期"}
+                        </div>
+                        <div className="font-medium truncate" title={log.adminName || "未知操作人"}>
+                          {log.adminName || "未知操作人"}
+                        </div>
+                      </div>
+                      <div className="flex gap-1 flex-shrink-0">
+                        <Badge variant="outline" className="text-xs">
+                          {ACTION_LABELS[log.action] || log.action}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          {TARGET_TYPE_LABELS[log.targetType] || log.targetType}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="break-words">{formatDescriptionWithBold(log)}</div>
                       {log.changes && (
-                        <span className="text-xs text-muted-foreground truncate">
+                        <div className="text-xs text-muted-foreground break-words">
                           {formatChanges(log.changes)}
-                        </span>
+                        </div>
                       )}
                     </div>
                   </div>

@@ -327,8 +327,8 @@ export default function AdminRequestsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {/* 表格標題 */}
-              <div className="grid grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-semibold text-sm">
+              {/* 桌面版表格標題 - 隱藏在小屏幕 */}
+              <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-semibold text-sm">
                 <div className="col-span-1">
                   <input
                     type="checkbox"
@@ -349,63 +349,131 @@ export default function AdminRequestsPage() {
               {filteredRequests.map((request) => (
                 <div
                   key={request.id}
-                  className="grid grid-cols-12 gap-4 p-4 border rounded-md hover:bg-muted/30 transition-colors"
+                  className="border rounded-md hover:bg-muted/30 transition-colors"
                 >
-                  <div className="col-span-1 flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedRequests.has(request.id)}
-                      onChange={() => toggleSelect(request.id)}
-                      className="h-4 w-4"
-                    />
-                  </div>
-                  <div className="col-span-1 flex items-center text-sm font-mono">
-                    {request.id.substring(0, 8)}
-                  </div>
-                  <div className="col-span-3 flex items-center min-w-0">
-                    <Link 
-                      href={`/admin/requests/${request.id}`}
-                      className="font-medium hover:underline text-primary truncate"
-                      title={request.name || request.fields?.join("、") || "未命名委托"}
-                    >
-                      {request.name || request.fields?.join("、") || "未命名委托"}
-                    </Link>
-                  </div>
-                  <div className="col-span-2 flex items-center text-sm min-w-0">
-                    <span className="truncate" title={request.requester?.name || "未知"}>
-                      {request.requester?.name || "未知"}
-                    </span>
-                  </div>
-                  <div className="col-span-2 flex items-center min-w-0">
-                    <div className="flex flex-wrap gap-1 max-w-full">
-                      {Array.isArray(request.fields) && request.fields.length > 0 ? (
-                        request.fields.map((field) => (
-                          <Badge key={field} variant="secondary" className="text-xs flex-shrink-0">
-                            {field}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-xs text-muted-foreground">無</span>
-                      )}
+                  {/* 桌面版布局 */}
+                  <div className="hidden md:grid grid-cols-12 gap-4 p-4">
+                    <div className="col-span-1 flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedRequests.has(request.id)}
+                        onChange={() => toggleSelect(request.id)}
+                        className="h-4 w-4"
+                      />
+                    </div>
+                    <div className="col-span-1 flex items-center text-sm font-mono">
+                      {request.id.substring(0, 8)}
+                    </div>
+                    <div className="col-span-3 flex items-center min-w-0">
+                      <Link 
+                        href={`/admin/requests/${request.id}`}
+                        className="font-medium hover:underline text-primary truncate"
+                        title={request.name || request.fields?.join("、") || "未命名委托"}
+                      >
+                        {request.name || request.fields?.join("、") || "未命名委托"}
+                      </Link>
+                    </div>
+                    <div className="col-span-2 flex items-center text-sm min-w-0">
+                      <span className="truncate" title={request.requester?.name || "未知"}>
+                        {request.requester?.name || "未知"}
+                      </span>
+                    </div>
+                    <div className="col-span-2 flex items-center min-w-0">
+                      <div className="flex flex-wrap gap-1 max-w-full">
+                        {Array.isArray(request.fields) && request.fields.length > 0 ? (
+                          request.fields.map((field) => (
+                            <Badge key={field} variant="secondary" className="text-xs flex-shrink-0">
+                              {field}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground">無</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-span-2 flex items-center text-sm text-muted-foreground">
+                      {formatDate(request.createdAt)}
+                    </div>
+                    <div className="col-span-1 flex items-center">
+                      <Badge
+                        variant={
+                          request.status === "pending"
+                            ? "outline"
+                            : request.status === "completed"
+                            ? "secondary"
+                            : request.status === "cancelled"
+                            ? "destructive"
+                            : "default"
+                        }
+                      >
+                        {STATUS_LABELS[request.status]}
+                      </Badge>
                     </div>
                   </div>
-                  <div className="col-span-2 flex items-center text-sm text-muted-foreground">
-                    {formatDate(request.createdAt)}
-                  </div>
-                  <div className="col-span-1 flex items-center">
-                    <Badge
-                      variant={
-                        request.status === "pending"
-                          ? "outline"
-                          : request.status === "completed"
-                          ? "secondary"
-                          : request.status === "cancelled"
-                          ? "destructive"
-                          : "default"
-                      }
-                    >
-                      {STATUS_LABELS[request.status]}
-                    </Badge>
+
+                  {/* 移動版卡片布局 */}
+                  <div className="md:hidden p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={selectedRequests.has(request.id)}
+                          onChange={() => toggleSelect(request.id)}
+                          className="h-4 w-4 flex-shrink-0"
+                        />
+                        <Link 
+                          href={`/admin/requests/${request.id}`}
+                          className="font-medium hover:underline text-primary truncate"
+                          title={request.name || request.fields?.join("、") || "未命名委托"}
+                        >
+                          {request.name || request.fields?.join("、") || "未命名委托"}
+                        </Link>
+                      </div>
+                      <Badge
+                        variant={
+                          request.status === "pending"
+                            ? "outline"
+                            : request.status === "completed"
+                            ? "secondary"
+                            : request.status === "cancelled"
+                            ? "destructive"
+                            : "default"
+                        }
+                        className="flex-shrink-0"
+                      >
+                        {STATUS_LABELS[request.status]}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">編號：</span>
+                        <span className="font-mono">{request.id.substring(0, 8)}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">委托者：</span>
+                        <span className="truncate block" title={request.requester?.name || "未知"}>
+                          {request.requester?.name || "未知"}
+                        </span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">領域：</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {Array.isArray(request.fields) && request.fields.length > 0 ? (
+                            request.fields.map((field) => (
+                              <Badge key={field} variant="secondary" className="text-xs">
+                                {field}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-xs text-muted-foreground">無</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">提交時間：</span>
+                        <span>{formatDate(request.createdAt)}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
