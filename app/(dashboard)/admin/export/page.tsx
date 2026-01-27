@@ -339,58 +339,6 @@ export default function AdminExportPage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* 快速操作 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>快速匯出</CardTitle>
-          <CardDescription>一鍵匯出常用數據</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Button
-            variant="outline"
-            onClick={async () => {
-              setExportType("requests");
-              setStatusFilter("pending");
-              setStartDate("");
-              setEndDate("");
-              await new Promise(resolve => setTimeout(resolve, 100));
-              handleExportCSV();
-            }}
-            disabled={loading}
-          >
-            匯出待審核委托
-          </Button>
-          <Button
-            variant="outline"
-            onClick={async () => {
-              setExportType("volunteers");
-              setStatusFilter("approved");
-              setStartDate("");
-              setEndDate("");
-              await new Promise(resolve => setTimeout(resolve, 100));
-              handleExportCSV();
-            }}
-            disabled={loading}
-          >
-            匯出已批准義工
-          </Button>
-          <Button
-            variant="outline"
-            onClick={async () => {
-              setExportType("applications");
-              setStatusFilter("pending");
-              setStartDate("");
-              setEndDate("");
-              await new Promise(resolve => setTimeout(resolve, 100));
-              handleExportCSV();
-            }}
-            disabled={loading}
-          >
-            匯出待處理報名
-          </Button>
-        </CardContent>
-      </Card>
     </div>
   );
 }
