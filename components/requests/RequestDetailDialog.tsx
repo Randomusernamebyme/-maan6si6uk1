@@ -145,20 +145,6 @@ export function RequestDetailDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* 查看完整詳情鏈接 */}
-          <div className="pb-2 border-b">
-            <Link 
-              href={`/volunteer/requests/${request.id}`}
-              className="text-sm text-primary hover:underline"
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenChange(false);
-              }}
-            >
-              查看完整詳情 →
-            </Link>
-          </div>
-
           {/* 需求描述 */}
           <div>
             <h3 className="font-semibold mb-2">需求描述</h3>
