@@ -345,13 +345,14 @@ export default function AdminApplicationsPage() {
           <Card key={requestId}>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>{apps[0]?.requestTitle || "未知委托"}</CardTitle>
-                  <CardDescription>
+                <div className="flex-1">
+                  <Button asChild variant="ghost" className="p-0 h-auto font-semibold text-lg hover:underline">
+                    <Link href={`/admin/requests/${requestId}`}>
+                      <CardTitle className="inline">{apps[0]?.requestTitle || "未知委托"}</CardTitle>
+                    </Link>
+                  </Button>
+                  <CardDescription className="mt-1">
                     委托 ID: {requestId.substring(0, 8)}
-                    <Button asChild variant="link" className="p-0 h-auto ml-2">
-                      <Link href={`/admin/requests/${requestId}`}>查看委托詳情</Link>
-                    </Button>
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
@@ -381,12 +382,6 @@ export default function AdminApplicationsPage() {
                       highlightApplicationId === app.id ? "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20" : ""
                     }`}
                   >
-                    <div className="pt-1">
-                      <Checkbox
-                        checked={selectedApplications.has(app.id)}
-                        onCheckedChange={() => toggleSelectApplication(app.id)}
-                      />
-                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-4 mb-2">
                         <div>
