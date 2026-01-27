@@ -377,16 +377,18 @@ export default function AdminApplicationsPage() {
                 {apps.map((app) => (
                   <div
                     key={app.id}
-                    className={`flex items-center gap-4 p-4 border rounded-md ${
+                    className={`flex items-start gap-3 p-4 border rounded-md ${
                       highlightApplicationId === app.id ? "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20" : ""
                     }`}
                   >
-                    <Checkbox
-                      checked={selectedApplications.has(app.id)}
-                      onCheckedChange={() => toggleSelectApplication(app.id)}
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-4">
+                    <div className="pt-1">
+                      <Checkbox
+                        checked={selectedApplications.has(app.id)}
+                        onCheckedChange={() => toggleSelectApplication(app.id)}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-4 mb-2">
                         <div>
                           <p className="font-semibold">{app.volunteerName || "未知義工"}</p>
                           <p className="text-sm text-muted-foreground">
@@ -416,7 +418,7 @@ export default function AdminApplicationsPage() {
                         </p>
                       )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-shrink-0">
                       <Button asChild variant="outline" size="sm">
                         <Link href={`/admin/volunteers/${app.volunteerId}`}>查看義工資料</Link>
                       </Button>
