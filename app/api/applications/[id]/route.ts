@@ -210,6 +210,47 @@ export async function PATCH(
           },
           createdAt: new Date(),
         });
+
+        // 創建通知給義工
+        try {
+          if (newStatus === "approved") {
+            await adminDb.collection("notifications").add({
+              userId: oldData?.volunteerId,
+              title: "報名已選中",
+              message: `您的報名「${requestName}」已被選中！`,
+              type: "success",
+              relatedRequestId: oldData?.requestId,
+              relatedApplicationId: params.id,
+              read: false,
+              createdAt: new Date(),
+            });
+          } else if (newStatus === "rejected") {
+            await adminDb.collection("notifications").add({
+              userId: oldData?.volunteerId,
+              title: "報名未選中",
+              message: `很抱歉，您的報名「${requestName}」未被選中。`,
+              type: "warning",
+              relatedRequestId: oldData?.requestId,
+              relatedApplicationId: params.id,
+              read: false,
+              createdAt: new Date(),
+            });
+          } else if (newStatus === "completed") {
+            await adminDb.collection("notifications").add({
+              userId: oldData?.volunteerId,
+              title: "委托已完成",
+              message: `委托「${requestName}」已完成！感謝您的付出。`,
+              type: "success",
+              relatedRequestId: oldData?.requestId,
+              relatedApplicationId: params.id,
+              read: false,
+              createdAt: new Date(),
+            });
+          }
+        } catch (notifError) {
+          console.error("Error creating notification:", notifError);
+          // 不影響主要操作
+        }
       } catch (logError) {
         console.error("Error creating activity log:", logError);
         // 不影響主要操作

@@ -123,6 +123,41 @@ export async function PATCH(
           },
           createdAt: new Date(),
         });
+        
+        // 創建通知給義工（狀態變更）
+        try {
+          if (body.status === "approved") {
+            await adminDb.collection("notifications").add({
+              userId: params.id,
+              title: "註冊已批准",
+              message: `恭喜！您的義工註冊申請已獲批准，現在可以開始報名委托了！`,
+              type: "success",
+              read: false,
+              createdAt: new Date(),
+            });
+          } else if (body.status === "rejected") {
+            await adminDb.collection("notifications").add({
+              userId: params.id,
+              title: "註冊未獲批准",
+              message: `很抱歉，您的義工註冊申請未獲批准。如有疑問，請聯繫管理員。`,
+              type: "warning",
+              read: false,
+              createdAt: new Date(),
+            });
+          } else if (body.status === "suspended") {
+            await adminDb.collection("notifications").add({
+              userId: params.id,
+              title: "帳號已暫停",
+              message: `您的義工帳號已被暫停。如有疑問，請聯繫管理員。`,
+              type: "error",
+              read: false,
+              createdAt: new Date(),
+            });
+          }
+        } catch (notifError) {
+          console.error("Error creating notification:", notifError);
+          // 不影響主要操作
+        }
       } catch (logError) {
         console.error("Error creating activity log:", logError);
         // 不影響主要操作

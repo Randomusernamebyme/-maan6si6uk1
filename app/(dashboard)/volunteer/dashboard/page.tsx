@@ -3,6 +3,7 @@
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useRequests } from "@/lib/hooks/useRequests";
 import { useApplications } from "@/lib/hooks/useApplications";
+import { useNotifications } from "@/lib/hooks/useNotifications";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,18 +81,17 @@ export default function VolunteerDashboardPage() {
 
   // 統計數據
   const { applications } = useApplications(user?.uid);
+  const { unreadCount } = useNotifications({ read: false });
   const stats = useMemo(() => {
     const applicationsCount = applications.length;
     const completedCount = applications.filter((app) => app.status === "completed").length;
-    // TODO: 獲取未讀通知數量
-    const unreadNotifications = 0;
     
     return {
       applicationsCount,
       completedCount,
-      unreadNotifications,
+      unreadNotifications: unreadCount,
     };
-  }, [applications]);
+  }, [applications, unreadCount]);
 
   if (loading) {
     return (

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { useNotifications } from "@/lib/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -9,10 +10,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, Bell } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export function Header() {
   const { user, logout, loading } = useAuth();
+  const { unreadCount } = useNotifications({ read: false });
 
   const handleLogout = async () => {
     try {
@@ -48,7 +51,23 @@ export function Header() {
           {loading ? (
             <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
           ) : user ? (
-            <DropdownMenu>
+            <>
+              {user.role === "volunteer" && (
+                <Button asChild variant="ghost" size="icon" className="relative">
+                  <Link href="/volunteer/notifications">
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                      >
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </Badge>
+                    )}
+                  </Link>
+                </Button>
+              )}
+              <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-2">
                   <User className="h-4 w-4" />
@@ -71,6 +90,7 @@ export function Header() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </>
           ) : (
             <div className="flex items-center gap-2">
               <Button asChild variant="ghost" size="sm">

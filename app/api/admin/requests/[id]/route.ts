@@ -147,6 +147,50 @@ export async function PATCH(
       } else if (body.status === "published" && oldStatus !== "published") {
         // 變為已發布
         updateData.publishedAt = now;
+        
+        // 當委托發布時，通知所有已批准的義工
+        try {
+          const requestName = requestDoc.data()?.name || "未知委托";
+          const requestFields = requestDoc.data()?.fields || [];
+          
+          // 獲取所有已批准的義工
+          const volunteersSnapshot = await adminDb
+            .collection("users")
+            .where("role", "==", "volunteer")
+            .where("status", "==", "approved")
+            .get();
+          
+          // 批量創建通知
+          const batch = adminDb.batch();
+          volunteersSnapshot.docs.forEach((volunteerDoc) => {
+            const volunteerData = volunteerDoc.data();
+            const volunteerFields = volunteerData.fields || [];
+            
+            // 檢查義工的服務範疇是否與委托匹配
+            const hasMatchingField = requestFields.some((field: string) => 
+              volunteerFields.includes(field)
+            );
+            
+            // 如果義工的服務範疇與委托匹配，或者委托沒有指定範疇，則發送通知
+            if (hasMatchingField || requestFields.length === 0) {
+              const notificationRef = adminDb.collection("notifications").doc();
+              batch.set(notificationRef, {
+                userId: volunteerDoc.id,
+                title: "新委托發布",
+                message: `新的委托「${requestName}」已發布，符合您的服務範疇！`,
+                type: "info",
+                relatedRequestId: requestId,
+                read: false,
+                createdAt: now,
+              });
+            }
+          });
+          
+          await batch.commit();
+        } catch (notifError) {
+          console.error("Error creating notifications for published request:", notifError);
+          // 不影響主要操作
+        }
       } else if (body.status === "matched") {
         updateData.matchedAt = now;
       } else if (body.status === "in-progress" && oldStatus !== "in-progress") {
@@ -198,6 +242,23 @@ export async function PATCH(
               },
               createdAt: completedAt,
             });
+            
+            // 創建通知給義工（委托已完成）
+            try {
+              await adminDb.collection("notifications").add({
+                userId: appData.volunteerId,
+                title: "委托已完成",
+                message: `委托「${requestName}」已完成！感謝您的付出。`,
+                type: "success",
+                relatedRequestId: requestId,
+                relatedApplicationId: appDoc.id,
+                read: false,
+                createdAt: completedAt,
+              });
+            } catch (notifError) {
+              console.error("Error creating notification:", notifError);
+              // 不影響主要操作
+            }
           } catch (logError) {
             console.error("Error creating activity log for application:", logError);
             // 不影響主要操作
