@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Link from "next/link";
 
 export default function ApplicationsPage() {
   const { user } = useAuth();
@@ -205,7 +206,12 @@ function ApplicationItem({
         <CardHeader>
           <div className="flex items-start justify-between">
             <CardTitle className="text-lg">
-              {request.name || request.fields.join("、")}
+              <Link 
+                href={`/volunteer/requests/${request.id}`}
+                className="hover:underline text-primary"
+              >
+                {request.name || request.fields.join("、")}
+              </Link>
             </CardTitle>
             <Badge variant={statusVariants[application.status] || "outline"}>
               {statusLabels[application.status] || application.status}
