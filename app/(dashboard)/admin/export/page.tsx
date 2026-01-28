@@ -218,89 +218,127 @@ export default function AdminExportPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>匯出設置</CardTitle>
-          <CardDescription>選擇要匯出的數據類型和篩選條件</CardDescription>
+          <CardTitle>依條件匯出</CardTitle>
+          <CardDescription>
+            先選擇要匯出的資料種類，再設定狀態與日期範圍，系統會按照這些條件產生匯出檔案
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* 數據類型 */}
-          <div className="space-y-2">
-            <Label>數據類型</Label>
-            <Select value={exportType} onValueChange={(v) => setExportType(v as ExportType)}>
-              <SelectTrigger>
-                <SelectValue placeholder="選擇數據類型" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="requests">委托列表</SelectItem>
-                <SelectItem value="volunteers">義工列表</SelectItem>
-                <SelectItem value="applications">報名記錄</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* 狀態篩選 */}
-          <div className="space-y-2">
-            <Label>狀態篩選</Label>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="選擇狀態" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">所有狀態</SelectItem>
-                {exportType === "requests" && (
-                  <>
-                    <SelectItem value="pending">待審核</SelectItem>
-                    <SelectItem value="open">已批准</SelectItem>
-                    <SelectItem value="published">已發布</SelectItem>
-                    <SelectItem value="matched">已配對</SelectItem>
-                    <SelectItem value="in-progress">進行中</SelectItem>
-                    <SelectItem value="completed">已完成</SelectItem>
-                    <SelectItem value="cancelled">已取消</SelectItem>
-                  </>
-                )}
-                {exportType === "volunteers" && (
-                  <>
-                    <SelectItem value="pending">待審核</SelectItem>
-                    <SelectItem value="approved">已批准</SelectItem>
-                    <SelectItem value="rejected">已拒絕</SelectItem>
-                    <SelectItem value="suspended">已暫停</SelectItem>
-                  </>
-                )}
-                {exportType === "applications" && (
-                  <>
-                    <SelectItem value="pending">待處理</SelectItem>
-                    <SelectItem value="approved">已選中</SelectItem>
-                    <SelectItem value="rejected">未選中</SelectItem>
-                    <SelectItem value="completed">已完成</SelectItem>
-                  </>
-                )}
-              </SelectContent>
-            </Select>
+          {/* 數據類型與狀態 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>資料類型</Label>
+              <Select value={exportType} onValueChange={(v) => setExportType(v as ExportType)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="選擇資料類型" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="requests">委托列表</SelectItem>
+                  <SelectItem value="volunteers">義工列表</SelectItem>
+                  <SelectItem value="applications">報名記錄</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>狀態條件</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="選擇狀態" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">所有狀態</SelectItem>
+                  {exportType === "requests" && (
+                    <>
+                      <SelectItem value="pending">待審核</SelectItem>
+                      <SelectItem value="open">已批准</SelectItem>
+                      <SelectItem value="published">已發布</SelectItem>
+                      <SelectItem value="matched">已配對</SelectItem>
+                      <SelectItem value="in-progress">進行中</SelectItem>
+                      <SelectItem value="completed">已完成</SelectItem>
+                      <SelectItem value="cancelled">已取消</SelectItem>
+                    </>
+                  )}
+                  {exportType === "volunteers" && (
+                    <>
+                      <SelectItem value="pending">待審核</SelectItem>
+                      <SelectItem value="approved">已批准</SelectItem>
+                      <SelectItem value="rejected">已拒絕</SelectItem>
+                      <SelectItem value="suspended">已暫停</SelectItem>
+                    </>
+                  )}
+                  {exportType === "applications" && (
+                    <>
+                      <SelectItem value="pending">待處理</SelectItem>
+                      <SelectItem value="approved">已選中</SelectItem>
+                      <SelectItem value="rejected">未選中</SelectItem>
+                      <SelectItem value="completed">已完成</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* 日期範圍 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>開始日期</Label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>結束日期</Label>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+          <div className="space-y-2">
+            <Label>日期範圍（依建立時間）</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">從這一天（含當日）之後建立的資料</p>
+              </div>
+              <div className="space-y-1">
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">到這一天（含當日）之前建立的資料</p>
+              </div>
             </div>
           </div>
 
           {/* 預覽統計 */}
           {previewCount > 0 && (
             <div className="rounded-md bg-muted p-4 text-sm">
-              <p className="font-semibold">將匯出 {previewCount} 條記錄</p>
+              <p className="font-semibold">
+                目前條件：{exportType === "requests" ? "委托" : exportType === "volunteers" ? "義工" : "報名"}，
+                狀態「
+                {statusFilter === "all"
+                  ? "所有狀態"
+                  : statusFilter === "pending"
+                  ? exportType === "applications"
+                    ? "待處理"
+                    : "待審核"
+                  : statusFilter === "approved"
+                  ? exportType === "applications"
+                    ? "已選中"
+                    : "已批准"
+                  : statusFilter === "rejected"
+                  ? exportType === "applications"
+                    ? "未選中"
+                    : "已拒絕"
+                  : statusFilter === "suspended"
+                  ? "已暫停"
+                  : statusFilter === "open"
+                  ? "已批准"
+                  : statusFilter === "published"
+                  ? "已發布"
+                  : statusFilter === "matched"
+                  ? "已配對"
+                  : statusFilter === "in-progress"
+                  ? "進行中"
+                  : statusFilter === "completed"
+                  ? "已完成"
+                  : statusFilter === "cancelled"
+                  ? "已取消"
+                  : statusFilter}
+                」；將匯出 {previewCount} 條記錄
+              </p>
             </div>
           )}
 

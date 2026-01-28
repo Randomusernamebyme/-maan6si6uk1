@@ -19,6 +19,8 @@ import {
 import { format } from "date-fns";
 import { zhTW } from "date-fns/locale";
 import { getAuthToken } from "@/lib/utils/auth";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 const ACTION_LABELS: Record<string, string> = {
@@ -226,20 +228,56 @@ function formatChanges(changes: any): string {
 }
 
 export default function AdminLogsPage() {
+  const { user } = useAuth();
+  const currentAdminId = user?.uid;
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [logs, setLogs] = useState<(ActivityLog & { adminName?: string; changes?: any })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   // 篩選狀態
-  const [actionFilter, setActionFilter] = useState<string>("all");
-  const [targetTypeFilter, setTargetTypeFilter] = useState<string>("all");
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [actionFilter, setActionFilter] = useState<string>(searchParams.get("action") || "all");
+  const [targetTypeFilter, setTargetTypeFilter] = useState<string>(
+    searchParams.get("targetType") || "all"
+  );
+  const [startDate, setStartDate] = useState<string>(searchParams.get("startDate") || "");
+  const [endDate, setEndDate] = useState<string>(searchParams.get("endDate") || "");
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+  const [onlySelf, setOnlySelf] = useState<boolean>(searchParams.get("onlySelf") === "1");
   
   // 分頁狀態
-  const [currentPage, setCurrentPage] = useState(1);
+  const initialPage = Number(searchParams.get("page") || "1");
+  const [currentPage, setCurrentPage] = useState(Math.max(1, initialPage));
   const logsPerPage = 15;
+
+  // 將當前篩選條件同步到 URL（使用 query string）
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (actionFilter !== "all") params.set("action", actionFilter);
+    if (targetTypeFilter !== "all") params.set("targetType", targetTypeFilter);
+    if (startDate) params.set("startDate", startDate);
+    if (endDate) params.set("endDate", endDate);
+    if (searchQuery) params.set("q", searchQuery);
+    if (onlySelf) params.set("onlySelf", "1");
+    if (currentPage > 1) params.set("page", String(currentPage));
+
+    const queryString = params.toString();
+    router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+  }, [
+    actionFilter,
+    targetTypeFilter,
+    startDate,
+    endDate,
+    searchQuery,
+    onlySelf,
+    currentPage,
+    pathname,
+    router,
+  ]);
 
   const fetchLogs = useCallback(async () => {
     try {
@@ -305,8 +343,13 @@ export default function AdminLogsPage() {
       );
     }
 
+    // 只看自己的操作
+    if (onlySelf && currentAdminId) {
+      filtered = filtered.filter((log) => log.userId === currentAdminId);
+    }
+
     return filtered;
-  }, [logs, searchQuery]);
+  }, [logs, searchQuery, onlySelf, currentAdminId]);
 
   // 分頁計算
   const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
@@ -317,7 +360,7 @@ export default function AdminLogsPage() {
   // 當篩選條件改變時，重置到第一頁
   useEffect(() => {
     setCurrentPage(1);
-  }, [actionFilter, targetTypeFilter, startDate, endDate, searchQuery]);
+  }, [actionFilter, targetTypeFilter, startDate, endDate, searchQuery, onlySelf]);
 
   // 獲取所有唯一的操作類型
   const uniqueActions = useMemo(() => {
@@ -358,7 +401,7 @@ export default function AdminLogsPage() {
       <Card>
         <CardHeader>
           <CardTitle>篩選條件</CardTitle>
-          <CardDescription>根據操作類型、目標類型和日期範圍篩選日誌</CardDescription>
+          <CardDescription>根據操作類型、目標類型、日期範圍或操作人篩選日誌</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -429,13 +472,27 @@ export default function AdminLogsPage() {
             />
           </div>
 
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleReset}>
-              重置篩選
-            </Button>
-            <p className="text-sm text-muted-foreground flex items-center">
-              篩選條件會自動套用
-            </p>
+          <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
+            <div className="flex items-center gap-2">
+              <input
+                id="only-self"
+                type="checkbox"
+                className="h-4 w-4 rounded border-muted-foreground"
+                checked={onlySelf}
+                onChange={(e) => setOnlySelf(e.target.checked)}
+              />
+              <Label htmlFor="only-self" className="cursor-pointer">
+                只看我自己的操作
+              </Label>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleReset}>
+                重置篩選
+              </Button>
+              <p className="text-sm text-muted-foreground flex items-center">
+                篩選條件會自動套用，並保留在網址列中
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

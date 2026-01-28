@@ -4,6 +4,7 @@ import React from "react";
 import { HeroSection } from "@/components/home/HeroSection";
 import { ServicesSection } from "@/components/home/ServicesSection";
 import { StatsSection } from "@/components/home/StatsSection";
+import { RecentCompletedRequestsSection } from "@/components/home/RecentCompletedRequestsSection";
 import { CTASection } from "@/components/home/CTASection";
 
 export default function Home() {
@@ -13,6 +14,7 @@ export default function Home() {
       <HeroSection />
       <ServicesSection />
       <StatsSection />
+      <RecentCompletedRequestsSection />
       <CTASection />
     </main>
   );
