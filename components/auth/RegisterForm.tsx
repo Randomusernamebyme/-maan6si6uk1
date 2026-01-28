@@ -285,19 +285,32 @@ export function RegisterForm() {
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary/50"
               }`}
-              onClick={() => toggleField(field)}
+              onClick={(e) => {
+                e.preventDefault();
+                toggleField(field);
+              }}
             >
               <div className="flex items-start space-x-3">
                 <Checkbox
                   id={`field-${field}`}
                   checked={selectedFields.includes(field)}
-                  onCheckedChange={() => toggleField(field)}
+                  onCheckedChange={(checked) => {
+                    // 阻止事件冒泡，避免雙重觸發
+                    if (checked !== selectedFields.includes(field)) {
+                      toggleField(field);
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
                   className="mt-1"
                 />
                 <div className="flex-1">
                   <Label
                     htmlFor={`field-${field}`}
                     className="font-normal cursor-pointer block mb-2"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleField(field);
+                    }}
                   >
                     {field}
                   </Label>
