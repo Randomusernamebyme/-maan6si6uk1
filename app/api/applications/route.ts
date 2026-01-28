@@ -96,9 +96,8 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
     });
 
-    // 獲取義工信息用於活動日誌
-    const volunteerDoc = await adminDb.collection("users").doc(body.volunteerId).get();
-    const volunteerName = volunteerDoc.exists ? (volunteerDoc.data()?.displayName || volunteerDoc.data()?.email || "未知義工") : "未知義工";
+    // 使用已獲取的義工信息用於活動日誌
+    const volunteerName = volunteerData?.displayName || volunteerData?.email || "未知義工";
     
     // 獲取請求信息用於活動日誌
     const requestDoc = await adminDb.collection("requests").doc(body.requestId).get();
