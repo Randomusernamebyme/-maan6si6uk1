@@ -58,6 +58,10 @@ export default function AdminRequestsPage() {
   const [batchAction, setBatchAction] = useState<string>("");
   const [batchStatus, setBatchStatus] = useState<string>("");
   const [batchProcessing, setBatchProcessing] = useState(false);
+  
+  // 分頁狀態
+  const [currentPage, setCurrentPage] = useState(1);
+  const requestsPerPage = 15;
 
   useEffect(() => {
     const q = query(
@@ -146,6 +150,17 @@ export default function AdminRequestsPage() {
     return format(date, "yyyy年MM月dd日 HH:mm", { locale: zhTW });
   };
 
+  // 分頁計算
+  const totalPages = Math.ceil(filteredRequests.length / requestsPerPage);
+  const startIndex = (currentPage - 1) * requestsPerPage;
+  const endIndex = startIndex + requestsPerPage;
+  const paginatedRequests = filteredRequests.slice(startIndex, endIndex);
+
+  // 當篩選條件改變時，重置到第一頁
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, fieldFilter, searchQuery]);
+
   const toggleSelect = (requestId: string) => {
     const newSelected = new Set(selectedRequests);
     if (newSelected.has(requestId)) {
@@ -157,10 +172,10 @@ export default function AdminRequestsPage() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedRequests.size === filteredRequests.length) {
+    if (selectedRequests.size === paginatedRequests.length) {
       setSelectedRequests(new Set());
     } else {
-      setSelectedRequests(new Set(filteredRequests.map((r) => r.id)));
+      setSelectedRequests(new Set(paginatedRequests.map((r) => r.id)));
     }
   };
 
@@ -327,27 +342,28 @@ export default function AdminRequestsPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* 桌面版表格標題 - 隱藏在小屏幕 */}
-              <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-semibold text-sm">
-                <div className="col-span-1">
-                  <input
-                    type="checkbox"
-                    checked={selectedRequests.size === filteredRequests.length && filteredRequests.length > 0}
-                    onChange={toggleSelectAll}
-                    className="h-4 w-4"
-                  />
+            <>
+              <div className="space-y-4">
+                {/* 桌面版表格標題 - 隱藏在小屏幕 */}
+                <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-semibold text-sm">
+                  <div className="col-span-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedRequests.size === paginatedRequests.length && paginatedRequests.length > 0}
+                      onChange={toggleSelectAll}
+                      className="h-4 w-4"
+                    />
+                  </div>
+                  <div className="col-span-1">編號</div>
+                  <div className="col-span-3">委托名稱</div>
+                  <div className="col-span-2">委托者</div>
+                  <div className="col-span-2">領域</div>
+                  <div className="col-span-2">提交時間</div>
+                  <div className="col-span-1">狀態</div>
                 </div>
-                <div className="col-span-1">編號</div>
-                <div className="col-span-3">委托名稱</div>
-                <div className="col-span-2">委托者</div>
-                <div className="col-span-2">領域</div>
-                <div className="col-span-2">提交時間</div>
-                <div className="col-span-1">狀態</div>
-              </div>
 
-              {/* 表格內容 */}
-              {filteredRequests.map((request) => (
+                {/* 表格內容 */}
+                {paginatedRequests.map((request) => (
                 <div
                   key={request.id}
                   className="border rounded-md hover:bg-muted/30 transition-colors"
@@ -477,8 +493,64 @@ export default function AdminRequestsPage() {
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+
+              {/* 分頁控件 */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t mt-6">
+                  <div className="text-sm text-muted-foreground">
+                    顯示第 {startIndex + 1}-{Math.min(endIndex, filteredRequests.length)} 條，共 {filteredRequests.length} 條
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      上一頁
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter((page) => {
+                          return (
+                            page === 1 ||
+                            page === totalPages ||
+                            (page >= currentPage - 1 && page <= currentPage + 1)
+                          );
+                        })
+                        .map((page, index, array) => {
+                          const showEllipsisBefore = index > 0 && array[index - 1] < page - 1;
+                          return (
+                            <div key={page} className="flex items-center gap-1">
+                              {showEllipsisBefore && (
+                                <span className="px-2 text-muted-foreground">...</span>
+                              )}
+                              <Button
+                                variant={currentPage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(page)}
+                                className="min-w-[2.5rem]"
+                              >
+                                {page}
+                              </Button>
+                            </div>
+                          );
+                        })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      下一頁
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </TabsContent>
       </Tabs>

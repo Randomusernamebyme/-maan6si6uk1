@@ -55,6 +55,10 @@ export default function AdminVolunteersPage() {
   const [showBatchEditDialog, setShowBatchEditDialog] = useState(false);
   const [batchStatus, setBatchStatus] = useState<string>("");
   const [batchProcessing, setBatchProcessing] = useState(false);
+  
+  // 分頁狀態
+  const [currentPage, setCurrentPage] = useState(1);
+  const volunteersPerPage = 15;
 
   useEffect(() => {
     const fetchVolunteers = async () => {
@@ -155,10 +159,10 @@ export default function AdminVolunteersPage() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedVolunteers.size === filteredVolunteers.length) {
+    if (selectedVolunteers.size === paginatedVolunteers.length) {
       setSelectedVolunteers(new Set());
     } else {
-      setSelectedVolunteers(new Set(filteredVolunteers.map((v) => v.uid)));
+      setSelectedVolunteers(new Set(paginatedVolunteers.map((v) => v.uid)));
     }
   };
 
@@ -254,6 +258,17 @@ export default function AdminVolunteersPage() {
     return format(date, "yyyy年MM月dd日", { locale: zhTW });
   };
 
+  // 分頁計算
+  const totalPages = Math.ceil(filteredVolunteers.length / volunteersPerPage);
+  const startIndex = (currentPage - 1) * volunteersPerPage;
+  const endIndex = startIndex + volunteersPerPage;
+  const paginatedVolunteers = filteredVolunteers.slice(startIndex, endIndex);
+
+  // 當篩選條件改變時，重置到第一頁
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, fieldFilter, searchQuery]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -330,26 +345,27 @@ export default function AdminVolunteersPage() {
               <p className="text-muted-foreground">目前沒有{STATUS_LABELS[statusFilter]}的義工</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* 桌面版表格標題 - 隱藏在小屏幕 */}
-              <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-semibold text-sm">
-                <div className="col-span-1">
-                  <input
-                    type="checkbox"
-                    checked={selectedVolunteers.size === filteredVolunteers.length && filteredVolunteers.length > 0}
-                    onChange={toggleSelectAll}
-                    className="h-4 w-4"
-                  />
+            <>
+              <div className="space-y-4">
+                {/* 桌面版表格標題 - 隱藏在小屏幕 */}
+                <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-muted/50 rounded-md font-semibold text-sm">
+                  <div className="col-span-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedVolunteers.size === paginatedVolunteers.length && paginatedVolunteers.length > 0}
+                      onChange={toggleSelectAll}
+                      className="h-4 w-4"
+                    />
+                  </div>
+                  <div className="col-span-2">姓名</div>
+                  <div className="col-span-3">Email</div>
+                  <div className="col-span-3">領域</div>
+                  <div className="col-span-2">報名時間</div>
+                  <div className="col-span-1">狀態</div>
                 </div>
-                <div className="col-span-2">姓名</div>
-                <div className="col-span-3">Email</div>
-                <div className="col-span-3">領域</div>
-                <div className="col-span-2">報名時間</div>
-                <div className="col-span-1">狀態</div>
-              </div>
 
-              {/* 表格內容 */}
-              {filteredVolunteers.map((volunteer) => (
+                {/* 表格內容 */}
+                {paginatedVolunteers.map((volunteer) => (
                 <div
                   key={volunteer.uid}
                   className="border rounded-md hover:bg-muted/30 transition-colors"
@@ -472,8 +488,64 @@ export default function AdminVolunteersPage() {
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+
+              {/* 分頁控件 */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t mt-6">
+                  <div className="text-sm text-muted-foreground">
+                    顯示第 {startIndex + 1}-{Math.min(endIndex, filteredVolunteers.length)} 條，共 {filteredVolunteers.length} 條
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      上一頁
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter((page) => {
+                          return (
+                            page === 1 ||
+                            page === totalPages ||
+                            (page >= currentPage - 1 && page <= currentPage + 1)
+                          );
+                        })
+                        .map((page, index, array) => {
+                          const showEllipsisBefore = index > 0 && array[index - 1] < page - 1;
+                          return (
+                            <div key={page} className="flex items-center gap-1">
+                              {showEllipsisBefore && (
+                                <span className="px-2 text-muted-foreground">...</span>
+                              )}
+                              <Button
+                                variant={currentPage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(page)}
+                                className="min-w-[2.5rem]"
+                              >
+                                {page}
+                              </Button>
+                            </div>
+                          );
+                        })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      下一頁
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </TabsContent>
       </Tabs>

@@ -33,8 +33,11 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const STATUS_LABELS: Record<ApplicationStatus, string> = {
+const STATUS_TABS: (ApplicationStatus | "all")[] = ["all", "pending", "approved", "rejected", "completed"];
+const STATUS_LABELS: Record<ApplicationStatus | "all", string> = {
+  all: "全部",
   pending: "待處理",
   approved: "已選中",
   rejected: "未選中",
@@ -53,7 +56,7 @@ export default function AdminApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const searchParams = useSearchParams();
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "all">("all");
   const initialRequestId = searchParams?.get("requestId") || searchParams?.get("request");
   const initialApplicationId = searchParams?.get("applicationId") || searchParams?.get("application");
   const [requestFilter, setRequestFilter] = useState<string>(initialRequestId || "all");
@@ -65,6 +68,10 @@ export default function AdminApplicationsPage() {
   const [showBatchEditDialog, setShowBatchEditDialog] = useState(false);
   const [batchStatus, setBatchStatus] = useState<string>("");
   const [batchProcessing, setBatchProcessing] = useState(false);
+  
+  // 分頁狀態
+  const [currentPage, setCurrentPage] = useState(1);
+  const applicationsPerPage = 15;
 
   useEffect(() => {
     if (initialRequestId) {
@@ -289,6 +296,25 @@ export default function AdminApplicationsPage() {
     return groups;
   }, [filteredApplications]);
 
+  // 分頁計算
+  const requestIds = Object.keys(groupedByRequest);
+  const totalPages = Math.ceil(requestIds.length / applicationsPerPage);
+  const startIndex = (currentPage - 1) * applicationsPerPage;
+  const endIndex = startIndex + applicationsPerPage;
+  const paginatedRequestIds = requestIds.slice(startIndex, endIndex);
+  const paginatedGroups = useMemo(() => {
+    const groups: Record<string, typeof filteredApplications> = {};
+    paginatedRequestIds.forEach((requestId) => {
+      groups[requestId] = groupedByRequest[requestId];
+    });
+    return groups;
+  }, [paginatedRequestIds, groupedByRequest]);
+
+  // 當篩選條件改變時，重置到第一頁
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, requestFilter, volunteerFilter]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -316,32 +342,33 @@ export default function AdminApplicationsPage() {
         )}
       </div>
 
-      {/* 篩選 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>篩選</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="選擇狀態" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全部狀態</SelectItem>
-                <SelectItem value="pending">待處理</SelectItem>
-                <SelectItem value="approved">已選中</SelectItem>
-                <SelectItem value="rejected">未選中</SelectItem>
-                <SelectItem value="completed">已完成</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* 狀態分頁 */}
+      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as ApplicationStatus | "all")}>
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-5 overflow-x-auto whitespace-nowrap">
+          {STATUS_TABS.map((status) => {
+            const count = status === "all" 
+              ? applications.length 
+              : applications.filter((a) => a.status === status).length;
+            return (
+              <TabsTrigger key={status} value={status} className="whitespace-nowrap">
+                {STATUS_LABELS[status]} ({count})
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
 
-      {/* 按委托分組顯示 */}
-      <div className="space-y-6">
-        {Object.entries(groupedByRequest).map(([requestId, apps]) => (
+        <TabsContent value={statusFilter} className="mt-6">
+          {filteredApplications.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">
+                目前沒有{STATUS_LABELS[statusFilter]}的報名記錄
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* 按委托分組顯示 */}
+              <div className="space-y-6">
+                {Object.entries(paginatedGroups).map(([requestId, apps]) => (
           <Card key={requestId}>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -443,8 +470,67 @@ export default function AdminApplicationsPage() {
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+                ))}
+              </div>
+
+              {/* 分頁控件 */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t mt-6">
+                  <div className="text-sm text-muted-foreground">
+                    顯示第 {startIndex + 1}-{Math.min(endIndex, requestIds.length)} 個委托，共 {requestIds.length} 個委托
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      上一頁
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter((page) => {
+                          return (
+                            page === 1 ||
+                            page === totalPages ||
+                            (page >= currentPage - 1 && page <= currentPage + 1)
+                          );
+                        })
+                        .map((page, index, array) => {
+                          const showEllipsisBefore = index > 0 && array[index - 1] < page - 1;
+                          return (
+                            <div key={page} className="flex items-center gap-1">
+                              {showEllipsisBefore && (
+                                <span className="px-2 text-muted-foreground">...</span>
+                              )}
+                              <Button
+                                variant={currentPage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(page)}
+                                className="min-w-[2.5rem]"
+                              >
+                                {page}
+                              </Button>
+                            </div>
+                          );
+                        })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      下一頁
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* 批量編輯對話框 */}
       <Dialog open={showBatchEditDialog} onOpenChange={setShowBatchEditDialog}>
