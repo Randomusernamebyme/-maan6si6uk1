@@ -277,56 +277,48 @@ export function RegisterForm() {
           我哋有社區拍檔、街坊樹窿、同埋生活助手，你認為自己適合加入邊一/幾個範疇？
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {SERVICE_FIELDS.map((field) => (
-            <div
-              key={field}
-              className={`relative border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                selectedFields.includes(field)
-                  ? "border-primary bg-primary/5"
-                  : "border-border hover:border-primary/50"
-              }`}
-              onClick={(e) => {
-                e.preventDefault();
-                toggleField(field);
-              }}
-            >
-              <div className="flex items-start space-x-3">
-                <Checkbox
-                  id={`field-${field}`}
-                  checked={selectedFields.includes(field)}
-                  onCheckedChange={(checked) => {
-                    // 阻止事件冒泡，避免雙重觸發
-                    if (checked !== selectedFields.includes(field)) {
-                      toggleField(field);
-                    }
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="mt-1"
-                />
-                <div className="flex-1">
-                  <Label
-                    htmlFor={`field-${field}`}
-                    className="font-normal cursor-pointer block mb-2"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleField(field);
-                    }}
-                  >
-                    {field}
-                  </Label>
-                  <div className="relative w-full h-32 rounded-md overflow-hidden bg-muted">
-                    <Image
-                      src={SERVICE_FIELD_IMAGES[field]}
-                      alt={field}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 33vw"
+          {SERVICE_FIELDS.map((field) => {
+            const isSelected = selectedFields.includes(field);
+            return (
+              <div
+                key={field}
+                className={`relative border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                  isSelected
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                }`}
+                onClick={() => toggleField(field)}
+              >
+                <div className="flex items-start space-x-3">
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      id={`field-${field}`}
+                      checked={isSelected}
+                      onCheckedChange={() => toggleField(field)}
+                      className="mt-1"
                     />
+                  </div>
+                  <div className="flex-1">
+                    <Label
+                      htmlFor={`field-${field}`}
+                      className="font-normal cursor-pointer block mb-2"
+                    >
+                      {field}
+                    </Label>
+                    <div className="relative w-full h-32 rounded-md overflow-hidden bg-muted">
+                      <Image
+                        src={SERVICE_FIELD_IMAGES[field]}
+                        alt={field}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         {errors.fields && (
           <p className="text-sm text-destructive">{errors.fields.message}</p>
