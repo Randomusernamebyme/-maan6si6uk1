@@ -6,13 +6,9 @@ export async function GET(request: NextRequest) {
   try {
     const adminDb = getAdminDb();
 
-    // 並行獲取所有統計數據與最新完成的委托
-    const [
-      completedRequestsSnapshot,
-      approvedVolunteersSnapshot,
-      applicationsSnapshot,
-      latestCompletedRequestsSnapshot,
-    ] = await Promise.all([
+    // 並行獲取所有統計數據
+    const [completedRequestsSnapshot, approvedVolunteersSnapshot, applicationsSnapshot] =
+      await Promise.all([
       // 已完成的委托數
       adminDb
         .collection("requests")
@@ -30,34 +26,12 @@ export async function GET(request: NextRequest) {
       adminDb
         .collection("applications")
         .get(),
-
-      // 最新完成的委托（只取少量用於首頁展示）
-      adminDb
-        .collection("requests")
-        .orderBy("completedAt", "desc")
-        .limit(5)
-        .get(),
     ]);
-
-    const latestCompletedRequests = latestCompletedRequestsSnapshot.docs
-      .map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          name: data.name || (Array.isArray(data.fields) ? data.fields.join("、") : "未命名委托"),
-          district: data.requester?.district || "",
-          completedAt: data.completedAt ? data.completedAt.toDate() : null,
-          status: data.status,
-        };
-      })
-      .filter((item) => item.status === "completed" && item.completedAt)
-      .slice(0, 3);
 
     return NextResponse.json({
       completedRequests: completedRequestsSnapshot.size,
       activeVolunteers: approvedVolunteersSnapshot.size,
       totalApplications: applicationsSnapshot.size,
-      latestCompletedRequests,
     });
   } catch (error: any) {
     console.error("Error fetching stats:", error);
