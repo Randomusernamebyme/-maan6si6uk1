@@ -48,7 +48,7 @@ export default function AdminVolunteersPage() {
   const [volunteers, setVolunteers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [statusFilter, setStatusFilter] = useState<UserStatus | "all">("pending");
+  const [statusFilter, setStatusFilter] = useState<UserStatus | "all">("all");
   const [fieldFilter, setFieldFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedVolunteers, setSelectedVolunteers] = useState<Set<string>>(new Set());

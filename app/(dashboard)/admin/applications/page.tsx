@@ -61,6 +61,7 @@ export default function AdminApplicationsPage() {
   const initialApplicationId = searchParams?.get("applicationId") || searchParams?.get("application");
   const [requestFilter, setRequestFilter] = useState<string>(initialRequestId || "all");
   const [volunteerFilter, setVolunteerFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [highlightApplicationId, setHighlightApplicationId] = useState<string | null>(
     initialApplicationId || null
   );
@@ -176,12 +177,30 @@ export default function AdminApplicationsPage() {
 
   const filteredApplications = useMemo(() => {
     return applications.filter((application) => {
+      // 狀態篩選
       if (statusFilter !== "all" && application.status !== statusFilter) return false;
+      
+      // 委托篩選
       if (requestFilter !== "all" && (application.requestId || "") !== requestFilter) return false;
+      
+      // 義工篩選
       if (volunteerFilter !== "all" && (application.volunteerId || "") !== volunteerFilter) return false;
+      
+      // 搜尋
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch =
+          (application.requestTitle || "").toLowerCase().includes(query) ||
+          (application.volunteerName || "").toLowerCase().includes(query) ||
+          (application.requestId || "").toLowerCase().includes(query) ||
+          (application.volunteerId || "").toLowerCase().includes(query) ||
+          (application.message || "").toLowerCase().includes(query);
+        if (!matchesSearch) return false;
+      }
+      
       return true;
     });
-  }, [applications, statusFilter, requestFilter, volunteerFilter]);
+  }, [applications, statusFilter, requestFilter, volunteerFilter, searchQuery]);
 
   const toggleSelectApplication = (applicationId: string) => {
     const newSelected = new Set(selectedApplications);
@@ -313,7 +332,7 @@ export default function AdminApplicationsPage() {
   // 當篩選條件改變時，重置到第一頁
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, requestFilter, volunteerFilter]);
+  }, [statusFilter, requestFilter, volunteerFilter, searchQuery]);
 
   if (loading) {
     return (
@@ -341,6 +360,23 @@ export default function AdminApplicationsPage() {
           </Button>
         )}
       </div>
+
+      {/* 篩選和搜尋 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>篩選和搜尋</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4">
+            <Input
+              placeholder="搜尋委托名稱/義工名稱/報名ID/義工ID/留言..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 狀態分頁 */}
       <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as ApplicationStatus | "all")}>
