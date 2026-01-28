@@ -59,12 +59,6 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href={user.role === "admin" ? "/admin/dashboard" : "/volunteer/profile"} className="flex items-center">
-                    <User className="mr-2 h-4 w-4" />
-                    個人資料
-                  </Link>
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   登出
