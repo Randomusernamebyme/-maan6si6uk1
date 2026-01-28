@@ -91,9 +91,31 @@ export async function PATCH(
     const oldData = userDoc.data();
     const oldStatus = oldData?.status;
 
-    // 更新文檔
+    // 僅允許更新狀態相關欄位，避免修改個人資料
+    const allowedUpdates: any = {};
+    if (typeof body.status === "string") {
+      allowedUpdates.status = body.status;
+    }
+    if (typeof body.interviewNotes === "string") {
+      allowedUpdates.interviewNotes = body.interviewNotes;
+      // interviewDate 只在批准流程中由後端自動寫入
+      if (body.status === "approved") {
+        allowedUpdates.interviewDate = new Date();
+      }
+    }
+    if (typeof body.rejectionReason === "string") {
+      allowedUpdates.rejectionReason = body.rejectionReason;
+    }
+
+    if (Object.keys(allowedUpdates).length === 0) {
+      return NextResponse.json(
+        { error: "不允許更新個人資料，僅可變更狀態相關欄位" },
+        { status: 400 }
+      );
+    }
+
     await userRef.update({
-      ...body,
+      ...allowedUpdates,
       updatedAt: new Date(),
     });
 

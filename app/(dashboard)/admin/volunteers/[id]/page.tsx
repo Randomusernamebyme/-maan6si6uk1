@@ -613,7 +613,7 @@ export default function AdminVolunteerDetailPage() {
                 </>
               )}
 
-              {/* approved 狀態：暫停/編輯 */}
+              {/* approved 狀態：暫停 */}
               {volunteer.status === "approved" && (
                 <>
                   <Button
@@ -626,13 +626,6 @@ export default function AdminVolunteerDetailPage() {
                     }}
                   >
                     暫停
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => alert("編輯功能開發中")}
-                  >
-                    編輯
                   </Button>
                 </>
               )}
