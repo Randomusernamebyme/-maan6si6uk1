@@ -132,6 +132,12 @@ export default function VolunteerDashboardPage() {
             </CardHeader>
           </Card>
         </div>
+
+        {user?.status === "suspended" && (
+          <div className="mt-4 rounded-md bg-destructive/10 border border-destructive/40 px-4 py-3 text-sm text-destructive">
+            您的義工帳號目前為「暫停」狀態，暫時無法報名新的委托。如有疑問，請聯絡管理員。
+          </div>
+        )}
       </div>
 
       {/* 篩選和搜尋 */}

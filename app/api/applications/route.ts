@@ -48,8 +48,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 檢查是否已經報名過
     const adminDb = getAdminDb();
+
+    // 檢查義工帳號狀態，暫停中的帳號不得報名
+    const volunteerDoc = await adminDb.collection("users").doc(body.volunteerId).get();
+    if (!volunteerDoc.exists) {
+      return NextResponse.json(
+        { error: "義工帳號不存在" },
+        { status: 404 }
+      );
+    }
+
+    const volunteerData = volunteerDoc.data();
+    if (volunteerData?.status === "suspended") {
+      return NextResponse.json(
+        { error: "您的帳號已被暫停，暫時不能報名新委托" },
+        { status: 403 }
+      );
+    }
+
+    // 檢查是否已經報名過
     const existingApps = await adminDb
       .collection("applications")
       .where("requestId", "==", body.requestId)
