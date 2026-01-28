@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNotifications } from "@/lib/hooks/useNotifications";
 import { NotificationCard } from "@/components/notifications/NotificationCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,12 +13,19 @@ import { CheckCheck } from "lucide-react";
 
 export default function NotificationsPage() {
   const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const notificationsPerPage = 15;
   const { notifications, loading, error } = useNotifications({
     read: filter === "all" ? undefined : filter === "read",
   });
 
   const unreadNotifications = notifications.filter((n) => !n.read);
   const readNotifications = notifications.filter((n) => n.read);
+
+  // 當標籤/篩選改變時，回到第一頁
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
 
   const handleMarkAsRead = async (id: string) => {
     try {
@@ -77,6 +84,11 @@ export default function NotificationsPage() {
       ? unreadNotifications
       : readNotifications;
 
+  const totalPages = Math.ceil(filteredNotifications.length / notificationsPerPage);
+  const startIndex = (currentPage - 1) * notificationsPerPage;
+  const endIndex = startIndex + notificationsPerPage;
+  const paginatedNotifications = filteredNotifications.slice(startIndex, endIndex);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -84,6 +96,12 @@ export default function NotificationsPage() {
           <h1 className="text-3xl font-bold">通知</h1>
           <p className="text-muted-foreground mt-1">
             共 {notifications.length} 條通知，{unreadNotifications.length} 條未讀
+            {filteredNotifications.length > notificationsPerPage && (
+              <span className="ml-2">
+                （第 {startIndex + 1}-{Math.min(endIndex, filteredNotifications.length)} 條，共{" "}
+                {totalPages} 頁）
+              </span>
+            )}
           </p>
         </div>
         {unreadNotifications.length > 0 && (
@@ -116,13 +134,68 @@ export default function NotificationsPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {filteredNotifications.map((notification) => (
+              {paginatedNotifications.map((notification) => (
                 <NotificationCard
                   key={notification.id}
                   notification={notification}
                   onMarkAsRead={handleMarkAsRead}
                 />
               ))}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    顯示第 {startIndex + 1}-{Math.min(endIndex, filteredNotifications.length)} 條，
+                    共 {filteredNotifications.length} 條
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      上一頁
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter((page) => {
+                          // 顯示當前頁、第一頁、最後一頁，以及當前頁前後各一頁
+                          return (
+                            page === 1 ||
+                            page === totalPages ||
+                            (page >= currentPage - 1 && page <= currentPage + 1)
+                          );
+                        })
+                        .map((page, index, array) => {
+                          const showEllipsisBefore = index > 0 && array[index - 1] < page - 1;
+                          return (
+                            <div key={page} className="flex items-center gap-1">
+                              {showEllipsisBefore && (
+                                <span className="px-2 text-muted-foreground">...</span>
+                              )}
+                              <Button
+                                variant={currentPage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(page)}
+                                className="min-w-[2.5rem]"
+                              >
+                                {page}
+                              </Button>
+                            </div>
+                          );
+                        })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      下一頁
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
