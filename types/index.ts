@@ -78,8 +78,10 @@ export interface Request {
   matchedAt?: Date; // 配對時間
   completedAt?: Date; // 完成時間
   adminNotes?: string; // 管理員備註
-  mergedWith?: string; // 合併到的委托ID
-  isMerged?: boolean; // 是否已被合併
+  // 合併相關
+  mergedChildrenIds?: string[]; // 作為主委托時，底下被合併的委托ID列表
+  mergedIntoId?: string; // 作為子委托時，被合併到的主委托ID
+  isMerged?: boolean; // 是否已被合併到其他委托（true 代表此委托是子委托）
   followUps?: Array<{
     date: Date;
     method: string; // 聯絡方式

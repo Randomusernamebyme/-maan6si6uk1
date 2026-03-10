@@ -58,6 +58,7 @@ export default function AdminRequestsPage() {
   const [batchAction, setBatchAction] = useState<string>("");
   const [batchStatus, setBatchStatus] = useState<string>("");
   const [batchProcessing, setBatchProcessing] = useState(false);
+  const [expandedRequests, setExpandedRequests] = useState<Set<string>>(new Set());
   
   // 分頁狀態
   const [currentPage, setCurrentPage] = useState(1);
@@ -177,6 +178,16 @@ export default function AdminRequestsPage() {
     } else {
       setSelectedRequests(new Set(paginatedRequests.map((r) => r.id)));
     }
+  };
+
+  const toggleExpand = (requestId: string) => {
+    const next = new Set(expandedRequests);
+    if (next.has(requestId)) {
+      next.delete(requestId);
+    } else {
+      next.add(requestId);
+    }
+    setExpandedRequests(next);
   };
 
   const handleBatchEdit = async () => {
@@ -363,7 +374,15 @@ export default function AdminRequestsPage() {
                 </div>
 
                 {/* 表格內容 */}
-                {paginatedRequests.map((request) => (
+                {paginatedRequests.map((request) => {
+                  const hasChildren =
+                    Array.isArray(request.mergedChildrenIds) && request.mergedChildrenIds.length > 0;
+                  const isExpanded = expandedRequests.has(request.id);
+                  const childRequests = hasChildren
+                    ? requests.filter((r) => r.mergedIntoId === request.id)
+                    : [];
+
+                  return (
                 <div
                   key={request.id}
                   className="border rounded-md hover:bg-muted/30 transition-colors"
@@ -411,20 +430,33 @@ export default function AdminRequestsPage() {
                     <div className="col-span-2 flex items-center text-sm text-muted-foreground">
                       {formatDate(request.createdAt)}
                     </div>
-                    <div className="col-span-1 flex items-center">
-                      <Badge
-                        variant={
-                          request.status === "pending"
-                            ? "outline"
-                            : request.status === "completed"
-                            ? "secondary"
-                            : request.status === "cancelled"
-                            ? "destructive"
-                            : "default"
-                        }
-                      >
-                        {STATUS_LABELS[request.status]}
-                      </Badge>
+                    <div className="col-span-1 flex items-center justify-between gap-2">
+                      <div className="flex-1">
+                        <Badge
+                          variant={
+                            request.status === "pending"
+                              ? "outline"
+                              : request.status === "completed"
+                              ? "secondary"
+                              : request.status === "cancelled"
+                              ? "destructive"
+                              : "default"
+                          }
+                        >
+                          {STATUS_LABELS[request.status]}
+                        </Badge>
+                      </div>
+                      {hasChildren && (
+                        <button
+                          type="button"
+                          onClick={() => toggleExpand(request.id)}
+                          className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+                        >
+                          {isExpanded
+                            ? `收起已合併 (${childRequests.length})`
+                            : `展開已合併 (${childRequests.length})`}
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -492,8 +524,43 @@ export default function AdminRequestsPage() {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* 已合併子委托（folder 內的列） */}
+                  {hasChildren && isExpanded && childRequests.length > 0 && (
+                    <div className="border-t bg-muted/40">
+                      <div className="px-4 pt-2 pb-3 text-xs text-muted-foreground">
+                        已合併的委托（{childRequests.length}）：
+                      </div>
+                      <div className="space-y-1 pb-3">
+                        {childRequests.map((child) => (
+                          <div
+                            key={child.id}
+                            className="px-4 py-2 text-xs md:text-sm flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="font-mono text-[11px] md:text-xs text-muted-foreground">
+                                {child.id.substring(0, 8)}
+                              </span>
+                              <Link
+                                href={`/admin/requests/${child.id}`}
+                                className="hover:underline text-primary truncate"
+                                title={child.name || child.fields?.join("、") || "未命名委托"}
+                              >
+                                {child.name || child.fields?.join("、") || "未命名委托"}
+                              </Link>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 text-[11px] md:text-xs text-muted-foreground">
+                              <span>委托者：{child.requester?.name || "未知"}</span>
+                              <span>提交時間：{formatDate(child.createdAt)}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* 分頁控件 */}

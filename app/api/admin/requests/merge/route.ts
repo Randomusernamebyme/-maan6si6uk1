@@ -48,26 +48,50 @@ export async function POST(request: NextRequest) {
 
     const adminDb = getAdminDb();
 
-    // 更新主委托，添加 mergedWith 欄位
-    await adminDb.collection("requests").doc(mainRequestId).update({
-      mergedWith: mergeRequestIds,
+    // 讀取主委托現有的 mergedChildrenIds，避免覆蓋舊資料
+    const mainRef = adminDb.collection("requests").doc(mainRequestId);
+    const mainSnap = await mainRef.get();
+    if (!mainSnap.exists) {
+      return NextResponse.json(
+        { error: "主委托不存在" },
+        { status: 404 }
+      );
+    }
+
+    const mainData = mainSnap.data() || {};
+    const existingChildren: string[] = Array.isArray(mainData.mergedChildrenIds)
+      ? mainData.mergedChildrenIds
+      : [];
+
+    // 合併新的子委托ID，並去除重複與主委托本身
+    const newChildrenSet = new Set<string>(existingChildren);
+    (mergeRequestIds as string[]).forEach((id) => {
+      if (id && id !== mainRequestId) {
+        newChildrenSet.add(id);
+      }
+    });
+    const mergedChildrenIds = Array.from(newChildrenSet);
+
+    // 更新主委托
+    await mainRef.update({
+      mergedChildrenIds,
       updatedAt: new Date(),
     });
 
-    // 標記被合併的委托
+    // 標記被合併的委托為子委托
     const batch = adminDb.batch();
-    mergeRequestIds.forEach((requestId: string) => {
+    mergedChildrenIds.forEach((requestId: string) => {
       const ref = adminDb.collection("requests").doc(requestId);
       batch.update(ref, {
         isMerged: true,
-        mergedWith: mainRequestId,
+        mergedIntoId: mainRequestId,
         updatedAt: new Date(),
       });
     });
 
     await batch.commit();
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, mainRequestId, mergedChildrenIds });
   } catch (error: any) {
     console.error("Error merging requests:", error);
     return NextResponse.json(

@@ -59,6 +59,7 @@ export default function RequestDetailPage() {
   const [followUpContent, setFollowUpContent] = useState("");
   const [applications, setApplications] = useState<(Application & { volunteerName?: string })[]>([]);
   const [applicationsLoading, setApplicationsLoading] = useState(true);
+  const [unmerging, setUnmerging] = useState(false);
 
   useEffect(() => {
     const fetchRequest = async () => {
@@ -311,6 +312,8 @@ export default function RequestDetailPage() {
     return <ErrorDisplay message="委托不存在" />;
   }
 
+  const hasMergedChildren = Array.isArray(request.mergedChildrenIds) && request.mergedChildrenIds.length > 0;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -377,6 +380,36 @@ export default function RequestDetailPage() {
                 <div>
                   <Label>預計時長</Label>
                   <p className="text-sm text-muted-foreground mt-1">{request.estimatedDuration}</p>
+                </div>
+              )}
+              {/* 已合併子委托列表 */}
+              {hasMergedChildren && (
+                <div>
+                  <Label>已合併的委托</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    此委托作為「主委托」，以下為一起合併的其他相似委托。
+                  </p>
+                  <div className="mt-2 space-y-2">
+                    {request.mergedChildrenIds!.map((childId) => (
+                      <div
+                        key={childId}
+                        className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 rounded border px-3 py-2 text-xs md:text-sm"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-mono text-[11px] md:text-xs text-muted-foreground">
+                            {childId.substring(0, 8)}
+                          </span>
+                          <Link
+                            href={`/admin/requests/${childId}`}
+                            className="hover:underline text-primary truncate"
+                            title={`查看委托 ${childId.substring(0, 8)}`}
+                          >
+                            查看詳情
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -800,6 +833,64 @@ export default function RequestDetailPage() {
                   {STATUS_LABELS[request.status] || request.status}
                 </Badge>
               </div>
+
+              {/* 若此委托是子委托，提供解除合併操作 */}
+              {request.isMerged && request.mergedIntoId && (
+                <div className="space-y-2 pt-4 border-t">
+                  <Label>合併狀態</Label>
+                  <p className="text-xs text-muted-foreground">
+                    此委托已合併至主委托{" "}
+                    <span className="font-mono">
+                      {request.mergedIntoId.substring(0, 8)}
+                    </span>
+                    。
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                    >
+                      <Link href={`/admin/requests/${request.mergedIntoId}`}>
+                        前往主委托
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={unmerging}
+                      onClick={async () => {
+                        try {
+                          setUnmerging(true);
+                          const token = await getAuthToken();
+                          if (!token) {
+                            throw new Error("請先登入");
+                          }
+                          const response = await fetch("/api/admin/requests/unmerge", {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                              Authorization: `Bearer ${token}`,
+                            },
+                            body: JSON.stringify({ childRequestId: request.id }),
+                          });
+                          if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.error || "解除合併失敗");
+                          }
+                          router.refresh();
+                          window.location.reload();
+                        } catch (err: any) {
+                          setError(err.message || "解除合併失敗");
+                          setUnmerging(false);
+                        }
+                      }}
+                    >
+                      {unmerging ? "解除合併中..." : "解除合併"}
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="status-select">更改狀態</Label>
