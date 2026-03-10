@@ -14,7 +14,7 @@ import { Loading } from "@/components/ui/loading";
 import { SuccessAnimation } from "@/components/ui/success-animation";
 import Image from "next/image";
 import { ServiceField } from "@/types";
-import { SERVICE_FIELD_IMAGES } from "@/lib/constants/serviceFields";
+import { SERVICE_FIELD_IMAGES, SERVICE_FIELD_INFO } from "@/lib/constants/serviceFields";
 
 // 香港電話號碼驗證：8位數字（可選前綴如+852或852）
 const phoneRegex = /^(\+?852[-.\s]?)?[2-9]\d{7}$/;
@@ -32,7 +32,13 @@ const requestSchema = z.object({
   requesterDistrict: z.enum(["九龍", "港島", "新界", "離島"], {
     required_error: "請選擇居住地區",
   }),
-  description: z.string().min(20, "請詳細描述您的需求（至少20個字）"),
+  description: z
+    .string()
+    .min(1, "請輸入您的需求")
+    .refine(
+      (value) => value.trim().split(/\s+/).filter((word) => word.length > 0).length >= 10,
+      "請至少輸入10個字詞，方便我哋了解你嘅情況"
+    ),
   fields: z.array(z.enum(["生活助手", "社區拍檔", "街坊樹窿"])).min(1, "請至少選擇一個幫助範疇"),
   appreciation: z.string().optional(),
 });
@@ -232,6 +238,7 @@ export function RequestSubmissionForm() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {SERVICE_FIELDS.map((field) => {
                 const isSelected = selectedFields.includes(field);
+                const info = SERVICE_FIELD_INFO[field];
                 return (
                   <div
                     key={field}
@@ -251,14 +258,24 @@ export function RequestSubmissionForm() {
                           className="mt-1"
                         />
                       </div>
-                      <div className="flex-1">
-                        <Label
-                          htmlFor={`field-${field}`}
-                          className="font-normal cursor-pointer block mb-2"
-                        >
-                          {field}
-                        </Label>
-                        <div className="relative w-full h-32 rounded-md overflow-hidden bg-muted">
+                      <div className="flex-1 space-y-2">
+                        <div>
+                          <Label
+                            htmlFor={`field-${field}`}
+                            className="font-semibold cursor-pointer block"
+                          >
+                            {field}
+                          </Label>
+                          {info && (
+                            <>
+                              <p className="text-xs text-muted-foreground">{info.subtitle}</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {info.description}
+                              </p>
+                            </>
+                          )}
+                        </div>
+                        <div className="relative w-full h-28 rounded-md overflow-hidden bg-muted">
                           <Image
                             src={SERVICE_FIELD_IMAGES[field]}
                             alt={field}
@@ -283,7 +300,7 @@ export function RequestSubmissionForm() {
             <textarea
               id="description"
               {...register("description")}
-              placeholder="請詳細描述您的需求（至少20個字）..."
+              placeholder="請詳細描述您的需求（至少10個字詞）..."
               rows={6}
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
             />
@@ -291,7 +308,7 @@ export function RequestSubmissionForm() {
               <p className="text-sm text-destructive">{errors.description.message}</p>
             )}
             <p className="text-xs text-muted-foreground">
-              最少需要20個字
+              最少需要 10 個字詞，例如：「最近照顧屋企人有啲吃力，想有人幫手分擔」
             </p>
           </div>
 
