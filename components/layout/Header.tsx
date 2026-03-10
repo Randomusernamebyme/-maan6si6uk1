@@ -32,16 +32,22 @@ export function Header() {
             </Link>
           </Button>
           
-          {user && (
-            <nav className="hidden md:flex items-center gap-4">
+          <nav className="hidden md:flex items-center gap-4">
+            {user && (
               <Link
                 href={user.role === "admin" ? "/admin/dashboard" : "/volunteer/dashboard"}
                 className="text-sm font-medium transition-colors hover:text-foreground/80 text-foreground/60"
               >
                 看板
               </Link>
-            </nav>
-          )}
+            )}
+            <Link
+              href="/gallery"
+              className="text-sm font-medium transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              Gallery
+            </Link>
+          </nav>
         </div>
 
         <div className="flex items-center gap-4">

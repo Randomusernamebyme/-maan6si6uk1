@@ -54,6 +54,22 @@ export async function GET(
         date: followUp.date?.toDate?.()?.toISOString() || followUp.date,
       }));
     }
+
+    let galleryPhotos = requestData?.galleryPhotos;
+    if (Array.isArray(galleryPhotos)) {
+      galleryPhotos = galleryPhotos.map((photo: any) => ({
+        ...photo,
+        uploadedAt: photo.uploadedAt?.toDate?.()?.toISOString() || photo.uploadedAt,
+      }));
+    }
+
+    let galleryFeedbacks = requestData?.galleryFeedbacks;
+    if (Array.isArray(galleryFeedbacks)) {
+      galleryFeedbacks = galleryFeedbacks.map((feedback: any) => ({
+        ...feedback,
+        createdAt: feedback.createdAt?.toDate?.()?.toISOString() || feedback.createdAt,
+      }));
+    }
     
     return NextResponse.json({
       id: requestDoc.id,
@@ -66,6 +82,8 @@ export async function GET(
       publishedAt: requestData?.publishedAt?.toDate?.()?.toISOString(),
       inProgressAt: requestData?.inProgressAt?.toDate?.()?.toISOString(),
       followUps: followUps,
+      galleryPhotos,
+      galleryFeedbacks,
     });
   } catch (error: any) {
     console.error("Error fetching request:", error);
@@ -278,6 +296,24 @@ export async function PATCH(
         adminId: decodedToken.uid, // 使用當前管理員 ID
       }));
       updateData.followUps = followUpsWithTimestamps;
+    }
+
+    if (typeof body.isPublicGallery === "boolean") {
+      updateData.isPublicGallery = body.isPublicGallery;
+    }
+
+    if (body.galleryPhotos && Array.isArray(body.galleryPhotos)) {
+      updateData.galleryPhotos = body.galleryPhotos.map((photo: any) => ({
+        ...photo,
+        uploadedAt: photo.uploadedAt instanceof Date ? photo.uploadedAt : new Date(photo.uploadedAt),
+      }));
+    }
+
+    if (body.galleryFeedbacks && Array.isArray(body.galleryFeedbacks)) {
+      updateData.galleryFeedbacks = body.galleryFeedbacks.map((feedback: any) => ({
+        ...feedback,
+        createdAt: feedback.createdAt instanceof Date ? feedback.createdAt : new Date(feedback.createdAt),
+      }));
     }
 
     await adminDb.collection("requests").doc(requestId).update(updateData);

@@ -16,6 +16,19 @@ export type UrgencyLevel = 'urgent' | 'normal';
 // 報名狀態類型
 export type ApplicationStatus = 'pending' | 'approved' | 'rejected' | 'completed';
 
+export interface GalleryPhoto {
+  url: string;
+  uploadedAt: Date;
+  uploadedBy: string; // admin uid
+}
+
+export interface GalleryFeedback {
+  content: string;
+  createdAt: Date;
+  createdBy: string; // admin uid
+  authorName?: string; // 顯示用
+}
+
 // User 介面（義工/管理員）
 export interface User {
   // 基本資料
@@ -82,6 +95,9 @@ export interface Request {
   mergedChildrenIds?: string[]; // 作為主委托時，底下被合併的委托ID列表
   mergedIntoId?: string; // 作為子委托時，被合併到的主委托ID
   isMerged?: boolean; // 是否已被合併到其他委托（true 代表此委托是子委托）
+  isPublicGallery?: boolean; // 是否公開到 Gallery
+  galleryPhotos?: GalleryPhoto[]; // Gallery 相片（僅 admin 可上傳）
+  galleryFeedbacks?: GalleryFeedback[]; // Gallery 回饋（僅 admin 可新增）
   followUps?: Array<{
     date: Date;
     method: string; // 聯絡方式
