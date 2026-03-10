@@ -136,6 +136,29 @@ export function RegisterForm() {
       setError("");
       setLoading(true);
 
+      // 先檢查電話是否已被使用（由後端 Admin SDK 處理）
+      const phoneCheckResponse = await fetch("/api/public/check-phone", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ phone: data.phone }),
+      });
+
+      if (!phoneCheckResponse.ok) {
+        const errorData = await phoneCheckResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || "電話檢查失敗，請稍後再試。");
+      }
+
+      const { exists } = (await phoneCheckResponse.json()) as { exists: boolean };
+      if (exists) {
+        setError(
+          "此電話號碼已被其他帳號使用。如你已註冊過，請改用該帳號的電郵登入，或到「忘記密碼」頁面重設密碼。"
+        );
+        setLoading(false);
+        return;
+      }
+
       // 處理其他技能和對象
       // 過濾掉 "Other"，只保留實際技能
       const skillsArray = (data.skills || []).filter((s) => s !== "Other");
