@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { Card, CardContent } from "@/components/ui/card";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error";
 import { format } from "date-fns";
@@ -38,7 +38,7 @@ export default function GalleryPage() {
   useEffect(() => {
     const fetchGallery = async () => {
       try {
-        const response = await fetch("/api/gallery");
+        const response = await fetch("/api/gallery", { cache: "no-store" });
         if (!response.ok) {
           const data = await response.json();
           throw new Error(data.error || "載入 Gallery 失敗");
@@ -77,7 +77,7 @@ export default function GalleryPage() {
       <div>
         <h1 className="text-3xl font-bold">成果 Gallery</h1>
         <p className="text-muted-foreground mt-2">
-          這裡展示已完成並公開的委托成果（相片與管理員回饋）。
+          以相片牆方式展示已完成並公開的委托成果，點擊可查看完整貼文。
         </p>
       </div>
 
@@ -88,69 +88,42 @@ export default function GalleryPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
-          {items.map((item) => (
-            <Card key={item.id}>
-              <CardHeader className="space-y-2">
-                <CardTitle>{item.name || item.fields.join("、") || "已完成委托"}</CardTitle>
-                <div className="flex flex-wrap gap-2">
-                  {item.fields.map((field) => (
-                    <Badge key={field} variant="secondary">
-                      {field}
-                    </Badge>
-                  ))}
-                  {item.completedAt && (
-                    <Badge variant="outline">
-                      完成於 {format(new Date(item.completedAt), "yyyy年MM月dd日", { locale: zhTW })}
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {item.description && (
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {item.description}
-                  </p>
-                )}
-
-                {item.galleryPhotos.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold mb-2">成果相片</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                      {item.galleryPhotos.map((photo, idx) => (
-                        <div key={`${item.id}-photo-${idx}`} className="relative w-full h-48 rounded-md overflow-hidden bg-muted">
-                          <Image
-                            src={photo.url}
-                            alt={`成果相片 ${idx + 1}`}
-                            fill
-                            className="object-cover"
-                          />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {items.map((item) => {
+            const cover = item.galleryPhotos?.[0]?.url;
+            return (
+              <Link key={item.id} href={`/gallery/${item.id}`} className="block">
+                <Card className="overflow-hidden hover:shadow-md transition-shadow">
+                  <CardContent className="p-0">
+                    <div className="relative w-full aspect-square bg-muted">
+                      {cover ? (
+                        <Image
+                          src={cover}
+                          alt={item.name || "成果貼文"}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+                          尚未上傳相片
                         </div>
-                      ))}
+                      )}
                     </div>
-                  </div>
-                )}
-
-                {item.galleryFeedbacks.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold mb-2">管理員回饋</h3>
-                    <div className="space-y-2">
-                      {item.galleryFeedbacks.map((feedback, idx) => (
-                        <div key={`${item.id}-feedback-${idx}`} className="rounded-md border p-3 text-sm">
-                          <p className="whitespace-pre-wrap">{feedback.content}</p>
-                          {feedback.createdAt && (
-                            <p className="text-xs text-muted-foreground mt-2">
-                              {format(new Date(feedback.createdAt), "yyyy年MM月dd日 HH:mm", { locale: zhTW })}
-                            </p>
-                          )}
-                        </div>
-                      ))}
+                    <div className="p-2 space-y-1">
+                      <p className="text-sm font-medium truncate">
+                        {item.name || item.fields.join("、") || "已完成委托"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.completedAt
+                          ? format(new Date(item.completedAt), "yyyy/MM/dd", { locale: zhTW })
+                          : "未記錄完成日期"}
+                      </p>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

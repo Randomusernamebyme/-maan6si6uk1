@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { getAuthToken } from "@/lib/utils/auth";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { storage } from "@/lib/firebase/config";
@@ -14,6 +15,7 @@ import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error";
 import { format } from "date-fns";
 import { zhTW } from "date-fns/locale";
+import Image from "next/image";
 
 interface GalleryPhoto {
   url: string;
@@ -44,16 +46,38 @@ export default function AdminGalleryPage() {
   const [items, setItems] = useState<AdminGalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [keyword, setKeyword] = useState("");
+  const [filter, setFilter] = useState<"all" | "public" | "private">("all");
   const [selectedFiles, setSelectedFiles] = useState<Record<string, File[]>>({});
   const [feedbackInputs, setFeedbackInputs] = useState<Record<string, string>>({});
   const [processingId, setProcessingId] = useState<string>("");
 
-  const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => {
+  const sortedItems = useMemo<AdminGalleryItem[]>(() => {
+    const normalizedKeyword = keyword.trim().toLowerCase();
+    return [...items]
+      .filter((item) => {
+        if (filter === "public") return !!item.isPublicGallery;
+        if (filter === "private") return !item.isPublicGallery;
+        return true;
+      })
+      .filter((item) => {
+        if (!normalizedKeyword) return true;
+        const target = `${item.name} ${item.description} ${(item.fields || []).join(" ")}`.toLowerCase();
+        return target.includes(normalizedKeyword);
+      })
+      .sort((a, b) => {
       const aTime = a.completedAt ? new Date(a.completedAt).getTime() : 0;
       const bTime = b.completedAt ? new Date(b.completedAt).getTime() : 0;
       return bTime - aTime;
-    });
+      });
+  }, [items, filter, keyword]);
+
+  const summary = useMemo(() => {
+    const total = items.length;
+    const publicCount = items.filter((item) => item.isPublicGallery).length;
+    const totalPhotos = items.reduce((sum, item) => sum + (item.galleryPhotos?.length || 0), 0);
+    const totalFeedbacks = items.reduce((sum, item) => sum + (item.galleryFeedbacks?.length || 0), 0);
+    return { total, publicCount, totalPhotos, totalFeedbacks };
   }, [items]);
 
   const fetchData = async () => {
@@ -64,6 +88,7 @@ export default function AdminGalleryPage() {
         throw new Error("請先登入");
       }
       const response = await fetch("/api/admin/gallery", {
+        cache: "no-store",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) {
@@ -181,16 +206,79 @@ export default function AdminGalleryPage() {
       <div>
         <h2 className="text-2xl font-bold">Gallery 管理</h2>
         <p className="text-muted-foreground mt-1">
-          管理已完成委托的公開展示、成果相片與管理員回饋。
+          管理已完成委托的公開展示、成果相片與管理員回饋，可直接檢查已發佈內容。
         </p>
       </div>
 
       {error && <ErrorDisplay message={error} />}
 
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-xs text-muted-foreground">已完成委托</p>
+            <p className="text-2xl font-bold">{summary.total}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-xs text-muted-foreground">公開貼文</p>
+            <p className="text-2xl font-bold">{summary.publicCount}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-xs text-muted-foreground">已上傳相片</p>
+            <p className="text-2xl font-bold">{summary.totalPhotos}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-xs text-muted-foreground">已發佈回饋</p>
+            <p className="text-2xl font-bold">{summary.totalFeedbacks}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid gap-3 md:grid-cols-3">
+            <Input
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="搜尋委托名稱、內容或服務類別..."
+              className="md:col-span-2"
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant={filter === "all" ? "default" : "outline"}
+                onClick={() => setFilter("all")}
+              >
+                全部
+              </Button>
+              <Button
+                size="sm"
+                variant={filter === "public" ? "default" : "outline"}
+                onClick={() => setFilter("public")}
+              >
+                已公開
+              </Button>
+              <Button
+                size="sm"
+                variant={filter === "private" ? "default" : "outline"}
+                onClick={() => setFilter("private")}
+              >
+                未公開
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {sortedItems.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center text-muted-foreground">
-            目前沒有已完成的委托可供管理。
+            找不到符合條件的委托。
           </CardContent>
         </Card>
       ) : (
@@ -199,7 +287,13 @@ export default function AdminGalleryPage() {
             <Card key={item.id}>
               <CardHeader className="space-y-2">
                 <CardTitle className="text-lg">
-                  {item.name || item.fields.join("、") || "已完成委托"}
+                  {item.isPublicGallery ? (
+                    <Link href={`/gallery/${item.id}`} target="_blank" className="underline-offset-4 hover:underline">
+                      {item.name || item.fields.join("、") || "已完成委托"}
+                    </Link>
+                  ) : (
+                    <span>{item.name || item.fields.join("、") || "已完成委托"}</span>
+                  )}
                 </CardTitle>
                 <div className="flex flex-wrap gap-2">
                   {item.fields.map((field) => (
@@ -218,7 +312,7 @@ export default function AdminGalleryPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
                     onClick={() => handleTogglePublic(item)}
@@ -226,6 +320,58 @@ export default function AdminGalleryPage() {
                   >
                     {item.isPublicGallery ? "取消公開" : "公開到 Gallery"}
                   </Button>
+                  {item.isPublicGallery && (
+                    <Button size="sm" variant="outline" asChild>
+                      <Link href={`/gallery/${item.id}`} target="_blank">
+                        查看公開貼文
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+                {!item.isPublicGallery && (
+                  <p className="text-xs text-amber-600">
+                    目前為未公開狀態：即使已上傳相片/回饋，前台 Gallery 也不會顯示。
+                  </p>
+                )}
+
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">已發佈內容預覽</p>
+                  {item.galleryPhotos?.length > 0 ? (
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                      {item.galleryPhotos.slice(0, 5).map((photo, idx) => (
+                        <div
+                          key={`${item.id}-preview-${idx}`}
+                          className="relative w-full aspect-square rounded-md overflow-hidden bg-muted"
+                        >
+                          <Image
+                            src={photo.url}
+                            alt={`已上傳相片 ${idx + 1}`}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">尚未上傳相片</p>
+                  )}
+
+                  {item.galleryFeedbacks?.length > 0 ? (
+                    <div className="space-y-2">
+                      {item.galleryFeedbacks.slice(0, 2).map((feedback, idx) => (
+                        <div key={`${item.id}-preview-feedback-${idx}`} className="rounded-md border p-2 text-xs">
+                          {feedback.content}
+                        </div>
+                      ))}
+                      {item.galleryFeedbacks.length > 2 && (
+                        <p className="text-xs text-muted-foreground">
+                          另有 {item.galleryFeedbacks.length - 2} 則回饋
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">尚未新增回饋</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
