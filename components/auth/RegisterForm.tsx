@@ -173,7 +173,10 @@ export function RegisterForm() {
       // 顯示歡迎動畫
       setShowWelcome(true);
     } catch (err: any) {
-      setError(err.message || "註冊失敗，請稍後再試");
+      const message =
+        err?.message ||
+        "註冊失敗，請稍後再試。如果你已經註冊過，可以嘗試登入或使用忘記密碼功能。";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -182,6 +185,37 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {error && <ErrorDisplay message={error} />}
+      {error && (
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive space-y-1">
+          <p>{error}</p>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              className="h-7 px-2 text-xs"
+              onClick={() => router.push("/login")}
+            >
+              去登入頁
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              className="h-7 px-2 text-xs"
+              onClick={() =>
+                router.push(
+                  `/forgot-password?email=${encodeURIComponent(
+                    (document.getElementById("email") as HTMLInputElement | null)?.value || ""
+                  )}`
+                )
+              }
+            >
+              忘記密碼／找回帳號
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="email">電子郵件 *</Label>

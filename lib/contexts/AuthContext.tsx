@@ -77,6 +77,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+      // 強制要求電郵已驗證
+      if (!userCredential.user.emailVerified) {
+        await sendEmailVerification(userCredential.user);
+        await signOut(auth);
+        throw new Error(
+          "你的電郵帳號尚未完成驗證。我們已重新發送驗證電郵，請到收件箱按連結完成驗證後再登入。"
+        );
+      }
+
       const userData = await fetchUserData(userCredential.user.uid);
       setUser(userData);
     } catch (error: any) {
@@ -95,7 +105,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
         const phoneSnapshot = await getDocs(phoneQuery);
         if (!phoneSnapshot.empty) {
-          throw new Error("此電話號碼已被使用，請改用其他電話號碼或嘗試登入。");
+          throw new Error(
+            "此電話號碼已被其他帳號使用。如你已註冊過，請改用該帳號的電郵去登入，或到「忘記密碼」頁面重設密碼。"
+          );
         }
       }
 
@@ -134,7 +146,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error: any) {
       // 處理常見錯誤訊息
       if (error?.code === "auth/email-already-in-use") {
-        throw new Error("此電子郵件已被使用，請改用其他電郵或嘗試登入。");
+        throw new Error(
+          "此電子郵件已經註冊過帳號。如你忘記密碼，請使用「忘記密碼」功能重設密碼，或改用其他電郵註冊。"
+        );
       }
       throw new Error(error.message || "註冊失敗");
     }
