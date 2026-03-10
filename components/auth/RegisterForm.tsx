@@ -15,7 +15,7 @@ import { Loading } from "@/components/ui/loading";
 import { WelcomeAnimation } from "@/components/ui/welcome-animation";
 import Image from "next/image";
 import { ServiceField } from "@/types";
-import { SERVICE_FIELD_IMAGES, SERVICE_FIELD_INFO } from "@/lib/constants/serviceFields";
+import { SERVICE_FIELD_IMAGES } from "@/lib/constants/serviceFields";
 
 // 香港電話號碼驗證：8位數字（可選前綴如+852或852）
 const phoneRegex = /^(\+?852[-.\s]?)?[2-9]\d{7}$/;
@@ -135,29 +135,6 @@ export function RegisterForm() {
     try {
       setError("");
       setLoading(true);
-
-      // 先檢查電話是否已被使用（由後端 Admin SDK 處理）
-      const phoneCheckResponse = await fetch("/api/public/check-phone", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ phone: data.phone }),
-      });
-
-      if (!phoneCheckResponse.ok) {
-        const errorData = await phoneCheckResponse.json().catch(() => ({}));
-        throw new Error(errorData.error || "電話檢查失敗，請稍後再試。");
-      }
-
-      const { exists } = (await phoneCheckResponse.json()) as { exists: boolean };
-      if (exists) {
-        setError(
-          "此電話號碼已被其他帳號使用。如你已註冊過，請改用該帳號的電郵登入，或到「忘記密碼」頁面重設密碼。"
-        );
-        setLoading(false);
-        return;
-      }
 
       // 處理其他技能和對象
       // 過濾掉 "Other"，只保留實際技能
@@ -339,7 +316,6 @@ export function RegisterForm() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {SERVICE_FIELDS.map((field) => {
             const isSelected = selectedFields.includes(field);
-            const info = SERVICE_FIELD_INFO[field];
             return (
               <div
                 key={field}
@@ -359,24 +335,14 @@ export function RegisterForm() {
                       className="mt-1"
                     />
                   </div>
-                  <div className="flex-1 space-y-2">
-                    <div>
-                      <Label
-                        htmlFor={`field-${field}`}
-                        className="font-semibold cursor-pointer block"
-                      >
-                        {field}
-                      </Label>
-                      {info && (
-                        <>
-                          <p className="text-xs text-muted-foreground">{info.subtitle}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {info.description}
-                          </p>
-                        </>
-                      )}
-                    </div>
-                    <div className="relative w-full h-28 rounded-md overflow-hidden bg-muted">
+                  <div className="flex-1">
+                    <Label
+                      htmlFor={`field-${field}`}
+                      className="font-normal cursor-pointer block mb-2"
+                    >
+                      {field}
+                    </Label>
+                    <div className="relative w-full h-32 rounded-md overflow-hidden bg-muted">
                       <Image
                         src={SERVICE_FIELD_IMAGES[field]}
                         alt={field}

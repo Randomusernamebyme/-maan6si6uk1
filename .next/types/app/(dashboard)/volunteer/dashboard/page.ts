@@ -1,4 +1,4 @@
-// File: /Users/gin1daai6/maan6si6uk1/-maan6si6uk1/app/(dashboard)/volunteer/dashboard/page.tsx
+// File: /Users/gin1daai6/Desktop/-maan6si6uk1/app/(dashboard)/volunteer/dashboard/page.tsx
 import * as entry from '../../../../../../app/(dashboard)/volunteer/dashboard/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

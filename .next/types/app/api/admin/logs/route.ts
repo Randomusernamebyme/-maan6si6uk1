@@ -1,4 +1,4 @@
-// File: /Users/gin1daai6/maan6si6uk1/-maan6si6uk1/app/api/admin/logs/route.ts
+// File: /Users/gin1daai6/Desktop/-maan6si6uk1/app/api/admin/logs/route.ts
 import * as entry from '../../../../../../app/api/admin/logs/route.js'
 import type { NextRequest } from 'next/server.js'
 

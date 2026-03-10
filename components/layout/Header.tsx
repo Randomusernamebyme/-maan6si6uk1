@@ -9,10 +9,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User } from "lucide-react";
+import { LogOut, Menu, User } from "lucide-react";
 
 export function Header() {
   const { user, logout, loading } = useAuth();
+  const dashboardHref = user?.role === "admin" ? "/admin/dashboard" : "/volunteer/dashboard";
 
   const handleLogout = async () => {
     try {
@@ -47,10 +48,37 @@ export function Header() {
             >
               Gallery
             </Link>
+            <Link
+              href="/about"
+              className="text-sm font-medium transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              About
+            </Link>
           </nav>
         </div>
 
         <div className="flex items-center gap-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden" aria-label="開啟導覽選單">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="md:hidden">
+              {user && (
+                <DropdownMenuItem asChild>
+                  <Link href={dashboardHref}>看板</Link>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem asChild>
+                <Link href="/gallery">Gallery</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/about">About</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {loading ? (
             <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
           ) : user ? (
