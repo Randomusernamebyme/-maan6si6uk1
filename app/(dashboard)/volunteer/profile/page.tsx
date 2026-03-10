@@ -25,6 +25,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
+// 香港電話號碼驗證：8位數字（可選前綴如+852或852）
+const phoneRegex = /^(\+?852[-.\s]?)?[2-9]\d{7}$/;
+
 const passwordChangeSchema = z
   .object({
     currentPassword: z.string().min(1, "請輸入當前密碼"),
@@ -235,6 +238,11 @@ export default function ProfilePage() {
 
     if (formData.fields.length === 0) {
       setError("請至少選擇一個服務範疇");
+      return;
+    }
+
+    if (!phoneRegex.test(formData.phone.trim())) {
+      setError("請輸入有效的香港電話號碼（8位數字）");
       return;
     }
 

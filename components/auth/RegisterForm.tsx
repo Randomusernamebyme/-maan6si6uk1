@@ -17,6 +17,9 @@ import Image from "next/image";
 import { ServiceField } from "@/types";
 import { SERVICE_FIELD_IMAGES } from "@/lib/constants/serviceFields";
 
+// 香港電話號碼驗證：8位數字（可選前綴如+852或852）
+const phoneRegex = /^(\+?852[-.\s]?)?[2-9]\d{7}$/;
+
 const registerSchema = z.object({
   email: z.string().email("請輸入有效的電子郵件"),
   password: z
@@ -29,7 +32,7 @@ const registerSchema = z.object({
   phone: z
     .string()
     .min(1, "請輸入電話號碼")
-    .regex(/^[0-9+\-\s()]+$/, "請輸入有效的電話號碼格式"),
+    .regex(phoneRegex, "請輸入有效的香港電話號碼（8位數字）"),
   age: z.enum(["12-17", "18-24"], {
     required_error: "請選擇年齡範圍",
   }),
