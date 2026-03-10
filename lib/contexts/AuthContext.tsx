@@ -78,16 +78,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
-      // 強制要求電郵已驗證
-      if (!userCredential.user.emailVerified) {
+      // 先載入 Firestore 中的用戶資料
+      const userData = await fetchUserData(userCredential.user.uid);
+      if (!userData) {
+        await signOut(auth);
+        throw new Error("未能載入帳號資料，請聯絡管理員協助處理。");
+      }
+
+      // 只有當義工已被 admin 批准時，才強制要求電郵已驗證
+      if (userData.status === "approved" && !userCredential.user.emailVerified) {
         await sendEmailVerification(userCredential.user);
         await signOut(auth);
         throw new Error(
-          "你的電郵帳號尚未完成驗證。我們已重新發送驗證電郵，請到收件箱按連結完成驗證後再登入。"
+          "你的義工帳號已獲批准，但電郵尚未完成驗證。我們已發送驗證電郵，請先到收件箱按連結完成驗證後再登入。"
         );
       }
 
-      const userData = await fetchUserData(userCredential.user.uid);
       setUser(userData);
     } catch (error: any) {
       throw new Error(error.message || "登入失敗");
