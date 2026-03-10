@@ -14,7 +14,7 @@ import {
   EmailAuthProvider,
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase/config";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { User } from "@/types";
 
 interface AuthContextType {
@@ -73,27 +73,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  // 登入
+  // 登入（不再強制檢查電郵是否已驗證）
   const login = async (email: string, password: string) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-
-      // 先載入 Firestore 中的用戶資料
       const userData = await fetchUserData(userCredential.user.uid);
-      if (!userData) {
-        await signOut(auth);
-        throw new Error("未能載入帳號資料，請聯絡管理員協助處理。");
-      }
-
-      // 只有當義工已被 admin 批准時，才強制要求電郵已驗證
-      if (userData.status === "approved" && !userCredential.user.emailVerified) {
-        await sendEmailVerification(userCredential.user);
-        await signOut(auth);
-        throw new Error(
-          "你的義工帳號已獲批准，但電郵尚未完成驗證。我們已發送驗證電郵，請先到收件箱按連結完成驗證後再登入。"
-        );
-      }
-
       setUser(userData);
     } catch (error: any) {
       throw new Error(error.message || "登入失敗");
@@ -103,6 +87,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 註冊
   const register = async (email: string, password: string, userData: Partial<User>) => {
     try {
+      // 檢查電話號碼是否已被使用（全站唯一）
+      if (userData.phone) {
+        const phoneQuery = query(
+          collection(db, "users"),
+          where("phone", "==", userData.phone)
+        );
+        const phoneSnapshot = await getDocs(phoneQuery);
+        if (!phoneSnapshot.empty) {
+          throw new Error(
+            "此電話號碼已被其他帳號使用。如你已註冊過，請改用該帳號的電郵去登入，或到「忘記密碼」頁面重設密碼。"
+          );
+        }
+      }
+
+      // 檢查電郵是否已被使用（全站唯一）
+      const emailQuery = query(
+        collection(db, "users"),
+        where("email", "==", email)
+      );
+      const emailSnapshot = await getDocs(emailQuery);
+      if (!emailSnapshot.empty) {
+        throw new Error(
+          "此電子郵件已經註冊過帳號。如你忘記密碼，請使用「忘記密碼」功能重設密碼，或改用其他電郵註冊。"
+        );
+      }
+
+      // 建立 Firebase Auth 帳號（不強制驗證電郵）
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUser: User = {
         uid: userCredential.user.uid,
@@ -128,11 +139,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-
-      // 發送驗證郵件
-      if (userCredential.user && !userCredential.user.emailVerified) {
-        await sendEmailVerification(userCredential.user);
-      }
 
       setUser(newUser);
     } catch (error: any) {
