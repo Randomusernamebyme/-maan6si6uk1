@@ -192,7 +192,7 @@ export function RegisterForm() {
             <Button
               type="button"
               variant="outline"
-              size="xs"
+              size="sm"
               className="h-7 px-2 text-xs"
               onClick={() => router.push("/login")}
             >
@@ -201,7 +201,7 @@ export function RegisterForm() {
             <Button
               type="button"
               variant="outline"
-              size="xs"
+              size="sm"
               className="h-7 px-2 text-xs"
               onClick={() =>
                 router.push(
