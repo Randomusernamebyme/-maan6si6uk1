@@ -1,7 +1,7 @@
-\"use client\";
+"use client";
 
-import { useEffect, useState } from \"react\";
-import { CheckCircle2, X } from \"lucide-react\";
+import { useEffect, useState } from "react";
+import { CheckCircle2, X } from "lucide-react";
 
 interface SuccessAnimationProps {
   trackingNumber?: string;
