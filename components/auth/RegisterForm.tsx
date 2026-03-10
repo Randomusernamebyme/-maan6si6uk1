@@ -15,7 +15,7 @@ import { Loading } from "@/components/ui/loading";
 import { WelcomeAnimation } from "@/components/ui/welcome-animation";
 import Image from "next/image";
 import { ServiceField } from "@/types";
-import { SERVICE_FIELD_IMAGES } from "@/lib/constants/serviceFields";
+import { SERVICE_FIELD_IMAGES, SERVICE_FIELD_INFO } from "@/lib/constants/serviceFields";
 
 // 香港電話號碼驗證：8位數字（可選前綴如+852或852）
 const phoneRegex = /^(\+?852[-.\s]?)?[2-9]\d{7}$/;
@@ -316,6 +316,7 @@ export function RegisterForm() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {SERVICE_FIELDS.map((field) => {
             const isSelected = selectedFields.includes(field);
+            const info = SERVICE_FIELD_INFO[field];
             return (
               <div
                 key={field}
@@ -335,14 +336,24 @@ export function RegisterForm() {
                       className="mt-1"
                     />
                   </div>
-                  <div className="flex-1">
-                    <Label
-                      htmlFor={`field-${field}`}
-                      className="font-normal cursor-pointer block mb-2"
-                    >
-                      {field}
-                    </Label>
-                    <div className="relative w-full h-32 rounded-md overflow-hidden bg-muted">
+                  <div className="flex-1 space-y-2">
+                    <div>
+                      <Label
+                        htmlFor={`field-${field}`}
+                        className="font-semibold cursor-pointer block"
+                      >
+                        {field}
+                      </Label>
+                      {info && (
+                        <>
+                          <p className="text-xs text-muted-foreground">{info.subtitle}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {info.description}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                    <div className="relative w-full h-28 rounded-md overflow-hidden bg-muted">
                       <Image
                         src={SERVICE_FIELD_IMAGES[field]}
                         alt={field}
