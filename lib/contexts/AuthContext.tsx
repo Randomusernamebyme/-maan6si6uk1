@@ -14,7 +14,7 @@ import {
   EmailAuthProvider,
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase/config";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { User } from "@/types";
 
 interface AuthContextType {
@@ -87,6 +87,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 註冊
   const register = async (email: string, password: string, userData: Partial<User>) => {
     try {
+      // 檢查電話號碼是否已被使用
+      if (userData.phone) {
+        const phoneQuery = query(
+          collection(db, "users"),
+          where("phone", "==", userData.phone)
+        );
+        const phoneSnapshot = await getDocs(phoneQuery);
+        if (!phoneSnapshot.empty) {
+          throw new Error("此電話號碼已被使用，請改用其他電話號碼或嘗試登入。");
+        }
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUser: User = {
         uid: userCredential.user.uid,
@@ -120,6 +132,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(newUser);
     } catch (error: any) {
+      // 處理常見錯誤訊息
+      if (error?.code === "auth/email-already-in-use") {
+        throw new Error("此電子郵件已被使用，請改用其他電郵或嘗試登入。");
+      }
       throw new Error(error.message || "註冊失敗");
     }
   };

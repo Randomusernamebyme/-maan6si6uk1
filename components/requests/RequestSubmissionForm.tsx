@@ -36,8 +36,8 @@ const requestSchema = z.object({
     .string()
     .min(1, "請輸入您的需求")
     .refine(
-      (value) => value.trim().split(/\s+/).filter((word) => word.length > 0).length >= 10,
-      "請至少輸入10個字詞，方便我哋了解你嘅情況"
+      (value) => value.replace(/\s/g, "").length >= 10,
+      "請至少輸入 10 個字，方便我哋了解你嘅情況"
     ),
   fields: z.array(z.enum(["生活助手", "社區拍檔", "街坊樹窿"])).min(1, "請至少選擇一個幫助範疇"),
   appreciation: z.string().optional(),
@@ -300,7 +300,7 @@ export function RequestSubmissionForm() {
             <textarea
               id="description"
               {...register("description")}
-              placeholder="請詳細描述您的需求（至少10個字詞）..."
+              placeholder="請詳細描述您的需求（至少 10 個字）..."
               rows={6}
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
             />
@@ -308,7 +308,7 @@ export function RequestSubmissionForm() {
               <p className="text-sm text-destructive">{errors.description.message}</p>
             )}
             <p className="text-xs text-muted-foreground">
-              最少需要 10 個字詞，例如：「最近照顧屋企人有啲吃力，想有人幫手分擔」
+              最少需要 10 個字，例如：「最近照顧屋企人有啲吃力，想有人幫手分擔」
             </p>
           </div>
 
