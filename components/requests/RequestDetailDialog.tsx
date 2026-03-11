@@ -55,6 +55,8 @@ export function RequestDetailDialog({
   const application = applications.find((app) => app.requestId === request.id);
   const hasApplied = !!application;
   const applicationStatus = application?.status;
+  const volunteerStatus = user?.status;
+  const canApply = !user || volunteerStatus === "approved";
 
   // 檢查技能匹配
   const matchingSkills = request.requiredSkills
@@ -224,12 +226,22 @@ export function RequestDetailDialog({
           {!hasApplied && !success && (
             <>
               {!showApplicationForm ? (
-                <Button
-                  onClick={() => setShowApplicationForm(true)}
-                  className="w-full"
-                >
-                  報名此委托
-                </Button>
+                <>
+                  {user && !canApply && (
+                    <div className="rounded-md bg-amber-50 dark:bg-amber-900/20 p-4 text-sm text-amber-800 dark:text-amber-200">
+                      {volunteerStatus === "pending" && "您的義工帳號仍在審核中，暫時未能報名委托。"}
+                      {volunteerStatus === "rejected" && "您的義工申請目前未獲通過，暫時未能報名委托。"}
+                      {volunteerStatus === "suspended" && "您的義工帳號已被暫停，暫時未能報名委托。"}
+                    </div>
+                  )}
+                  <Button
+                    onClick={() => setShowApplicationForm(true)}
+                    className="w-full"
+                    disabled={!canApply}
+                  >
+                    報名此委托
+                  </Button>
+                </>
               ) : (
                 <div className="space-y-4 border-t pt-4">
                   {error && <ErrorDisplay message={error} />}

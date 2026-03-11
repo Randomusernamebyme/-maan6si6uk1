@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     const adminDb = getAdminDb();
 
-    // 檢查義工帳號狀態，暫停中的帳號不得報名
+    // 檢查義工帳號狀態：只有已審核（approved）可報名
     const volunteerDoc = await adminDb.collection("users").doc(body.volunteerId).get();
     if (!volunteerDoc.exists) {
       return NextResponse.json(
@@ -60,9 +60,18 @@ export async function POST(request: NextRequest) {
     }
 
     const volunteerData = volunteerDoc.data();
-    if (volunteerData?.status === "suspended") {
+    if (volunteerData?.status !== "approved") {
+      const status = volunteerData?.status;
+      const statusMessage =
+        status === "pending"
+          ? "您的義工帳號仍在審核中，暫時不能報名新委托"
+          : status === "rejected"
+          ? "您的義工申請目前未獲通過，暫時不能報名新委托"
+          : status === "suspended"
+          ? "您的帳號已被暫停，暫時不能報名新委托"
+          : "您的義工帳號狀態未符合報名要求";
       return NextResponse.json(
-        { error: "您的帳號已被暫停，暫時不能報名新委托" },
+        { error: statusMessage },
         { status: 403 }
       );
     }

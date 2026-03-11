@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/lib/hooks/useAuth";
+import { useApplications } from "@/lib/hooks/useApplications";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -159,6 +160,7 @@ const TARGET_AUDIENCE = [
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
+  const { applications } = useApplications(user?.uid);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
@@ -203,6 +205,10 @@ export default function ProfilePage() {
       </div>
     );
   }
+
+  const completedRequestsCount = applications.filter(
+    (application) => application.status === "completed"
+  ).length;
 
   const toggleField = (field: ServiceField) => {
     const newFields = formData.fields.includes(field)
@@ -575,7 +581,7 @@ export default function ProfilePage() {
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">完成的委托數：</span>
-            <span>{user.completedTasks || 0}</span>
+            <span>{completedRequestsCount}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">累計義工時數：</span>
