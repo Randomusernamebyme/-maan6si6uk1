@@ -32,7 +32,7 @@ async function verifyAdmin(request: NextRequest) {
   return decodedToken;
 }
 
-async function recalculateVolunteerHours(volunteerId: string) {
+async function recalculateVolunteerMetrics(volunteerId: string) {
   const adminDb = getAdminDb();
   const completedSnapshot = await adminDb
     .collection("applications")
@@ -44,13 +44,18 @@ async function recalculateVolunteerHours(volunteerId: string) {
     const hours = Number(doc.data()?.contributedHours || 0);
     return sum + (Number.isFinite(hours) ? hours : 0);
   }, 0);
+  const completedTasks = completedSnapshot.size;
 
   await adminDb.collection("users").doc(volunteerId).update({
     totalVolunteerHours: totalHours,
+    completedTasks,
     updatedAt: new Date(),
   });
 
-  return totalHours;
+  return {
+    totalVolunteerHours: totalHours,
+    completedTasks,
+  };
 }
 
 // DELETE: 撤回報名
@@ -121,6 +126,15 @@ export async function DELETE(
 
     // 刪除報名記錄
     await applicationRef.delete();
+
+    // 如刪除的是已完成報名，需同步重算義工統計
+    if (applicationData?.volunteerId && applicationData?.status === "completed") {
+      try {
+        await recalculateVolunteerMetrics(applicationData.volunteerId);
+      } catch (metricsError) {
+        console.error("Error recalculating volunteer metrics after delete:", metricsError);
+      }
+    }
 
     // 創建活動日誌（異步，不阻塞響應）
     try {
@@ -208,6 +222,18 @@ export async function PATCH(
 
     // 獲取更新後的狀態
     const newStatus = body.status || oldStatus;
+    let recalculatedMetrics: { totalVolunteerHours: number; completedTasks: number } | null = null;
+
+    if (
+      oldData?.volunteerId &&
+      ((body.status && body.status !== oldStatus) || body.contributedHours !== undefined)
+    ) {
+      try {
+        recalculatedMetrics = await recalculateVolunteerMetrics(oldData.volunteerId);
+      } catch (metricsError) {
+        console.error("Error recalculating volunteer metrics:", metricsError);
+      }
+    }
 
     // 如果狀態有變化，創建活動日誌
     if (body.status && body.status !== oldStatus) {
@@ -302,7 +328,9 @@ export async function PATCH(
           const requestDoc = await adminDb.collection("requests").doc(oldData?.requestId).get();
           const requestName = requestDoc.exists ? (requestDoc.data()?.name || "未知委托") : "未知委托";
 
-          const totalVolunteerHours = await recalculateVolunteerHours(oldData.volunteerId);
+          const totalVolunteerHours =
+            recalculatedMetrics?.totalVolunteerHours ??
+            (await recalculateVolunteerMetrics(oldData.volunteerId)).totalVolunteerHours;
 
           await adminDb.collection("activity_logs").add({
             userId: decodedToken.uid,

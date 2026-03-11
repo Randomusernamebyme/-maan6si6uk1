@@ -26,6 +26,20 @@ async function verifyAdmin(request: NextRequest) {
   }
 }
 
+async function recalculateVolunteerCompletedTasks(volunteerId: string) {
+  const adminDb = getAdminDb();
+  const completedSnapshot = await adminDb
+    .collection("applications")
+    .where("volunteerId", "==", volunteerId)
+    .where("status", "==", "completed")
+    .get();
+
+  await adminDb.collection("users").doc(volunteerId).update({
+    completedTasks: completedSnapshot.size,
+    updatedAt: new Date(),
+  });
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -287,6 +301,14 @@ export async function PATCH(
           } catch (logError) {
             console.error("Error creating activity log for application:", logError);
             // 不影響主要操作
+          }
+
+          if (appData?.volunteerId) {
+            try {
+              await recalculateVolunteerCompletedTasks(appData.volunteerId);
+            } catch (metricsError) {
+              console.error("Error recalculating completedTasks:", metricsError);
+            }
           }
         });
         
