@@ -4,8 +4,17 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { zhTW } from "date-fns/locale";
 
@@ -34,6 +43,8 @@ export default function GalleryPage() {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
+  const [isPostOpen, setIsPostOpen] = useState(false);
+  const [activePostId, setActivePostId] = useState("");
 
   useEffect(() => {
     const fetchGallery = async () => {
@@ -53,6 +64,8 @@ export default function GalleryPage() {
     };
     fetchGallery();
   }, []);
+
+  const activePost = items.find((item) => item.id === activePostId) || null;
 
   if (loading) {
     return (
@@ -92,7 +105,15 @@ export default function GalleryPage() {
           {items.map((item) => {
             const cover = item.galleryPhotos?.[0]?.url;
             return (
-              <Link key={item.id} href={`/gallery/${item.id}`} className="block">
+              <button
+                key={item.id}
+                type="button"
+                className="block text-left"
+                onClick={() => {
+                  setActivePostId(item.id);
+                  setIsPostOpen(true);
+                }}
+              >
                 <Card className="overflow-hidden hover:shadow-md transition-shadow">
                   <CardContent className="p-0">
                     <div className="relative w-full aspect-square bg-muted">
@@ -121,11 +142,89 @@ export default function GalleryPage() {
                     </div>
                   </CardContent>
                 </Card>
-              </Link>
+              </button>
             );
           })}
         </div>
       )}
+
+      <Dialog open={isPostOpen} onOpenChange={setIsPostOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {activePost && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{activePost.name || activePost.fields.join("、") || "成果貼文"}</DialogTitle>
+                <DialogDescription>已完成並公開的委托成果內容</DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6">
+                <div className="flex flex-wrap gap-2">
+                  {activePost.fields.map((field) => (
+                    <Badge key={field} variant="secondary">
+                      {field}
+                    </Badge>
+                  ))}
+                  {activePost.completedAt && (
+                    <Badge variant="outline">
+                      完成於 {format(new Date(activePost.completedAt), "yyyy年MM月dd日", { locale: zhTW })}
+                    </Badge>
+                  )}
+                </div>
+
+                {activePost.description && (
+                  <div>
+                    <h3 className="font-semibold mb-2">公開基本資訊</h3>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{activePost.description}</p>
+                  </div>
+                )}
+
+                {activePost.galleryPhotos.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold mb-2">管理員上傳相片</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {activePost.galleryPhotos.map((photo, idx) => (
+                        <div
+                          key={`${activePost.id}-photo-${idx}`}
+                          className="relative w-full h-64 rounded-md overflow-hidden bg-muted"
+                        >
+                          <Image
+                            src={photo.url}
+                            alt={`成果相片 ${idx + 1}`}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {activePost.galleryFeedbacks.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold mb-2">管理員回饋</h3>
+                    <div className="space-y-2">
+                      {activePost.galleryFeedbacks.map((feedback, idx) => (
+                        <div key={`${activePost.id}-feedback-${idx}`} className="rounded-md border p-3 text-sm">
+                          <p className="whitespace-pre-wrap">{feedback.content}</p>
+                          {feedback.createdAt && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {format(new Date(feedback.createdAt), "yyyy年MM月dd日 HH:mm", { locale: zhTW })}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/gallery/${activePost.id}`}>在獨立頁面查看</Link>
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
