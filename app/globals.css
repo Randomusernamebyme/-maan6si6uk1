@@ -4,21 +4,22 @@
 
 @layer base {
   :root {
-    /* 簡約黑白灰設計 */
+    /* 全站主題色 */
     --background: 0 0% 100%; /* 純白背景 */
     --foreground: 0 0% 3.9%; /* 深灰文字 */
     --card: 0 0% 100%; /* 白色卡片 */
     --card-foreground: 0 0% 3.9%; /* 深灰文字 */
     --popover: 0 0% 100%; /* 白色彈窗 */
     --popover-foreground: 0 0% 3.9%; /* 深灰文字 */
-    --primary: 0 0% 9%; /* 深灰主色 */
+    --primary: 19 78% 37%; /* #aa4515 Highlighted Button */
     --primary-foreground: 0 0% 98%; /* 白色文字 */
-    --secondary: 0 0% 96.1%; /* 淺灰次要 */
-    --secondary-foreground: 0 0% 9%; /* 深灰文字 */
+    --secondary: 35 95% 66%; /* #fbb657 Normal Button */
+    --secondary-foreground: 19 78% 20%; /* 深色文字 */
+    --secondary-hover: 33 72% 78%; /* #efcb9e Hover Normal Button */
     --muted: 0 0% 96.1%; /* 極淺灰 */
     --muted-foreground: 0 0% 45.1%; /* 中灰文字 */
-    --accent: 0 0% 96.1%; /* 淺灰強調 */
-    --accent-foreground: 0 0% 9%; /* 深灰文字 */
+    --accent: 35 95% 66%; /* 一般互動色 */
+    --accent-foreground: 19 78% 20%; /* 深色文字 */
     --destructive: 0 84.2% 60.2%; /* 深灰錯誤 */
     --destructive-foreground: 0 0% 98%; /* 白色文字 */
     --border: 0 0% 89.8%; /* 淺灰邊框 */
@@ -35,14 +36,15 @@
     --card-foreground: 0 0% 98%; /* 淺灰文字 */
     --popover: 0 0% 3.9%; /* 稍淺灰彈窗 */
     --popover-foreground: 0 0% 98%; /* 淺灰文字 */
-    --primary: 0 0% 98%; /* 淺灰主色 */
-    --primary-foreground: 0 0% 9%; /* 深灰文字 */
-    --secondary: 0 0% 14.9%; /* 深灰次要 */
-    --secondary-foreground: 0 0% 98%; /* 淺灰文字 */
+    --primary: 19 78% 37%; /* #aa4515 Highlighted Button */
+    --primary-foreground: 0 0% 98%; /* 白字 */
+    --secondary: 35 95% 66%; /* #fbb657 Normal Button */
+    --secondary-foreground: 19 78% 20%; /* 深色文字 */
+    --secondary-hover: 33 72% 78%; /* #efcb9e Hover Normal Button */
     --muted: 0 0% 14.9%; /* 深灰 */
     --muted-foreground: 0 0% 63.9%; /* 中灰文字 */
-    --accent: 0 0% 14.9%; /* 稍淺灰強調 */
-    --accent-foreground: 0 0% 98%; /* 淺灰文字 */
+    --accent: 35 95% 66%; /* 一般互動色 */
+    --accent-foreground: 19 78% 20%; /* 深色文字 */
     --destructive: 0 62.8% 30.6%; /* 中灰錯誤 */
     --destructive-foreground: 0 0% 98%; /* 淺灰文字 */
     --border: 0 0% 14.9%; /* 中灰邊框 */
