@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { HEADER_BRANDING } from "@/lib/constants/branding";
 
 export function HeroSection() {
   const { user } = useAuth();
@@ -10,9 +12,23 @@ export function HeroSection() {
     <section className="relative py-20 md:py-32 bg-gradient-to-b from-muted/50 to-background">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center space-y-6">
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
-            堅城萬事屋
-          </h1>
+          <h1 className="sr-only">{HEADER_BRANDING.title}</h1>
+          <div className="flex justify-center">
+            {HEADER_BRANDING.logoUrl ? (
+              <Image
+                src={HEADER_BRANDING.logoUrl}
+                alt={HEADER_BRANDING.title}
+                width={560}
+                height={150}
+                className="h-16 md:h-20 w-auto object-contain"
+                priority
+              />
+            ) : (
+              <p className="text-5xl md:text-6xl font-bold tracking-tight">
+                {HEADER_BRANDING.title}
+              </p>
+            )}
+          </div>
           <p className="text-xl md:text-2xl text-muted-foreground">
             社區服務平台，連接需要幫助的委托者與願意提供服務的義工
           </p>
