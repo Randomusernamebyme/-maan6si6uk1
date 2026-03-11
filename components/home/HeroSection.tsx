@@ -21,7 +21,7 @@ export function HeroSection() {
             幫助街坊解決生活難題，建立更緊密的社區聯繫。
           </p>
             <div className="flex flex-wrap gap-4 justify-center pt-4">
-              <Button asChild size="lg" className="bg-foreground text-background hover:bg-foreground/90">
+              <Button asChild size="lg">
                 <Link href="/request">提交委托請求</Link>
               </Button>
               {!user && (

@@ -24,7 +24,7 @@ export function CTASection() {
             我們都歡迎您加入堅城萬事屋的大家庭。
           </p>
           <div className="flex flex-wrap gap-4 justify-center pt-4">
-            <Button asChild size="lg" className="bg-foreground text-background hover:bg-foreground/90">
+            <Button asChild size="lg">
               <Link href="/request">提交委托</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="border-2">
