@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { HEADER_BRANDING } from "@/lib/constants/branding";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +16,6 @@ import { LogOut, Menu, User } from "lucide-react";
 export function Header() {
   const { user, logout, loading } = useAuth();
   const dashboardHref = user?.role === "admin" ? "/admin/dashboard" : "/volunteer/dashboard";
-  const logoUrl = process.env.NEXT_PUBLIC_SITE_LOGO_URL;
 
   const handleLogout = async () => {
     try {
@@ -29,19 +29,19 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-[#86926d]">
       <div className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-6">
-          <Button asChild variant="ghost" className="p-0 h-auto hover:bg-transparent">
+          <Button asChild variant="ghost" className="text-xl font-bold p-0 h-auto hover:bg-transparent">
             <Link href="/" className="flex items-center space-x-2">
-              {logoUrl ? (
+              {HEADER_BRANDING.logoUrl ? (
                 <Image
-                  src={logoUrl}
-                  alt="堅城萬事屋"
-                  width={180}
-                  height={44}
+                  src={HEADER_BRANDING.logoUrl}
+                  alt={HEADER_BRANDING.title}
+                  width={HEADER_BRANDING.width}
+                  height={HEADER_BRANDING.height}
                   className="h-10 w-auto object-contain"
                   priority
                 />
               ) : (
-                <span className="text-xl font-bold">堅城萬事屋</span>
+                HEADER_BRANDING.title
               )}
             </Link>
           </Button>
