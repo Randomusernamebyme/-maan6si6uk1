@@ -14,7 +14,7 @@ import {
   EmailAuthProvider,
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase/config";
-import { doc, getDoc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, query, where, getDocs, onSnapshot } from "firebase/firestore";
 import { User } from "@/types";
 
 interface AuthContextType {
@@ -30,6 +30,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function toDate(value: any): Date {
+  if (!value) return new Date();
+  if (value instanceof Date) return value;
+  if (typeof value?.toDate === "function") return value.toDate();
+  return new Date(value);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -44,8 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // 轉換 Firestore Timestamp 為 Date
         return {
           ...userData,
-          createdAt: userData.createdAt instanceof Date ? userData.createdAt : new Date(userData.createdAt),
-          updatedAt: userData.updatedAt instanceof Date ? userData.updatedAt : new Date(userData.updatedAt),
+          createdAt: toDate(userData.createdAt),
+          updatedAt: toDate(userData.updatedAt),
         };
       }
       return null;
@@ -57,20 +64,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // 監聽認證狀態變化
   useEffect(() => {
+    let unsubscribeUserDoc: (() => void) | null = null;
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setFirebaseUser(firebaseUser);
-      
+
+      if (unsubscribeUserDoc) {
+        unsubscribeUserDoc();
+        unsubscribeUserDoc = null;
+      }
+
       if (firebaseUser) {
-        const userData = await fetchUserData(firebaseUser.uid);
-        setUser(userData);
+        setLoading(true);
+        const userRef = doc(db, "users", firebaseUser.uid);
+
+        unsubscribeUserDoc = onSnapshot(
+          userRef,
+          (snapshot) => {
+            if (!snapshot.exists()) {
+              setUser(null);
+              setLoading(false);
+              return;
+            }
+
+            const userData = snapshot.data() as User;
+            setUser({
+              ...userData,
+              createdAt: toDate(userData.createdAt),
+              updatedAt: toDate(userData.updatedAt),
+            });
+            setLoading(false);
+          },
+          (error) => {
+            console.error("Error listening to user data:", error);
+            setUser(null);
+            setLoading(false);
+          }
+        );
       } else {
         setUser(null);
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (unsubscribeUserDoc) {
+        unsubscribeUserDoc();
+      }
+    };
   }, []);
 
   // 登入（不再強制檢查電郵是否已驗證）
@@ -129,6 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         goals: userData.goals,
         status: "pending",
         completedTasks: 0,
+        totalVolunteerHours: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

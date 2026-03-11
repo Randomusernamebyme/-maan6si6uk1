@@ -577,6 +577,10 @@ export default function ProfilePage() {
             <span className="text-muted-foreground">完成的委托數：</span>
             <span>{user.completedTasks || 0}</span>
           </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">累計義工時數：</span>
+            <span>{user.totalVolunteerHours || 0} 小時</span>
+          </div>
         </CardContent>
       </Card>
 
