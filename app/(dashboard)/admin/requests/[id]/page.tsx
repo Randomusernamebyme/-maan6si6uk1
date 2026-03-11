@@ -60,6 +60,7 @@ export default function RequestDetailPage() {
   const [applications, setApplications] = useState<(Application & { volunteerName?: string })[]>([]);
   const [applicationsLoading, setApplicationsLoading] = useState(true);
   const [unmerging, setUnmerging] = useState(false);
+  const [contributedHoursInputs, setContributedHoursInputs] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchRequest = async () => {
@@ -158,6 +159,11 @@ export default function RequestDetailPage() {
             );
 
             setApplications(apps);
+            setContributedHoursInputs(
+              Object.fromEntries(
+                apps.map((app) => [app.id, String(Number(app.contributedHours ?? 0))])
+              )
+            );
             setApplicationsLoading(false);
           } catch (err) {
             console.error("Error processing applications:", err);
@@ -286,6 +292,35 @@ export default function RequestDetailPage() {
       setFollowUpContent("");
     } catch (err: any) {
       setError(err.message || "添加跟進記錄失敗");
+    }
+  };
+
+  const handleSaveContributedHours = async (applicationId: string) => {
+    const raw = contributedHoursInputs[applicationId] ?? "0";
+    const hours = Number(raw);
+    if (!Number.isFinite(hours) || hours < 0) {
+      setError("義工時數請輸入大於或等於 0 的數字");
+      return;
+    }
+    try {
+      setError("");
+      const token = await getAuthToken();
+      if (!token) throw new Error("請先登入");
+      const response = await fetch(`/api/applications/${applicationId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ contributedHours: hours }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "更新義工時數失敗");
+      }
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message || "更新義工時數失敗");
     }
   };
 
@@ -637,6 +672,66 @@ export default function RequestDetailPage() {
                                       {app.message}
                                     </p>
                                   )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 已完成（可填寫義工時數） */}
+                  {applications.filter((app) => app.status === "completed").length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-sm mb-2">
+                        已完成 ({applications.filter((app) => app.status === "completed").length})
+                      </h4>
+                      <div className="space-y-2">
+                        {applications
+                          .filter((app) => app.status === "completed")
+                          .map((app) => (
+                            <div
+                              key={app.id}
+                              className="p-3 border rounded-md bg-gray-50 dark:bg-gray-900/20"
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <Link
+                                      href={`/admin/volunteers/${app.volunteerId}`}
+                                      className="font-semibold hover:underline text-primary truncate"
+                                      title={app.volunteerName}
+                                    >
+                                      {app.volunteerName}
+                                    </Link>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    完成時間：{formatDate(app.completedAt || app.updatedAt)}
+                                  </p>
+                                </div>
+                                <div className="flex items-end gap-2">
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">義工時數（小時）</Label>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="0.5"
+                                      value={contributedHoursInputs[app.id] ?? "0"}
+                                      onChange={(e) =>
+                                        setContributedHoursInputs((prev) => ({
+                                          ...prev,
+                                          [app.id]: e.target.value,
+                                        }))
+                                      }
+                                      className="h-8 w-28"
+                                    />
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleSaveContributedHours(app.id)}
+                                  >
+                                    儲存時數
+                                  </Button>
                                 </div>
                               </div>
                             </div>

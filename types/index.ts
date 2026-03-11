@@ -55,6 +55,7 @@ export interface User {
 
   // 統計
   completedTasks?: number; // 完成的委托數
+  totalVolunteerHours?: number; // 累計義工時數
 
   // 系統欄位
   createdAt: Date;
@@ -126,6 +127,7 @@ export interface Application {
   // 配對資訊
   matchedAt?: Date; // 配對時間
   completedAt?: Date; // 完成時間
+  contributedHours?: number; // 管理員核定的義工時數
 
   // 系統欄位
   createdAt: Date;

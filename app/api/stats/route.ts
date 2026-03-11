@@ -28,10 +28,16 @@ export async function GET(request: NextRequest) {
         .get(),
     ]);
 
+    const totalVolunteerHours = approvedVolunteersSnapshot.docs.reduce((sum, doc) => {
+      const hours = Number(doc.data()?.totalVolunteerHours || 0);
+      return sum + (Number.isFinite(hours) ? hours : 0);
+    }, 0);
+
     return NextResponse.json({
       completedRequests: completedRequestsSnapshot.size,
       activeVolunteers: approvedVolunteersSnapshot.size,
       totalApplications: applicationsSnapshot.size,
+      totalVolunteerHours,
     });
   } catch (error: any) {
     console.error("Error fetching stats:", error);

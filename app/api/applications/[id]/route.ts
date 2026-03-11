@@ -32,6 +32,27 @@ async function verifyAdmin(request: NextRequest) {
   return decodedToken;
 }
 
+async function recalculateVolunteerHours(volunteerId: string) {
+  const adminDb = getAdminDb();
+  const completedSnapshot = await adminDb
+    .collection("applications")
+    .where("volunteerId", "==", volunteerId)
+    .where("status", "==", "completed")
+    .get();
+
+  const totalHours = completedSnapshot.docs.reduce((sum, doc) => {
+    const hours = Number(doc.data()?.contributedHours || 0);
+    return sum + (Number.isFinite(hours) ? hours : 0);
+  }, 0);
+
+  await adminDb.collection("users").doc(volunteerId).update({
+    totalVolunteerHours: totalHours,
+    updatedAt: new Date(),
+  });
+
+  return totalHours;
+}
+
 // DELETE: 撤回報名
 export async function DELETE(
   request: NextRequest,
@@ -168,10 +189,22 @@ export async function PATCH(
     const oldData = applicationDoc.data();
     const oldStatus = oldData?.status;
 
-    await applicationRef.update({
+    const updatePayload: Record<string, any> = {
       ...body,
       updatedAt: new Date(),
-    });
+    };
+    if (body.contributedHours !== undefined) {
+      const parsedHours = Number(body.contributedHours);
+      if (!Number.isFinite(parsedHours) || parsedHours < 0) {
+        return NextResponse.json(
+          { error: "義工時數格式不正確，請輸入大於或等於 0 的數字" },
+          { status: 400 }
+        );
+      }
+      updatePayload.contributedHours = parsedHours;
+    }
+
+    await applicationRef.update(updatePayload);
 
     // 獲取更新後的狀態
     const newStatus = body.status || oldStatus;
@@ -254,6 +287,55 @@ export async function PATCH(
       } catch (logError) {
         console.error("Error creating activity log:", logError);
         // 不影響主要操作
+      }
+    }
+
+    if (body.contributedHours !== undefined) {
+      try {
+        const contributedHours = Number(updatePayload.contributedHours || 0);
+        const oldHours = Number(oldData?.contributedHours || 0);
+        if (contributedHours !== oldHours && oldData?.volunteerId) {
+          const volunteerDoc = await adminDb.collection("users").doc(oldData?.volunteerId).get();
+          const volunteerName = volunteerDoc.exists
+            ? (volunteerDoc.data()?.displayName || volunteerDoc.data()?.email || "未知義工")
+            : "未知義工";
+          const requestDoc = await adminDb.collection("requests").doc(oldData?.requestId).get();
+          const requestName = requestDoc.exists ? (requestDoc.data()?.name || "未知委托") : "未知委托";
+
+          const totalVolunteerHours = await recalculateVolunteerHours(oldData.volunteerId);
+
+          await adminDb.collection("activity_logs").add({
+            userId: decodedToken.uid,
+            action: "update_volunteer_hours",
+            targetType: "application",
+            targetId: params.id,
+            description: `更新義工 ${volunteerName} 於委托「${requestName}」的服務時數：${oldHours} -> ${contributedHours}`,
+            changes: {
+              applicationId: params.id,
+              requestId: oldData?.requestId,
+              volunteerId: oldData?.volunteerId,
+              requestName,
+              volunteerName,
+              oldHours,
+              newHours: contributedHours,
+              totalVolunteerHours,
+            },
+            createdAt: new Date(),
+          });
+
+          await adminDb.collection("notifications").add({
+            userId: oldData?.volunteerId,
+            title: "義工時數已更新",
+            message: `您於委托「${requestName}」的服務時數已更新為 ${contributedHours} 小時。累計時數：${totalVolunteerHours} 小時。`,
+            type: "info",
+            relatedRequestId: oldData?.requestId,
+            relatedApplicationId: params.id,
+            read: false,
+            createdAt: new Date(),
+          });
+        }
+      } catch (hoursError) {
+        console.error("Error updating volunteer hours and notifications:", hoursError);
       }
     }
 
