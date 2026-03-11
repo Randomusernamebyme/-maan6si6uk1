@@ -2,21 +2,31 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { HEADER_BRANDING } from "@/lib/constants/branding";
 
 export function HeroSection() {
   const { user } = useAuth();
+  const [isLogoHovered, setIsLogoHovered] = useState(false);
   return (
     <section className="relative py-20 md:py-32 bg-gradient-to-b from-muted/50 to-background">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center space-y-6">
           <h1 className="sr-only">{HEADER_BRANDING.title}</h1>
-          <div className="flex justify-center">
+          <div
+            className="flex justify-center"
+            onMouseEnter={() => setIsLogoHovered(true)}
+            onMouseLeave={() => setIsLogoHovered(false)}
+          >
             {HEADER_BRANDING.logoUrl ? (
               <Image
-                src={HEADER_BRANDING.logoUrl}
+                src={
+                  isLogoHovered && HEADER_BRANDING.logoHoverUrl
+                    ? HEADER_BRANDING.logoHoverUrl
+                    : HEADER_BRANDING.logoUrl
+                }
                 alt={HEADER_BRANDING.title}
                 width={560}
                 height={150}

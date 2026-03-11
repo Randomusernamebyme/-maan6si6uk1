@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getStorage } from "firebase-admin/storage";
 import { getAdminApp } from "@/lib/firebase/admin";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
     if (!bucketName) {
@@ -13,11 +13,13 @@ export async function GET() {
     }
 
     const bucket = getStorage(getAdminApp()).bucket(bucketName);
-    const file = bucket.file("branding/header-logo.png");
+    const variant = request.nextUrl.searchParams.get("variant");
+    const objectPath = variant === "hover" ? "branding/hover.png" : "branding/header-logo.png";
+    const file = bucket.file(objectPath);
 
     const [exists] = await file.exists();
     if (!exists) {
-      return NextResponse.json({ error: "Logo 檔案不存在" }, { status: 404 });
+      return NextResponse.json({ error: `Logo 檔案不存在：${objectPath}` }, { status: 404 });
     }
 
     const [signedUrl] = await file.getSignedUrl({
