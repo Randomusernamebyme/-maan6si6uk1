@@ -4,8 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getAuthToken } from "@/lib/utils/auth";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { storage } from "@/lib/firebase/config";
-import { ref, uploadBytes } from "firebase/storage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -145,31 +143,32 @@ export default function AdminGalleryPage() {
 
     try {
       setProcessingId(item.id);
-      const bucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-      if (!bucket) {
-        throw new Error("缺少 Firebase Storage bucket 設定");
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("請先登入");
       }
 
       const uploaded = await Promise.all(
         files.map(async (file) => {
-          const safeFileName = file.name.replace(/\s+/g, "_");
-          const filePath = `requests/${item.id}/gallery/${Date.now()}-${safeFileName}`;
-          const downloadToken = crypto.randomUUID();
-          const fileRef = ref(storage, filePath);
-          await uploadBytes(fileRef, file, {
-            contentType: file.type || "image/jpeg",
-            cacheControl: "public,max-age=31536000",
-            customMetadata: {
-              firebaseStorageDownloadTokens: downloadToken,
+          const formData = new FormData();
+          formData.append("requestId", item.id);
+          formData.append("file", file);
+          const response = await fetch("/api/admin/gallery/upload", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
             },
+            body: formData,
           });
-          const url = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(
-            filePath
-          )}?alt=media&token=${downloadToken}`;
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || "上傳相片失敗");
+          }
+          const data = await response.json();
           return {
-            url,
-            uploadedAt: new Date().toISOString(),
-            uploadedBy: user?.uid || "",
+            url: data.url,
+            uploadedAt: data.uploadedAt || new Date().toISOString(),
+            uploadedBy: data.uploadedBy || user?.uid || "",
           };
         })
       );
