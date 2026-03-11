@@ -113,20 +113,30 @@ export async function PATCH(
     if (!requestDoc.exists) {
       return NextResponse.json({ error: "委托不存在" }, { status: 404 });
     }
+    const requestData = requestDoc.data() || {};
+    const requestName = requestData.name || "未知委托";
 
     // 更新委托
     const updateData: any = {
       updatedAt: new Date(),
     };
+    const pendingActivityLogs: Array<{
+      action: string;
+      targetType: "request";
+      targetId: string;
+      description: string;
+      changes: Record<string, any>;
+      createdAt: Date;
+      userId: string;
+    }> = [];
 
     if (body.status) {
-      const oldStatus = requestDoc.data()?.status;
+      const oldStatus = requestData?.status;
       updateData.status = body.status;
       
       // 如果狀態有變化，創建活動日誌
       if (oldStatus !== body.status) {
         try {
-          const requestName = requestDoc.data()?.name || "未知委托";
           const statusLabels: Record<string, string> = {
             pending: "待審核",
             open: "已批准",
@@ -168,8 +178,7 @@ export async function PATCH(
         
         // 當委托發布時，通知所有已批准的義工
         try {
-          const requestName = requestDoc.data()?.name || "未知委托";
-          const requestFields = requestDoc.data()?.fields || [];
+          const requestFields = requestData?.fields || [];
           
           // 獲取所有已批准的義工
           const volunteersSnapshot = await adminDb
@@ -226,8 +235,6 @@ export async function PATCH(
           .get();
         
         // 獲取請求名稱用於活動日誌
-        const requestName = requestDoc.data()?.name || "未知委托";
-        
         const updatePromises = applicationsSnapshot.docs.map(async (appDoc) => {
           const appData = appDoc.data();
           
@@ -289,6 +296,7 @@ export async function PATCH(
 
     // 處理跟進記錄更新
     if (body.followUps && Array.isArray(body.followUps)) {
+      const oldFollowUpsCount = Array.isArray(requestData.followUps) ? requestData.followUps.length : 0;
       // 轉換日期為 Firestore Timestamp
       const followUpsWithTimestamps = body.followUps.map((followUp: any) => ({
         ...followUp,
@@ -296,27 +304,116 @@ export async function PATCH(
         adminId: decodedToken.uid, // 使用當前管理員 ID
       }));
       updateData.followUps = followUpsWithTimestamps;
+
+      if (followUpsWithTimestamps.length !== oldFollowUpsCount) {
+        pendingActivityLogs.push({
+          userId: decodedToken.uid,
+          action: "update_request_followups",
+          targetType: "request",
+          targetId: requestId,
+          description: `更新委托「${requestName}」的跟進記錄（由 ${oldFollowUpsCount} 筆變更為 ${followUpsWithTimestamps.length} 筆）`,
+          changes: {
+            requestId,
+            requestName,
+            oldFollowUpsCount,
+            newFollowUpsCount: followUpsWithTimestamps.length,
+          },
+          createdAt: new Date(),
+        });
+      }
     }
 
     if (typeof body.isPublicGallery === "boolean") {
+      const oldIsPublicGallery = !!requestData.isPublicGallery;
       updateData.isPublicGallery = body.isPublicGallery;
+      if (oldIsPublicGallery !== body.isPublicGallery) {
+        pendingActivityLogs.push({
+          userId: decodedToken.uid,
+          action: "update_gallery_visibility",
+          targetType: "request",
+          targetId: requestId,
+          description: body.isPublicGallery
+            ? `將委托「${requestName}」公開到 Gallery`
+            : `將委托「${requestName}」從 Gallery 取消公開`,
+          changes: {
+            requestId,
+            requestName,
+            oldIsPublicGallery,
+            newIsPublicGallery: body.isPublicGallery,
+          },
+          createdAt: new Date(),
+        });
+      }
     }
 
     if (body.galleryPhotos && Array.isArray(body.galleryPhotos)) {
+      const oldPhotosCount = Array.isArray(requestData.galleryPhotos) ? requestData.galleryPhotos.length : 0;
       updateData.galleryPhotos = body.galleryPhotos.map((photo: any) => ({
         ...photo,
         uploadedAt: photo.uploadedAt instanceof Date ? photo.uploadedAt : new Date(photo.uploadedAt),
       }));
+      const newPhotosCount = updateData.galleryPhotos.length;
+      if (newPhotosCount !== oldPhotosCount) {
+        pendingActivityLogs.push({
+          userId: decodedToken.uid,
+          action: "update_gallery_photos",
+          targetType: "request",
+          targetId: requestId,
+          description:
+            newPhotosCount > oldPhotosCount
+              ? `為委托「${requestName}」上傳了 ${newPhotosCount - oldPhotosCount} 張 Gallery 相片`
+              : `從委托「${requestName}」移除了 ${oldPhotosCount - newPhotosCount} 張 Gallery 相片`,
+          changes: {
+            requestId,
+            requestName,
+            oldPhotosCount,
+            newPhotosCount,
+          },
+          createdAt: new Date(),
+        });
+      }
     }
 
     if (body.galleryFeedbacks && Array.isArray(body.galleryFeedbacks)) {
+      const oldFeedbacksCount = Array.isArray(requestData.galleryFeedbacks)
+        ? requestData.galleryFeedbacks.length
+        : 0;
       updateData.galleryFeedbacks = body.galleryFeedbacks.map((feedback: any) => ({
         ...feedback,
         createdAt: feedback.createdAt instanceof Date ? feedback.createdAt : new Date(feedback.createdAt),
       }));
+      const newFeedbacksCount = updateData.galleryFeedbacks.length;
+      if (newFeedbacksCount !== oldFeedbacksCount) {
+        pendingActivityLogs.push({
+          userId: decodedToken.uid,
+          action: "update_gallery_feedbacks",
+          targetType: "request",
+          targetId: requestId,
+          description:
+            newFeedbacksCount > oldFeedbacksCount
+              ? `為委托「${requestName}」新增了 ${newFeedbacksCount - oldFeedbacksCount} 則 Gallery 回饋`
+              : `從委托「${requestName}」移除了 ${oldFeedbacksCount - newFeedbacksCount} 則 Gallery 回饋`,
+          changes: {
+            requestId,
+            requestName,
+            oldFeedbacksCount,
+            newFeedbacksCount,
+          },
+          createdAt: new Date(),
+        });
+      }
     }
 
     await adminDb.collection("requests").doc(requestId).update(updateData);
+    if (pendingActivityLogs.length > 0) {
+      try {
+        await Promise.all(
+          pendingActivityLogs.map((log) => adminDb.collection("activity_logs").add(log))
+        );
+      } catch (logError) {
+        console.error("Error creating gallery/follow-up activity logs:", logError);
+      }
+    }
 
     return NextResponse.json({ 
       success: true,
