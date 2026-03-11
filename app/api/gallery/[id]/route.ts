@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase/admin";
+import { normalizeGalleryPhotos } from "@/lib/firebase/gallery-urls";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -26,12 +27,13 @@ export async function GET(
       return NextResponse.json({ error: "貼文未公開" }, { status: 404 });
     }
 
-    const galleryPhotos = Array.isArray(data.galleryPhotos)
+    const rawGalleryPhotos = Array.isArray(data.galleryPhotos)
       ? data.galleryPhotos.map((photo: any) => ({
           ...photo,
           uploadedAt: photo.uploadedAt?.toDate?.()?.toISOString() || photo.uploadedAt,
         }))
       : [];
+    const galleryPhotos = await normalizeGalleryPhotos(rawGalleryPhotos);
 
     const galleryFeedbacks = Array.isArray(data.galleryFeedbacks)
       ? data.galleryFeedbacks.map((feedback: any) => ({

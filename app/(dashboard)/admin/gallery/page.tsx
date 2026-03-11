@@ -5,7 +5,7 @@ import Link from "next/link";
 import { getAuthToken } from "@/lib/utils/auth";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { storage } from "@/lib/firebase/config";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes } from "firebase/storage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -145,12 +145,27 @@ export default function AdminGalleryPage() {
 
     try {
       setProcessingId(item.id);
+      const bucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+      if (!bucket) {
+        throw new Error("缺少 Firebase Storage bucket 設定");
+      }
+
       const uploaded = await Promise.all(
         files.map(async (file) => {
-          const filePath = `requests/${item.id}/gallery/${Date.now()}-${file.name}`;
+          const safeFileName = file.name.replace(/\s+/g, "_");
+          const filePath = `requests/${item.id}/gallery/${Date.now()}-${safeFileName}`;
+          const downloadToken = crypto.randomUUID();
           const fileRef = ref(storage, filePath);
-          await uploadBytes(fileRef, file);
-          const url = await getDownloadURL(fileRef);
+          await uploadBytes(fileRef, file, {
+            contentType: file.type || "image/jpeg",
+            cacheControl: "public,max-age=31536000",
+            customMetadata: {
+              firebaseStorageDownloadTokens: downloadToken,
+            },
+          });
+          const url = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(
+            filePath
+          )}?alt=media&token=${downloadToken}`;
           return {
             url,
             uploadedAt: new Date().toISOString(),
