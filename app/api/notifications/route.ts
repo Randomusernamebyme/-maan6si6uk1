@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase/admin";
 import { Notification } from "@/types";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // 驗證用戶身份
 async function verifyUser(request: NextRequest) {
   const authHeader = request.headers.get("authorization");

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase/admin";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // 驗證管理員權限
 async function verifyAdmin(request: NextRequest) {
   const authHeader = request.headers.get("authorization");

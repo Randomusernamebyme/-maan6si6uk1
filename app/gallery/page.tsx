@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +65,17 @@ export default function GalleryPage() {
   }, []);
 
   const activePost = items.find((item) => item.id === activePostId) || null;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const postId = new URLSearchParams(window.location.search).get("postId");
+    if (!postId || items.length === 0) return;
+    const exists = items.some((item) => item.id === postId);
+    if (exists) {
+      setActivePostId(postId);
+      setIsPostOpen(true);
+    }
+  }, [items]);
 
   if (loading) {
     return (
@@ -148,7 +158,20 @@ export default function GalleryPage() {
         </div>
       )}
 
-      <Dialog open={isPostOpen} onOpenChange={setIsPostOpen}>
+      <Dialog
+        open={isPostOpen}
+        onOpenChange={(open) => {
+          setIsPostOpen(open);
+          if (!open) {
+            if (typeof window === "undefined") return;
+            const params = new URLSearchParams(window.location.search);
+            params.delete("postId");
+            const query = params.toString();
+            const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+            window.history.replaceState({}, "", nextUrl);
+          }
+        }}
+      >
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {activePost && (
             <>
@@ -217,8 +240,15 @@ export default function GalleryPage() {
                   </div>
                 )}
 
-                <Button asChild variant="outline" size="sm">
-                  <Link href={`/gallery/${activePost.id}`}>在獨立頁面查看</Link>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const shareUrl = `${window.location.origin}/gallery?postId=${activePost.id}`;
+                    await navigator.clipboard.writeText(shareUrl);
+                  }}
+                >
+                  複製貼文連結
                 </Button>
               </div>
             </>

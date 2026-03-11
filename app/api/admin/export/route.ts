@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase/admin";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // 安全地轉換 Firestore Timestamp 為 Date
 function convertTimestamp(ts: any): Date | undefined {
   if (!ts) return undefined;

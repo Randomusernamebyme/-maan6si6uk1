@@ -1,6 +1,4 @@
-"use client";
-
-import React from "react";
+import { Suspense } from "react";
 import { HeroSection } from "@/components/home/HeroSection";
 import { ServicesSection } from "@/components/home/ServicesSection";
 import { StatsSection } from "@/components/home/StatsSection";
@@ -13,7 +11,9 @@ export default function Home() {
     <main className="flex min-h-screen flex-col">
       <HeroSection />
       <ServicesSection />
-      <RecentShowcaseSection />
+      <Suspense fallback={null}>
+        <RecentShowcaseSection />
+      </Suspense>
       <StatsSection />
       <CTASection />
     </main>

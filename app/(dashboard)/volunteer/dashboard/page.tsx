@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/hooks/useAuth";
 import { useRequests } from "@/lib/hooks/useRequests";
 import { useApplications } from "@/lib/hooks/useApplications";
 import { useNotifications } from "@/lib/hooks/useNotifications";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,9 @@ import {
 import { RequestDetailDialog } from "@/components/requests/RequestDetailDialog";
 
 export default function VolunteerDashboardPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const { requests, loading, error } = useRequests("published");
   const [searchQuery, setSearchQuery] = useState("");
@@ -92,6 +96,15 @@ export default function VolunteerDashboardPage() {
       unreadNotifications: unreadCount,
     };
   }, [applications, unreadCount]);
+
+  useEffect(() => {
+    const requestId = searchParams.get("requestId");
+    if (!requestId || requests.length === 0) return;
+    const matched = requests.find((request) => request.id === requestId);
+    if (matched) {
+      setSelectedRequest(matched);
+    }
+  }, [searchParams, requests]);
 
   if (loading) {
     return (
@@ -218,7 +231,15 @@ export default function VolunteerDashboardPage() {
           request={selectedRequest}
           userSkills={user?.skills || []}
           open={!!selectedRequest}
-          onOpenChange={(open) => !open && setSelectedRequest(null)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedRequest(null);
+              const params = new URLSearchParams(searchParams.toString());
+              params.delete("requestId");
+              const query = params.toString();
+              router.replace(query ? `${pathname}?${query}` : pathname);
+            }
+          }}
         />
       )}
     </div>
