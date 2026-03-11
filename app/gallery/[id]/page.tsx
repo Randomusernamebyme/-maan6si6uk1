@@ -38,6 +38,7 @@ export default function GalleryDetailPage() {
   const [item, setItem] = useState<GalleryItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [shareMessage, setShareMessage] = useState("");
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -59,6 +60,18 @@ export default function GalleryDetailPage() {
       fetchPost();
     }
   }, [params.id]);
+
+  const handleShare = async () => {
+    if (typeof window === "undefined") return;
+    const shareUrl = `${window.location.origin}/gallery/${params.id}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareMessage("已複製分享連結");
+    } catch {
+      setShareMessage("無法自動複製，請手動複製網址");
+    }
+    setTimeout(() => setShareMessage(""), 2500);
+  };
 
   if (loading) {
     return (
@@ -83,9 +96,16 @@ export default function GalleryDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-10 space-y-6">
-      <Button asChild variant="outline" size="sm">
-        <Link href="/gallery">返回 Gallery</Link>
-      </Button>
+      <div className="flex items-center justify-between gap-2">
+        <Button asChild variant="outline" size="sm">
+          <Link href="/gallery">返回 Gallery</Link>
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleShare}>
+          分享貼文
+        </Button>
+      </div>
+
+      {shareMessage && <p className="text-sm text-muted-foreground">{shareMessage}</p>}
 
       <Card>
         <CardHeader className="space-y-3">

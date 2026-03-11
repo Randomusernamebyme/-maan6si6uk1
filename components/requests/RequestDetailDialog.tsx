@@ -45,6 +45,7 @@ export function RequestDetailDialog({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
 
   const formatDate = (date: Date) => {
     return format(date, "yyyy年MM月dd日", { locale: zhTW });
@@ -110,6 +111,18 @@ export function RequestDetailDialog({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleShare = async () => {
+    if (typeof window === "undefined") return;
+    const shareUrl = `${window.location.origin}/requests/${request.id}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareMessage("已複製委托分享連結");
+    } catch {
+      setShareMessage("無法自動複製，請手動複製網址");
+    }
+    setTimeout(() => setShareMessage(""), 2500);
   };
 
   return (
@@ -199,6 +212,15 @@ export function RequestDetailDialog({
           </div>
 
           {/* 報名表單 */}
+          <div className="space-y-2">
+            <Button onClick={handleShare} variant="outline" className="w-full">
+              分享此委托
+            </Button>
+            {shareMessage && (
+              <p className="text-xs text-muted-foreground">{shareMessage}</p>
+            )}
+          </div>
+
           {!hasApplied && !success && (
             <>
               {!showApplicationForm ? (
