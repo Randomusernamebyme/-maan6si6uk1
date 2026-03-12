@@ -2,9 +2,9 @@ import { ServiceField } from "@/types";
 
 // 服務領域圖片 URL
 export const SERVICE_FIELD_IMAGES: Record<ServiceField, string> = {
-  "生活助手": "https://firebasestorage.googleapis.com/v0/b/maan6si6uk1.firebasestorage.app/o/service-fields%2F1.png?alt=media&token=e5b30fcb-3e76-4965-ac0e-c04ecc5f8e9c",
-  "社區拍檔": "https://firebasestorage.googleapis.com/v0/b/maan6si6uk1.firebasestorage.app/o/service-fields%2F2.png?alt=media&token=4133eb66-66bc-44dd-859c-ec463fdb3d84",
-  "街坊樹窿": "https://firebasestorage.googleapis.com/v0/b/maan6si6uk1.firebasestorage.app/o/service-fields%2F3.png?alt=media&token=a85c6f02-a0e5-4c53-a2f9-f0e77f4edccb",
+  "生活助手": "/api/service-fields/1",
+  "社區拍檔": "/api/service-fields/2",
+  "街坊樹窿": "/api/service-fields/3",
 };
 
 // 三大服務範疇背景色（按指定順序）
