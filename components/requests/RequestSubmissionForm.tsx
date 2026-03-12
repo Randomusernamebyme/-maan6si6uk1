@@ -285,12 +285,12 @@ export function RequestSubmissionForm() {
                             </>
                           )}
                         </div>
-                        <div className="relative w-full h-28 rounded-md overflow-hidden bg-muted">
+                        <div className="relative w-full aspect-[4/3] rounded-md overflow-hidden bg-white/80">
                           <Image
                             src={SERVICE_FIELD_IMAGES[field]}
                             alt={field}
                             fill
-                            className="object-cover"
+                            className="object-contain p-1.5"
                             sizes="(max-width: 768px) 100vw, 33vw"
                           />
                         </div>

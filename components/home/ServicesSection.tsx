@@ -32,12 +32,12 @@ export function ServicesSection() {
                 style={{ backgroundColor: SERVICE_FIELD_BACKGROUNDS[field] }}
               >
                 <CardHeader>
-                  <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden bg-muted">
+                  <div className="relative w-full aspect-[4/3] mb-4 rounded-lg overflow-hidden bg-white/80">
                     <Image
                       src={SERVICE_FIELD_IMAGES[field]}
                       alt={field}
                       fill
-                      className="object-cover"
+                      className="object-contain p-2"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                   </div>
