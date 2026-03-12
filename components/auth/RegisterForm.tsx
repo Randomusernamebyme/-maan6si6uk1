@@ -346,7 +346,7 @@ export function RegisterForm() {
                     >
                       {field}
                     </Label>
-                    <div className="relative w-full aspect-[4/3] rounded-md overflow-hidden bg-white/80">
+                    <div className="relative w-full aspect-[4/3] rounded-md overflow-hidden">
                       <Image
                         src={SERVICE_FIELD_IMAGES[field]}
                         alt={field}
