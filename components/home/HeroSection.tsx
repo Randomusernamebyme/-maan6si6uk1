@@ -4,52 +4,39 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { HEADER_BRANDING } from "@/lib/constants/branding";
+import { HEADER_BRANDING, HERO_BRANDING } from "@/lib/constants/branding";
 
 export function HeroSection() {
   const { user } = useAuth();
   return (
     <section className="relative py-20 md:py-32 bg-gradient-to-b from-muted/50 to-background">
       <div className="container mx-auto px-4">
-        <div className="max-w-3xl mx-auto text-center space-y-6">
-          <h1 className="sr-only">{HEADER_BRANDING.title}</h1>
-          <div className="flex justify-center">
-            {HEADER_BRANDING.logoUrl ? (
-              <div className="group relative h-16 md:h-20">
-                <Image
-                  src={HEADER_BRANDING.logoUrl}
-                  alt={HEADER_BRANDING.title}
-                  width={560}
-                  height={150}
-                  className={`h-16 md:h-20 w-auto object-contain transition-opacity ${
-                    HEADER_BRANDING.hoverLogoUrl ? "opacity-100 group-hover:opacity-0" : "opacity-100"
-                  }`}
-                  priority
-                />
-                {HEADER_BRANDING.hoverLogoUrl && (
-                  <Image
-                    src={HEADER_BRANDING.hoverLogoUrl}
-                    alt={`${HEADER_BRANDING.title} hover`}
-                    width={560}
-                    height={150}
-                    className="pointer-events-none absolute inset-0 h-16 md:h-20 w-auto object-contain opacity-0 transition-opacity group-hover:opacity-100"
-                    priority
-                  />
-                )}
-              </div>
+        <div className="space-y-8">
+          <h1 className="sr-only">{HERO_BRANDING.title}</h1>
+          <div className="w-full">
+            {HERO_BRANDING.heroUrl ? (
+              <Image
+                src={HERO_BRANDING.heroUrl}
+                alt={HERO_BRANDING.title}
+                width={HERO_BRANDING.width}
+                height={HERO_BRANDING.height}
+                className="w-full h-auto object-contain"
+                priority
+              />
             ) : (
-              <p className="text-5xl md:text-6xl font-bold tracking-tight">
+              <p className="text-center text-5xl md:text-6xl font-bold tracking-tight">
                 {HEADER_BRANDING.title}
               </p>
             )}
           </div>
-          <p className="text-xl md:text-2xl text-muted-foreground">
-            社區服務平台，連接需要幫助的委托者與願意提供服務的義工
-          </p>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            我們致力於為堅尼地城社區提供溫暖的支援服務，透過三大服務領域，
-            幫助街坊解決生活難題，建立更緊密的社區聯繫。
-          </p>
+          <div className="max-w-3xl mx-auto text-center space-y-6">
+            <p className="text-xl md:text-2xl text-muted-foreground">
+              社區服務平台，連接需要幫助的委托者與願意提供服務的義工
+            </p>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              我們致力於為堅尼地城社區提供溫暖的支援服務，透過三大服務領域，
+              幫助街坊解決生活難題，建立更緊密的社區聯繫。
+            </p>
             <div className="flex flex-wrap gap-4 justify-center pt-4">
               <Button asChild size="lg">
                 <Link href="/request">提交委托請求</Link>
@@ -60,6 +47,7 @@ export function HeroSection() {
                 </Button>
               )}
             </div>
+          </div>
         </div>
       </div>
     </section>

@@ -17,7 +17,7 @@ export async function GET() {
 
     const [exists] = await file.exists();
     if (!exists) {
-      return NextResponse.json({ error: "Hover Logo 檔案不存在" }, { status: 404 });
+      return NextResponse.json({ error: "Hero 圖片不存在" }, { status: 404 });
     }
 
     const [signedUrl] = await file.getSignedUrl({
@@ -32,9 +32,9 @@ export async function GET() {
       },
     });
   } catch (error: any) {
-    console.error("Error generating branding hover logo URL:", error);
+    console.error("Error generating hero branding URL:", error);
     return NextResponse.json(
-      { error: error?.message || "讀取 hover logo 失敗" },
+      { error: error?.message || "讀取 hero 圖片失敗" },
       { status: 500 }
     );
   }

@@ -30,30 +30,16 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-6">
           <Button asChild variant="ghost" className="text-xl font-bold p-0 h-auto hover:bg-transparent">
-            <Link href="/" className="group flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2">
               {HEADER_BRANDING.logoUrl ? (
-                <div className="relative h-10">
-                  <Image
-                    src={HEADER_BRANDING.logoUrl}
-                    alt={HEADER_BRANDING.title}
-                    width={HEADER_BRANDING.width}
-                    height={HEADER_BRANDING.height}
-                    className={`h-10 w-auto object-contain transition-opacity ${
-                      HEADER_BRANDING.hoverLogoUrl ? "opacity-100 group-hover:opacity-0" : "opacity-100"
-                    }`}
-                    priority
-                  />
-                  {HEADER_BRANDING.hoverLogoUrl && (
-                    <Image
-                      src={HEADER_BRANDING.hoverLogoUrl}
-                      alt={`${HEADER_BRANDING.title} hover`}
-                      width={HEADER_BRANDING.width}
-                      height={HEADER_BRANDING.height}
-                      className="pointer-events-none absolute inset-0 h-10 w-auto object-contain opacity-0 transition-opacity group-hover:opacity-100"
-                      priority
-                    />
-                  )}
-                </div>
+                <Image
+                  src={HEADER_BRANDING.logoUrl}
+                  alt={HEADER_BRANDING.title}
+                  width={HEADER_BRANDING.width}
+                  height={HEADER_BRANDING.height}
+                  className="h-10 w-auto object-contain"
+                  priority
+                />
               ) : (
                 HEADER_BRANDING.title
               )}
