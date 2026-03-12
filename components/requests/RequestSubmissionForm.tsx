@@ -14,7 +14,11 @@ import { Loading } from "@/components/ui/loading";
 import { SuccessAnimation } from "@/components/ui/success-animation";
 import Image from "next/image";
 import { ServiceField } from "@/types";
-import { SERVICE_FIELD_IMAGES, SERVICE_FIELD_INFO } from "@/lib/constants/serviceFields";
+import {
+  SERVICE_FIELD_BACKGROUNDS,
+  SERVICE_FIELD_IMAGES,
+  SERVICE_FIELD_INFO,
+} from "@/lib/constants/serviceFields";
 
 // 香港電話號碼驗證：8位數字（可選前綴如+852或852）
 const phoneRegex = /^(\+?852[-.\s]?)?[2-9]\d{7}$/;
@@ -239,14 +243,16 @@ export function RequestSubmissionForm() {
               {SERVICE_FIELDS.map((field) => {
                 const isSelected = selectedFields.includes(field);
                 const info = SERVICE_FIELD_INFO[field];
+                const isDarkBg = field === "生活助手";
                 return (
                   <div
                     key={field}
                     className={`relative border-2 rounded-lg p-4 cursor-pointer transition-all ${
                       isSelected
-                        ? "border-primary bg-primary/5"
+                        ? "border-primary ring-2 ring-primary/30"
                         : "border-border hover:border-primary/50"
                     }`}
+                    style={{ backgroundColor: SERVICE_FIELD_BACKGROUNDS[field] }}
                     onClick={() => toggleField(field)}
                   >
                     <div className="flex items-start space-x-3">
@@ -262,14 +268,18 @@ export function RequestSubmissionForm() {
                         <div>
                           <Label
                             htmlFor={`field-${field}`}
-                            className="font-semibold cursor-pointer block"
+                            className={`font-semibold cursor-pointer block ${
+                              isDarkBg ? "text-white" : "text-foreground"
+                            }`}
                           >
                             {field}
                           </Label>
                           {info && (
                             <>
-                              <p className="text-xs text-muted-foreground">{info.subtitle}</p>
-                              <p className="text-xs text-muted-foreground mt-1">
+                              <p className={`text-xs ${isDarkBg ? "text-white/90" : "text-foreground/80"}`}>
+                                {info.subtitle}
+                              </p>
+                              <p className={`text-xs mt-1 ${isDarkBg ? "text-white/90" : "text-foreground/80"}`}>
                                 {info.description}
                               </p>
                             </>

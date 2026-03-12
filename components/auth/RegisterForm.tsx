@@ -15,7 +15,7 @@ import { Loading } from "@/components/ui/loading";
 import { WelcomeAnimation } from "@/components/ui/welcome-animation";
 import Image from "next/image";
 import { ServiceField } from "@/types";
-import { SERVICE_FIELD_IMAGES } from "@/lib/constants/serviceFields";
+import { SERVICE_FIELD_BACKGROUNDS, SERVICE_FIELD_IMAGES } from "@/lib/constants/serviceFields";
 
 // 香港電話號碼驗證：8位數字（可選前綴如+852或852）
 const phoneRegex = /^(\+?852[-.\s]?)?[2-9]\d{7}$/;
@@ -316,14 +316,16 @@ export function RegisterForm() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {SERVICE_FIELDS.map((field) => {
             const isSelected = selectedFields.includes(field);
+            const isDarkBg = field === "生活助手";
             return (
               <div
                 key={field}
                 className={`relative border-2 rounded-lg p-4 cursor-pointer transition-all ${
                   isSelected
-                    ? "border-primary bg-primary/5"
+                    ? "border-primary ring-2 ring-primary/30"
                     : "border-border hover:border-primary/50"
                 }`}
+                style={{ backgroundColor: SERVICE_FIELD_BACKGROUNDS[field] }}
                 onClick={() => toggleField(field)}
               >
                 <div className="flex items-start space-x-3">
@@ -338,7 +340,9 @@ export function RegisterForm() {
                   <div className="flex-1">
                     <Label
                       htmlFor={`field-${field}`}
-                      className="font-normal cursor-pointer block mb-2"
+                      className={`font-normal cursor-pointer block mb-2 ${
+                        isDarkBg ? "text-white" : "text-foreground"
+                      }`}
                     >
                       {field}
                     </Label>

@@ -2,7 +2,11 @@
 
 import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SERVICE_FIELD_IMAGES, SERVICE_FIELD_INFO } from "@/lib/constants/serviceFields";
+import {
+  SERVICE_FIELD_BACKGROUNDS,
+  SERVICE_FIELD_IMAGES,
+  SERVICE_FIELD_INFO,
+} from "@/lib/constants/serviceFields";
 import { ServiceField } from "@/types";
 
 export function ServicesSection() {
@@ -20,8 +24,13 @@ export function ServicesSection() {
         <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
           {serviceFields.map((field) => {
             const info = SERVICE_FIELD_INFO[field];
+            const isDarkBg = field === "生活助手";
             return (
-              <Card key={field} className="border-2 hover:shadow-lg transition-shadow">
+              <Card
+                key={field}
+                className="border-2 hover:shadow-lg transition-shadow"
+                style={{ backgroundColor: SERVICE_FIELD_BACKGROUNDS[field] }}
+              >
                 <CardHeader>
                   <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden bg-muted">
                     <Image
@@ -32,11 +41,15 @@ export function ServicesSection() {
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                   </div>
-                  <CardTitle className="text-xl">{field}</CardTitle>
-                  <CardDescription>{info.subtitle}</CardDescription>
+                  <CardTitle className={`text-xl ${isDarkBg ? "text-white" : "text-foreground"}`}>
+                    {field}
+                  </CardTitle>
+                  <CardDescription className={isDarkBg ? "text-white/90" : "text-foreground/80"}>
+                    {info.subtitle}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <p className={`text-sm leading-relaxed ${isDarkBg ? "text-white/90" : "text-foreground/80"}`}>
                     {info.description}
                   </p>
                 </CardContent>

@@ -7,6 +7,13 @@ export const SERVICE_FIELD_IMAGES: Record<ServiceField, string> = {
   "街坊樹窿": "https://firebasestorage.googleapis.com/v0/b/maan6si6uk1.firebasestorage.app/o/service-fields%2F3.png?alt=media&token=a85c6f02-a0e5-4c53-a2f9-f0e77f4edccb",
 };
 
+// 三大服務範疇背景色（按指定順序）
+export const SERVICE_FIELD_BACKGROUNDS: Record<ServiceField, string> = {
+  "生活助手": "#aa4515",
+  "社區拍檔": "#fbb657",
+  "街坊樹窿": "#efcb9e",
+};
+
 // 服務領域信息
 export const SERVICE_FIELD_INFO: Record<ServiceField, { subtitle: string; description: string }> = {
   "生活助手": {
