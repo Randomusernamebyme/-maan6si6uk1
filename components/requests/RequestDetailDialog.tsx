@@ -194,7 +194,7 @@ export function RequestDetailDialog({
                     <Badge
                       key={skill}
                       variant={isMatching ? "default" : "secondary"}
-                      className={`${isMatching ? "bg-green-600" : ""} flex-shrink-0`}
+                      className="flex-shrink-0"
                     >
                       {skill}
                       {isMatching && " ✓"}
@@ -228,7 +228,7 @@ export function RequestDetailDialog({
               {!showApplicationForm ? (
                 <>
                   {user && !canApply && (
-                    <div className="rounded-md bg-amber-50 dark:bg-amber-900/20 p-4 text-sm text-amber-800 dark:text-amber-200">
+                    <div className="rounded-md bg-secondary-hover p-4 text-sm text-foreground">
                       {volunteerStatus === "pending" && "您的義工帳號仍在審核中，暫時未能報名委托。"}
                       {volunteerStatus === "rejected" && "您的義工申請目前未獲通過，暫時未能報名委托。"}
                       {volunteerStatus === "suspended" && "您的義工帳號已被暫停，暫時未能報名委托。"}
@@ -246,7 +246,7 @@ export function RequestDetailDialog({
                 <div className="space-y-4 border-t pt-4">
                   {error && <ErrorDisplay message={error} />}
                   {success && (
-                    <div className="rounded-md bg-green-50 dark:bg-green-900/20 p-4 text-sm text-green-800 dark:text-green-200">
+                    <div className="rounded-md bg-secondary/30 p-4 text-sm text-foreground">
                       報名成功！團隊會盡快聯絡你
                     </div>
                   )}
@@ -304,12 +304,12 @@ export function RequestDetailDialog({
           {hasApplied && (
             <div className={`rounded-md p-4 text-sm ${
               applicationStatus === "approved" 
-                ? "bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200"
+                ? "bg-secondary/30 text-foreground"
                 : applicationStatus === "rejected"
-                ? "bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200"
+                ? "bg-primary/20 text-foreground"
                 : applicationStatus === "completed"
-                ? "bg-gray-50 dark:bg-gray-900/20 text-gray-800 dark:text-gray-200"
-                : "bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200"
+                ? "bg-muted text-foreground"
+                : "bg-secondary-hover text-foreground"
             }`}>
               {applicationStatus === "approved" && "✓ 您已被選中！請留意 WhatsApp，團隊會聯絡你"}
               {applicationStatus === "rejected" && "您的報名未被選中"}

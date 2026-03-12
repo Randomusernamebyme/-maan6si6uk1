@@ -129,7 +129,7 @@ export function RecentShowcaseSection() {
       <div className="container mx-auto px-4 space-y-10">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold">最近成果</h2>
-          <p className="text-muted-foreground mt-2">點擊貼文以 popup 查看完整相片與回饋。</p>
+          <p className="text-muted-foreground mt-2">點擊卡片即可查看完整相片與內容。</p>
           {loading ? (
             <div className="py-8">
               <Loading size="sm" />
@@ -177,7 +177,7 @@ export function RecentShowcaseSection() {
 
         <div>
           <h2 className="text-2xl md:text-3xl font-bold">最近開放申請委托</h2>
-          <p className="text-muted-foreground mt-2">點擊委托以 popup 查看詳情，申請前需先登入/註冊。</p>
+          <p className="text-muted-foreground mt-2">點擊委托查看詳情，申請前請先登入或註冊。</p>
           {loading ? (
             <div className="py-8">
               <Loading size="sm" />
@@ -227,7 +227,7 @@ export function RecentShowcaseSection() {
             <>
               <DialogHeader>
                 <DialogTitle>{activeGallery.name || activeGallery.fields.join("、") || "成果貼文"}</DialogTitle>
-                <DialogDescription>已完成並公開的委托成果內容</DialogDescription>
+                <DialogDescription>已完成委托的成果內容</DialogDescription>
               </DialogHeader>
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">
@@ -286,7 +286,7 @@ export function RecentShowcaseSection() {
             <>
               <DialogHeader>
                 <DialogTitle>{activeRequest.name || activeRequest.fields.join("、") || "公開委托"}</DialogTitle>
-                <DialogDescription>公開委托資訊（已隱藏個人私隱資料）</DialogDescription>
+                <DialogDescription>委托詳情</DialogDescription>
               </DialogHeader>
               <div className="space-y-5">
                 <div className="flex flex-wrap gap-2">

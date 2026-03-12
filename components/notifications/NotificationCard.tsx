@@ -21,10 +21,10 @@ const typeIcons = {
 };
 
 const typeColors = {
-  info: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  success: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  warning: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  error: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  info: "bg-secondary/30 text-foreground",
+  success: "bg-secondary/30 text-foreground",
+  warning: "bg-secondary-hover text-foreground",
+  error: "bg-primary/20 text-foreground",
 };
 
 export function NotificationCard({ notification, onMarkAsRead }: NotificationCardProps) {
@@ -71,10 +71,10 @@ export function NotificationCard({ notification, onMarkAsRead }: NotificationCar
                     {notification.type === "info"
                       ? "資訊"
                       : notification.type === "success"
-                      ? "成功"
+                      ? "更新"
                       : notification.type === "warning"
-                      ? "警告"
-                      : "錯誤"}
+                      ? "提醒"
+                      : "通知"}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
                     {formatDate(notification.createdAt)}

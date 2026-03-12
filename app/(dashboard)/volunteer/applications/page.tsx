@@ -265,7 +265,7 @@ function ApplicationItem({
 
           {application.status === "approved" && (
             <div className="border-t pt-4">
-              <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-4 text-sm text-blue-800 dark:text-blue-200">
+              <div className="rounded-md bg-secondary-hover p-4 text-sm text-foreground">
                 請留意 WhatsApp，團隊會聯絡你
               </div>
             </div>

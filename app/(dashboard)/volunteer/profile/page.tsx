@@ -83,7 +83,7 @@ function PasswordChangeForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {error && <ErrorDisplay message={error} />}
       {success && (
-        <div className="rounded-md bg-green-50 dark:bg-green-900/20 p-4 text-sm text-green-800 dark:text-green-200">
+        <div className="rounded-md bg-secondary/30 p-4 text-sm text-foreground">
           密碼修改成功！
         </div>
       )}
@@ -342,7 +342,7 @@ export default function ProfilePage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && <ErrorDisplay message={error} />}
             {success && (
-              <div className="rounded-md bg-green-50 dark:bg-green-900/20 p-4 text-sm text-green-800 dark:text-green-200">
+              <div className="rounded-md bg-secondary/30 p-4 text-sm text-foreground">
                 資料更新成功！
               </div>
             )}

@@ -441,7 +441,7 @@ export default function AdminApplicationsPage() {
                   <div
                     key={app.id}
                     className={`flex items-start gap-3 p-4 border rounded-md ${
-                      highlightApplicationId === app.id ? "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20" : ""
+                      highlightApplicationId === app.id ? "ring-2 ring-primary bg-secondary/20" : ""
                     }`}
                   >
                     <div className="flex-1 min-w-0">

@@ -163,8 +163,8 @@ export default function AdminDashboardPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
-                      <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <div className="p-2 rounded-lg bg-secondary/30 group-hover:bg-secondary/50 transition-colors">
+                      <FileText className="h-5 w-5 text-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-lg mb-1">查看待審核委托</CardTitle>
@@ -197,8 +197,8 @@ export default function AdminDashboardPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 group-hover:bg-green-200 dark:group-hover:bg-green-900/50 transition-colors">
-                      <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <div className="p-2 rounded-lg bg-secondary/30 group-hover:bg-secondary/50 transition-colors">
+                      <Users className="h-5 w-5 text-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-lg mb-1">查看待審核義工</CardTitle>
@@ -231,8 +231,8 @@ export default function AdminDashboardPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition-colors">
-                      <ClipboardList className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    <div className="p-2 rounded-lg bg-secondary/30 group-hover:bg-secondary/50 transition-colors">
+                      <ClipboardList className="h-5 w-5 text-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-lg mb-1">查看最新報名</CardTitle>
@@ -265,13 +265,13 @@ export default function AdminDashboardPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/50 transition-colors">
-                      <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    <div className="p-2 rounded-lg bg-secondary/30 group-hover:bg-secondary/50 transition-colors">
+                      <FileText className="h-5 w-5 text-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-lg mb-1">管理 Gallery</CardTitle>
                       <CardDescription className="text-sm">
-                        上傳完成委托相片與管理員回饋，控制是否公開展示
+                        整理完成委托內容並設定公開展示
                       </CardDescription>
                     </div>
                   </div>

@@ -20,7 +20,7 @@
     --muted-foreground: 0 0% 45.1%; /* 中灰文字 */
     --accent: 35 95% 66%; /* 一般互動色 */
     --accent-foreground: 19 78% 20%; /* 深色文字 */
-    --destructive: 0 84.2% 60.2%; /* 深灰錯誤 */
+    --destructive: 19 78% 37%; /* 使用品牌主色 */
     --destructive-foreground: 0 0% 98%; /* 白色文字 */
     --border: 0 0% 89.8%; /* 淺灰邊框 */
     --input: 0 0% 89.8%; /* 淺灰輸入框 */
@@ -45,7 +45,7 @@
     --muted-foreground: 0 0% 63.9%; /* 中灰文字 */
     --accent: 35 95% 66%; /* 一般互動色 */
     --accent-foreground: 19 78% 20%; /* 深色文字 */
-    --destructive: 0 62.8% 30.6%; /* 中灰錯誤 */
+    --destructive: 19 78% 37%; /* 使用品牌主色 */
     --destructive-foreground: 0 0% 98%; /* 淺灰文字 */
     --border: 0 0% 14.9%; /* 中灰邊框 */
     --input: 0 0% 14.9%; /* 深灰輸入框 */
@@ -66,5 +66,63 @@
 @layer base {
   iframe[src*="metamask"] {
     display: none !important;
+  }
+}
+
+/* 全站提示色統一：只使用黑白 + 品牌色 */
+@layer utilities {
+  .bg-blue-50,
+  .bg-green-50,
+  .bg-red-50,
+  .bg-yellow-50,
+  .bg-amber-50,
+  .bg-purple-100 {
+    background-color: hsl(var(--secondary-hover)) !important;
+  }
+
+  .text-blue-800,
+  .text-green-800,
+  .text-red-800,
+  .text-yellow-800,
+  .text-amber-800,
+  .text-purple-600,
+  .text-blue-600,
+  .text-green-600,
+  .text-red-600,
+  .text-amber-600 {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .border-blue-500,
+  .border-blue-300,
+  .border-green-300,
+  .border-red-300,
+  .border-yellow-300,
+  .border-amber-300 {
+    border-color: hsl(var(--primary)) !important;
+  }
+
+  .dark .dark\:bg-blue-900\/20,
+  .dark .dark\:bg-green-900\/20,
+  .dark .dark\:bg-red-900\/20,
+  .dark .dark\:bg-yellow-900\/20,
+  .dark .dark\:bg-amber-900\/20,
+  .dark .dark\:bg-purple-900\/30,
+  .dark .dark\:bg-blue-900\/30,
+  .dark .dark\:bg-green-900\/30,
+  .dark .dark\:bg-amber-900\/30 {
+    background-color: hsl(var(--secondary) / 0.25) !important;
+  }
+
+  .dark .dark\:text-blue-200,
+  .dark .dark\:text-green-200,
+  .dark .dark\:text-red-200,
+  .dark .dark\:text-yellow-200,
+  .dark .dark\:text-amber-200,
+  .dark .dark\:text-purple-400,
+  .dark .dark\:text-blue-400,
+  .dark .dark\:text-green-400,
+  .dark .dark\:text-amber-400 {
+    color: hsl(var(--foreground)) !important;
   }
 }
