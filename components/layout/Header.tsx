@@ -61,12 +61,6 @@ export function Header() {
             >
               Gallery
             </Link>
-            <Link
-              href="/about"
-              className="text-sm font-medium transition-colors hover:text-foreground/80 text-foreground/60"
-            >
-              About
-            </Link>
           </nav>
         </div>
 
@@ -85,9 +79,6 @@ export function Header() {
               )}
               <DropdownMenuItem asChild>
                 <Link href="/gallery">Gallery</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/about">About</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
