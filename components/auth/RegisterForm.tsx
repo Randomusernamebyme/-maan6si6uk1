@@ -187,7 +187,7 @@ export function RegisterForm() {
       {error && <ErrorDisplay message={error} />}
       {error && (
         <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive space-y-1">
-          <p>{error}</p>
+          <p>暫時未能完成註冊，請稍後再試。</p>
           <div className="flex flex-wrap gap-2 pt-1">
             <Button
               type="button"
