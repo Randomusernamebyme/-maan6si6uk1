@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminAuth, getAdminDb, getAdminApp } from "@/lib/firebase/admin";
-import { getStorage } from "firebase-admin/storage";
+import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
+import { uploadGalleryBuffer } from "@/lib/cloudinary/upload";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -40,34 +40,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "缺少 requestId 或檔案" }, { status: 400 });
     }
 
-    const bucketName =
-      process.env.FIREBASE_ADMIN_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-    if (!bucketName) {
-      return NextResponse.json({ error: "缺少 Storage bucket 設定" }, { status: 500 });
-    }
-
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const safeFileName = file.name.replace(/\s+/g, "_");
-    const objectPath = `requests/${requestId}/gallery/${Date.now()}-${safeFileName}`;
+    const contentType = file.type || "image/jpeg";
 
-    const bucket = getStorage(getAdminApp()).bucket(bucketName);
-    const gcsFile = bucket.file(objectPath);
-    await gcsFile.save(buffer, {
-      metadata: {
-        contentType: file.type || "image/jpeg",
-        cacheControl: "public,max-age=31536000",
-      },
-      resumable: false,
-    });
-
-    const [signedUrl] = await gcsFile.getSignedUrl({
-      action: "read",
-      expires: "2500-01-01",
-    });
+    const { secureUrl } = await uploadGalleryBuffer(buffer, contentType, requestId);
 
     return NextResponse.json({
-      url: signedUrl,
+      url: secureUrl,
       uploadedAt: new Date().toISOString(),
       uploadedBy: decoded.uid,
     });

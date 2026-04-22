@@ -1,6 +1,6 @@
 export const HEADER_BRANDING = {
   title: "堅城萬事屋",
-  // 使用後端簽名網址代理，避免 Firebase Storage 403 導致前端 502
+  // 經 API 302 導向 Cloudinary 交付網址（見 lib/cloudinary/public-ids）
   logoUrl: "/api/branding/logo",
   width: 180,
   height: 48,
@@ -8,7 +8,7 @@ export const HEADER_BRANDING = {
 
 export const HERO_BRANDING = {
   title: "堅城萬事屋",
-  // 對應：gs://maan6si6uk1.firebasestorage.app/branding/hover.png
+  // Cloudinary public_id 預設：{CLOUDINARY_ASSET_PREFIX}/branding/hover
   heroUrl: "/api/branding/hero",
   width: 1920,
   height: 540,

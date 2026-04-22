@@ -25,6 +25,15 @@ function extractObjectPath(url: string): string | null {
 }
 
 async function toReadableUrl(url: string): Promise<string> {
+  try {
+    const host = new URL(url).hostname;
+    if (host === "res.cloudinary.com" || host.endsWith(".cloudinary.com")) {
+      return url;
+    }
+  } catch {
+    // ignore
+  }
+
   const objectPath = extractObjectPath(url);
   if (!objectPath) {
     return url;
