@@ -64,6 +64,7 @@ export default function AdminGalleryPage() {
   const [createName, setCreateName] = useState("");
   const [createFields, setCreateFields] = useState("");
   const [createDescription, setCreateDescription] = useState("");
+  const [createFiles, setCreateFiles] = useState<File[]>([]);
 
   const activeItem = useMemo(
     () => items.find((item) => item.id === activeItemId) || null,
@@ -173,6 +174,51 @@ export default function AdminGalleryPage() {
     }
     const data = await response.json();
     return String(data.id || "");
+  };
+
+  const uploadFilesToPost = async (postId: string, files: File[]) => {
+    if (!files.length) return [];
+    const token = await getAuthToken();
+    if (!token) throw new Error("請先登入");
+    return Promise.all(
+      files.map(async (file) => {
+        const formData = new FormData();
+        formData.append("postId", postId);
+        formData.append("file", file);
+        const response = await fetch("/api/admin/gallery/upload", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || "上傳相片失敗");
+        }
+        const data = await response.json();
+        return {
+          url: data.url,
+          uploadedAt: data.uploadedAt || new Date().toISOString(),
+          uploadedBy: data.uploadedBy || user?.uid || "",
+        } as GalleryPhoto;
+      })
+    );
+  };
+
+  const patchPostPhotos = async (postId: string, photos: GalleryPhoto[]) => {
+    const token = await getAuthToken();
+    if (!token) throw new Error("請先登入");
+    const response = await fetch(`/api/admin/gallery/posts/${postId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ photos }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || "更新貼文相片失敗");
+    }
   };
 
   const openEditor = (item: AdminGalleryItem) => {
@@ -653,6 +699,12 @@ export default function AdminGalleryPage() {
               placeholder="貼文描述（可留空）"
               rows={4}
             />
+            <Input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={(e) => setCreateFiles(Array.from(e.target.files || []))}
+            />
             <div className="flex gap-2">
               <Button
                 size="sm"
@@ -661,10 +713,15 @@ export default function AdminGalleryPage() {
                     setError("");
                     setProcessingId("creating");
                     const id = await createStandalonePost();
+                    const uploaded = await uploadFilesToPost(id, createFiles);
+                    if (uploaded.length > 0) {
+                      await patchPostPhotos(id, uploaded);
+                    }
                     setIsCreateOpen(false);
                     setCreateName("");
                     setCreateFields("");
                     setCreateDescription("");
+                    setCreateFiles([]);
                     const nextItems = await fetchData();
                     const created = nextItems.find((it) => it.id === id && it.kind === "post");
                     if (created) openEditor(created);
