@@ -36,6 +36,7 @@ interface GalleryFeedback {
 }
 
 interface AdminGalleryItem {
+  kind: "request" | "post";
   id: string;
   name: string;
   fields: string[];
@@ -59,6 +60,10 @@ export default function AdminGalleryPage() {
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [newFeedback, setNewFeedback] = useState("");
   const [feedbackDrafts, setFeedbackDrafts] = useState<Record<number, string>>({});
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createName, setCreateName] = useState("");
+  const [createFields, setCreateFields] = useState("");
+  const [createDescription, setCreateDescription] = useState("");
 
   const activeItem = useMemo(
     () => items.find((item) => item.id === activeItemId) || null,
@@ -107,9 +112,12 @@ export default function AdminGalleryPage() {
         throw new Error(data.error || "載入 Gallery 管理資料失敗");
       }
       const data = await response.json();
-      setItems(data.items || []);
+      const nextItems = data.items || [];
+      setItems(nextItems);
+      return nextItems as AdminGalleryItem[];
     } catch (err: any) {
       setError(err.message || "載入 Gallery 管理資料失敗");
+      return [] as AdminGalleryItem[];
     } finally {
       setLoading(false);
       setProcessingId("");
@@ -120,10 +128,14 @@ export default function AdminGalleryPage() {
     fetchData();
   }, []);
 
-  const patchRequest = async (requestId: string, payload: any) => {
+  const patchItem = async (item: AdminGalleryItem, payload: any) => {
     const token = await getAuthToken();
     if (!token) throw new Error("請先登入");
-    const response = await fetch(`/api/admin/requests/${requestId}`, {
+    const endpoint =
+      item.kind === "request"
+        ? `/api/admin/requests/${item.id}`
+        : `/api/admin/gallery/posts/${item.id}`;
+    const response = await fetch(endpoint, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -135,6 +147,32 @@ export default function AdminGalleryPage() {
       const data = await response.json();
       throw new Error(data.error || "更新失敗");
     }
+  };
+
+  const createStandalonePost = async () => {
+    const name = createName.trim();
+    const description = createDescription.trim();
+    const fields = createFields
+      .split(/[、,，]/g)
+      .map((v) => v.trim())
+      .filter(Boolean);
+
+    const token = await getAuthToken();
+    if (!token) throw new Error("請先登入");
+    const response = await fetch("/api/admin/gallery/posts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ name, description, fields }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || "新增花絮貼文失敗");
+    }
+    const data = await response.json();
+    return String(data.id || "");
   };
 
   const openEditor = (item: AdminGalleryItem) => {
@@ -158,7 +196,11 @@ export default function AdminGalleryPage() {
   const handleTogglePublic = async (item: AdminGalleryItem) => {
     try {
       setProcessingId(item.id);
-      await patchRequest(item.id, { isPublicGallery: !item.isPublicGallery });
+      if (item.kind === "request") {
+        await patchItem(item, { isPublicGallery: !item.isPublicGallery });
+      } else {
+        await patchItem(item, { isPublic: !item.isPublicGallery });
+      }
       await fetchData();
     } catch (err: any) {
       setError(err.message || "更新公開狀態失敗");
@@ -176,7 +218,11 @@ export default function AdminGalleryPage() {
       const uploaded = await Promise.all(
         pendingFiles.map(async (file) => {
           const formData = new FormData();
-          formData.append("requestId", activeItem.id);
+          if (activeItem.kind === "request") {
+            formData.append("requestId", activeItem.id);
+          } else {
+            formData.append("postId", activeItem.id);
+          }
           formData.append("file", file);
           const response = await fetch("/api/admin/gallery/upload", {
             method: "POST",
@@ -196,9 +242,12 @@ export default function AdminGalleryPage() {
         })
       );
 
-      await patchRequest(activeItem.id, {
-        galleryPhotos: [...(activeItem.galleryPhotos || []), ...uploaded],
-      });
+      const nextPhotos = [...(activeItem.galleryPhotos || []), ...uploaded];
+      if (activeItem.kind === "request") {
+        await patchItem(activeItem, { galleryPhotos: nextPhotos });
+      } else {
+        await patchItem(activeItem, { photos: nextPhotos });
+      }
       setPendingFiles([]);
       await fetchData();
     } catch (err: any) {
@@ -211,9 +260,12 @@ export default function AdminGalleryPage() {
     if (!activeItem) return;
     try {
       setProcessingId(activeItem.id);
-      await patchRequest(activeItem.id, {
-        galleryPhotos: activeItem.galleryPhotos.filter((_, idx) => idx !== photoIndex),
-      });
+      const nextPhotos = activeItem.galleryPhotos.filter((_, idx) => idx !== photoIndex);
+      if (activeItem.kind === "request") {
+        await patchItem(activeItem, { galleryPhotos: nextPhotos });
+      } else {
+        await patchItem(activeItem, { photos: nextPhotos });
+      }
       await fetchData();
     } catch (err: any) {
       setError(err.message || "刪除相片失敗");
@@ -233,9 +285,12 @@ export default function AdminGalleryPage() {
         createdBy: user?.uid || "",
         authorName: user?.displayName || "管理員",
       };
-      await patchRequest(activeItem.id, {
-        galleryFeedbacks: [...(activeItem.galleryFeedbacks || []), nextFeedback],
-      });
+      const nextFeedbacks = [...(activeItem.galleryFeedbacks || []), nextFeedback];
+      if (activeItem.kind === "request") {
+        await patchItem(activeItem, { galleryFeedbacks: nextFeedbacks });
+      } else {
+        await patchItem(activeItem, { feedbacks: nextFeedbacks });
+      }
       setNewFeedback("");
       await fetchData();
     } catch (err: any) {
@@ -256,7 +311,11 @@ export default function AdminGalleryPage() {
       const updatedFeedbacks = activeItem.galleryFeedbacks.map((feedback, idx) =>
         idx === feedbackIndex ? { ...feedback, content: newContent } : feedback
       );
-      await patchRequest(activeItem.id, { galleryFeedbacks: updatedFeedbacks });
+      if (activeItem.kind === "request") {
+        await patchItem(activeItem, { galleryFeedbacks: updatedFeedbacks });
+      } else {
+        await patchItem(activeItem, { feedbacks: updatedFeedbacks });
+      }
       await fetchData();
     } catch (err: any) {
       setError(err.message || "更新回饋失敗");
@@ -268,9 +327,12 @@ export default function AdminGalleryPage() {
     if (!activeItem) return;
     try {
       setProcessingId(activeItem.id);
-      await patchRequest(activeItem.id, {
-        galleryFeedbacks: activeItem.galleryFeedbacks.filter((_, idx) => idx !== feedbackIndex),
-      });
+      const nextFeedbacks = activeItem.galleryFeedbacks.filter((_, idx) => idx !== feedbackIndex);
+      if (activeItem.kind === "request") {
+        await patchItem(activeItem, { galleryFeedbacks: nextFeedbacks });
+      } else {
+        await patchItem(activeItem, { feedbacks: nextFeedbacks });
+      }
       await fetchData();
     } catch (err: any) {
       setError(err.message || "刪除回饋失敗");
@@ -291,16 +353,22 @@ export default function AdminGalleryPage() {
       <div>
         <h2 className="text-2xl font-bold">Gallery 管理</h2>
         <p className="text-muted-foreground mt-1">
-          以相片牆方式管理貼文，點擊任一貼文可在彈窗中編輯、刪除相片與回饋。
+          以相片牆方式管理貼文（已完成委托成果 / 獨立花絮），點擊任一貼文可在彈窗中編輯、刪除相片與回饋。
         </p>
       </div>
 
       {error && <ErrorDisplay message={error} />}
 
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" onClick={() => setIsCreateOpen(true)}>
+          新增花絮貼文
+        </Button>
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-xs text-muted-foreground">已完成委托</p>
+            <p className="text-xs text-muted-foreground">貼文總數</p>
             <p className="text-2xl font-bold">{summary.total}</p>
           </CardContent>
         </Card>
@@ -434,6 +502,9 @@ export default function AdminGalleryPage() {
                   <Badge variant={activeItem.isPublicGallery ? "default" : "outline"}>
                     {activeItem.isPublicGallery ? "公開中" : "未公開"}
                   </Badge>
+                  <Badge variant="secondary">
+                    {activeItem.kind === "request" ? "委托成果" : "獨立花絮"}
+                  </Badge>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
@@ -555,6 +626,68 @@ export default function AdminGalleryPage() {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>新增花絮貼文</DialogTitle>
+            <DialogDescription>建立一篇不需綁定委托的 Gallery 花絮貼文。</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <Input
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
+              placeholder="貼文標題（可留空）"
+            />
+            <Input
+              value={createFields}
+              onChange={(e) => setCreateFields(e.target.value)}
+              placeholder="服務類別（用 、 或 , 分隔，可留空）"
+            />
+            <Textarea
+              value={createDescription}
+              onChange={(e) => setCreateDescription(e.target.value)}
+              placeholder="貼文描述（可留空）"
+              rows={4}
+            />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={async () => {
+                  try {
+                    setError("");
+                    setProcessingId("creating");
+                    const id = await createStandalonePost();
+                    setIsCreateOpen(false);
+                    setCreateName("");
+                    setCreateFields("");
+                    setCreateDescription("");
+                    const nextItems = await fetchData();
+                    const created = nextItems.find((it) => it.id === id && it.kind === "post");
+                    if (created) openEditor(created);
+                  } catch (err: any) {
+                    setError(err.message || "新增花絮貼文失敗");
+                  } finally {
+                    setProcessingId("");
+                  }
+                }}
+                disabled={processingId === "creating"}
+              >
+                建立貼文
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsCreateOpen(false)}
+                disabled={processingId === "creating"}
+              >
+                取消
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

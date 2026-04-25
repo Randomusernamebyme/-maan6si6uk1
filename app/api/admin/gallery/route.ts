@@ -33,9 +33,10 @@ export async function GET(request: NextRequest) {
     }
 
     const adminDb = getAdminDb();
-    const snapshot = await adminDb.collection("requests").where("status", "==", "completed").get();
+    const requestSnapshot = await adminDb.collection("requests").where("status", "==", "completed").get();
+    const postSnapshot = await adminDb.collection("galleryPosts").get();
 
-    const items = await Promise.all(snapshot.docs.map(async (doc) => {
+    const requestItems = await Promise.all(requestSnapshot.docs.map(async (doc) => {
       const data = doc.data() || {};
       const rawGalleryPhotos = Array.isArray(data.galleryPhotos)
         ? data.galleryPhotos.map((photo: any) => ({
@@ -52,6 +53,7 @@ export async function GET(request: NextRequest) {
         : [];
 
       return {
+        kind: "request" as const,
         id: doc.id,
         name: data.name || "",
         fields: Array.isArray(data.fields) ? data.fields : [],
@@ -62,6 +64,40 @@ export async function GET(request: NextRequest) {
         galleryFeedbacks,
       };
     }));
+
+    const postItems = await Promise.all(postSnapshot.docs.map(async (doc) => {
+      const data = doc.data() || {};
+      const rawPhotos = Array.isArray(data.photos)
+        ? data.photos.map((photo: any) => ({
+            ...photo,
+            uploadedAt: photo.uploadedAt?.toDate?.()?.toISOString() || photo.uploadedAt,
+          }))
+        : [];
+      const galleryPhotos = await normalizeGalleryPhotos(rawPhotos);
+      const galleryFeedbacks = Array.isArray(data.feedbacks)
+        ? data.feedbacks.map((feedback: any) => ({
+            ...feedback,
+            createdAt: feedback.createdAt?.toDate?.()?.toISOString() || feedback.createdAt,
+          }))
+        : [];
+
+      const publishedAt = data.publishedAt?.toDate?.()?.toISOString() || null;
+      const createdAt = data.createdAt?.toDate?.()?.toISOString() || null;
+
+      return {
+        kind: "post" as const,
+        id: doc.id,
+        name: data.name || "",
+        fields: Array.isArray(data.fields) ? data.fields : [],
+        description: data.description || "",
+        isPublicGallery: !!data.isPublic,
+        completedAt: publishedAt || createdAt,
+        galleryPhotos,
+        galleryFeedbacks,
+      };
+    }));
+
+    const items = [...requestItems, ...postItems];
 
     items.sort((a, b) => {
       const aTime = a.completedAt ? new Date(a.completedAt).getTime() : 0;

@@ -29,6 +29,22 @@ export interface GalleryFeedback {
   authorName?: string; // 顯示用
 }
 
+// 獨立花絮貼文（不需綁定委托）
+export interface GalleryPost {
+  id: string; // 文檔ID (主鍵)
+  name?: string;
+  description?: string;
+  fields?: ServiceField[];
+  isPublic?: boolean;
+  publishedAt?: Date;
+  photos?: GalleryPhoto[];
+  feedbacks?: GalleryFeedback[];
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy?: string;
+  updatedBy?: string;
+}
+
 // User 介面（義工/管理員）
 export interface User {
   // 基本資料

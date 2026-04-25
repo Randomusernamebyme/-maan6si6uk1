@@ -16,43 +16,81 @@ export async function GET(
     }
 
     const adminDb = getAdminDb();
-    const doc = await adminDb.collection("requests").doc(id).get();
+    const requestDoc = await adminDb.collection("requests").doc(id).get();
+    if (requestDoc.exists) {
+      const data = requestDoc.data() || {};
+      if (data.status !== "completed" || data.isPublicGallery !== true) {
+        return NextResponse.json({ error: "貼文未公開" }, { status: 404 });
+      }
 
-    if (!doc.exists) {
-      return NextResponse.json({ error: "找不到貼文" }, { status: 404 });
+      const rawGalleryPhotos = Array.isArray(data.galleryPhotos)
+        ? data.galleryPhotos.map((photo: any) => ({
+            ...photo,
+            uploadedAt: photo.uploadedAt?.toDate?.()?.toISOString() || photo.uploadedAt,
+          }))
+        : [];
+      const galleryPhotos = await normalizeGalleryPhotos(rawGalleryPhotos);
+
+      const galleryFeedbacks = Array.isArray(data.galleryFeedbacks)
+        ? data.galleryFeedbacks.map((feedback: any) => ({
+            ...feedback,
+            createdAt: feedback.createdAt?.toDate?.()?.toISOString() || feedback.createdAt,
+          }))
+        : [];
+
+      const item = {
+        kind: "request" as const,
+        id: requestDoc.id,
+        name: data.name || "",
+        fields: Array.isArray(data.fields) ? data.fields : [],
+        description: data.description || "",
+        completedAt: data.completedAt?.toDate?.()?.toISOString() || null,
+        galleryPhotos,
+        galleryFeedbacks,
+      };
+
+      return NextResponse.json({ item });
     }
 
-    const data = doc.data() || {};
-    if (data.status !== "completed" || data.isPublicGallery !== true) {
+    const postDoc = await adminDb.collection("galleryPosts").doc(id).get();
+    if (!postDoc.exists) {
+      return NextResponse.json({ error: "找不到貼文" }, { status: 404 });
+    }
+    const data = postDoc.data() || {};
+    if (data.isPublic !== true) {
       return NextResponse.json({ error: "貼文未公開" }, { status: 404 });
     }
 
-    const rawGalleryPhotos = Array.isArray(data.galleryPhotos)
-      ? data.galleryPhotos.map((photo: any) => ({
+    const rawPhotos = Array.isArray(data.photos)
+      ? data.photos.map((photo: any) => ({
           ...photo,
           uploadedAt: photo.uploadedAt?.toDate?.()?.toISOString() || photo.uploadedAt,
         }))
       : [];
-    const galleryPhotos = await normalizeGalleryPhotos(rawGalleryPhotos);
+    const galleryPhotos = await normalizeGalleryPhotos(rawPhotos);
 
-    const galleryFeedbacks = Array.isArray(data.galleryFeedbacks)
-      ? data.galleryFeedbacks.map((feedback: any) => ({
+    const galleryFeedbacks = Array.isArray(data.feedbacks)
+      ? data.feedbacks.map((feedback: any) => ({
           ...feedback,
           createdAt: feedback.createdAt?.toDate?.()?.toISOString() || feedback.createdAt,
         }))
       : [];
 
-    const item = {
-      id: doc.id,
-      name: data.name || "",
-      fields: Array.isArray(data.fields) ? data.fields : [],
-      description: data.description || "",
-      completedAt: data.completedAt?.toDate?.()?.toISOString() || null,
-      galleryPhotos,
-      galleryFeedbacks,
-    };
+    const publishedAt = data.publishedAt?.toDate?.()?.toISOString() || null;
+    const createdAt = data.createdAt?.toDate?.()?.toISOString() || null;
 
-    return NextResponse.json({ item });
+    return NextResponse.json({
+      item: {
+        kind: "post" as const,
+        id: postDoc.id,
+        name: data.name || "",
+        fields: Array.isArray(data.fields) ? data.fields : [],
+        description: data.description || "",
+        completedAt: publishedAt || createdAt,
+        galleryPhotos,
+        galleryFeedbacks,
+      },
+    });
   } catch (error: any) {
     console.error("Error fetching gallery post:", error);
     return NextResponse.json(

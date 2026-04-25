@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
-import { uploadGalleryBuffer } from "@/lib/cloudinary/upload";
+import { uploadGalleryBuffer, uploadGalleryBufferToFolder } from "@/lib/cloudinary/upload";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -34,17 +34,20 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const requestId = String(formData.get("requestId") || "").trim();
+    const postId = String(formData.get("postId") || "").trim();
     const file = formData.get("file");
 
-    if (!requestId || !(file instanceof File)) {
-      return NextResponse.json({ error: "缺少 requestId 或檔案" }, { status: 400 });
+    if ((!requestId && !postId) || !(file instanceof File)) {
+      return NextResponse.json({ error: "缺少 requestId / postId 或檔案" }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const contentType = file.type || "image/jpeg";
 
-    const { secureUrl } = await uploadGalleryBuffer(buffer, contentType, requestId);
+    const { secureUrl } = requestId
+      ? await uploadGalleryBuffer(buffer, contentType, requestId)
+      : await uploadGalleryBufferToFolder(buffer, contentType, `gallery-posts/${postId}/photos`);
 
     return NextResponse.json({
       url: secureUrl,
