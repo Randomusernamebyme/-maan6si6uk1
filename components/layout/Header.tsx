@@ -59,7 +59,7 @@ export function Header() {
               href="/gallery"
               className="text-sm font-medium transition-colors hover:text-foreground/80 text-foreground/60"
             >
-              Gallery
+              展覽
             </Link>
           </nav>
         </div>
@@ -78,7 +78,7 @@ export function Header() {
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem asChild>
-                <Link href="/gallery">Gallery</Link>
+                <Link href="/gallery">展覽</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

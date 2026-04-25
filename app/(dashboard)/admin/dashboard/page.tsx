@@ -269,9 +269,9 @@ export default function AdminDashboardPage() {
                       <FileText className="h-5 w-5 text-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg mb-1">管理 Gallery</CardTitle>
+                      <CardTitle className="text-lg mb-1">管理展覽</CardTitle>
                       <CardDescription className="text-sm">
-                        整理完成委托內容並設定公開展示
+                        建立花絮貼文，或將委托貼文公開展示
                       </CardDescription>
                     </div>
                   </div>

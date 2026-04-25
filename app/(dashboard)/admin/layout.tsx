@@ -21,7 +21,7 @@ export default function AdminLayout({
   const navItems = [
     { href: "/admin/dashboard", label: "儀表板" },
     { href: "/admin/requests", label: "委托管理" },
-    { href: "/admin/gallery", label: "Gallery 管理" },
+    { href: "/admin/gallery", label: "展覽管理" },
     { href: "/admin/volunteers", label: "義工管理" },
     { href: "/admin/applications", label: "報名管理" },
     { href: "/admin/logs", label: "操作日誌" },

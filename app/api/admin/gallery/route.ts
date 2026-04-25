@@ -33,7 +33,10 @@ export async function GET(request: NextRequest) {
     }
 
     const adminDb = getAdminDb();
-    const requestSnapshot = await adminDb.collection("requests").where("status", "==", "completed").get();
+    const requestSnapshot = await adminDb
+      .collection("requests")
+      .where("status", "in", ["open", "published", "matched", "in-progress", "completed"])
+      .get();
     const postSnapshot = await adminDb.collection("galleryPosts").get();
 
     const requestItems = await Promise.all(requestSnapshot.docs.map(async (doc) => {
@@ -109,7 +112,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error("Error fetching admin gallery:", error);
     return NextResponse.json(
-      { error: error.message || "獲取 Gallery 管理資料失敗" },
+      { error: error.message || "獲取展覽管理資料失敗" },
       { status: 500 }
     );
   }

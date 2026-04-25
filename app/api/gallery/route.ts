@@ -10,8 +10,8 @@ export async function GET() {
     const adminDb = getAdminDb();
     const requestSnapshot = await adminDb
       .collection("requests")
-      .where("status", "==", "completed")
       .where("isPublicGallery", "==", true)
+      .where("status", "in", ["published", "matched", "in-progress", "completed"])
       .get();
 
     const postSnapshot = await adminDb
@@ -90,7 +90,7 @@ export async function GET() {
   } catch (error: any) {
     console.error("Error fetching gallery:", error);
     return NextResponse.json(
-      { error: error.message || "獲取 Gallery 失敗" },
+      { error: error.message || "獲取展覽失敗" },
       { status: 500 }
     );
   }

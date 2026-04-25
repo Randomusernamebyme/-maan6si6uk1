@@ -98,7 +98,7 @@ export default function GalleryPage() {
   return (
     <div className="container mx-auto px-4 py-10 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">成果 Gallery</h1>
+        <h1 className="text-3xl font-bold">展覽</h1>
         <p className="text-muted-foreground mt-2">
           以相片牆方式展示公開的成果與花絮貼文，點擊可查看完整貼文。
         </p>

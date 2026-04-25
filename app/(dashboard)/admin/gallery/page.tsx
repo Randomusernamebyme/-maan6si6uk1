@@ -351,9 +351,9 @@ export default function AdminGalleryPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Gallery 管理</h2>
+        <h2 className="text-2xl font-bold">展覽管理</h2>
         <p className="text-muted-foreground mt-1">
-          以相片牆方式管理貼文（已完成委托成果 / 獨立花絮），點擊任一貼文可在彈窗中編輯、刪除相片與回饋。
+          以相片牆方式管理貼文（委托貼文 / 獨立花絮），點擊任一貼文可在彈窗中編輯、刪除相片與回饋。
         </p>
       </div>
 

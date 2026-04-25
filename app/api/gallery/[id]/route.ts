@@ -19,7 +19,8 @@ export async function GET(
     const requestDoc = await adminDb.collection("requests").doc(id).get();
     if (requestDoc.exists) {
       const data = requestDoc.data() || {};
-      if (data.status !== "completed" || data.isPublicGallery !== true) {
+      const allowed = ["published", "matched", "in-progress", "completed"];
+      if (!allowed.includes(data.status) || data.isPublicGallery !== true) {
         return NextResponse.json({ error: "貼文未公開" }, { status: 404 });
       }
 

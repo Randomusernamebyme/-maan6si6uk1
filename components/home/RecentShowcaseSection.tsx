@@ -227,7 +227,7 @@ export function RecentShowcaseSection() {
             <>
               <DialogHeader>
                 <DialogTitle>{activeGallery.name || activeGallery.fields.join("、") || "成果貼文"}</DialogTitle>
-                <DialogDescription>已完成委托的成果內容</DialogDescription>
+                <DialogDescription>展覽貼文內容</DialogDescription>
               </DialogHeader>
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-2">
