@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server";
-import { cloudinaryImageDeliveryUrl } from "@/lib/cloudinary/delivery";
 import { brandingLogoPublicId } from "@/lib/cloudinary/public-ids";
+import { imageAssetDeliveryUrl } from "@/lib/storage/image-delivery";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {
-  const url = cloudinaryImageDeliveryUrl(brandingLogoPublicId());
+  const url = imageAssetDeliveryUrl(brandingLogoPublicId());
   if (!url) {
     return NextResponse.json(
-      { error: "Cloudinary 未設定：請設定 CLOUDINARY_CLOUD_NAME 或 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME" },
+      {
+        error:
+          "圖片託管未設定：請設定 Supabase（NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET）或 Cloudinary（CLOUDINARY_CLOUD_NAME 等）",
+      },
       { status: 500 }
     );
   }

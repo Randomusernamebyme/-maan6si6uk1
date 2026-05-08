@@ -22,14 +22,14 @@ const ASSETS: Array<{
   {
     key: "logo",
     title: "Logo（Header）",
-    hint: "會覆寫網站 Header logo 的 Cloudinary public_id",
+    hint: "會覆寫 Header logo 的固定 asset path（Supabase Storage 物件鍵／Cloudinary public_id）",
     previewUrl: "/api/branding/logo",
     recommended: "建議 PNG / SVG（透明背景）",
   },
   {
     key: "hero",
     title: "Hero（首頁）",
-    hint: "會覆寫網站首頁 hero 的 Cloudinary public_id",
+    hint: "會覆寫首頁 hero 的固定 asset path",
     previewUrl: "/api/branding/hero",
     recommended: "建議 1920×540（或同等比例）",
   },
@@ -98,7 +98,7 @@ export default function AdminBrandingUploadPage() {
       setUploadedUrl((prev) => ({ ...prev, [asset]: String(data.url || "") }));
       setUploadedAt((prev) => ({ ...prev, [asset]: String(data.uploadedAt || new Date().toISOString()) }));
 
-      // 讓 next/image 的 /api/* 302 重新抓到更新後的 Cloudinary
+      // 讓 next/image 經過 /api/* 302 重新抓到更新後的圖檔（含 CDN／快取）
       setTimeout(() => {
         const bust = `?t=${Date.now()}`;
         const img = new window.Image();
@@ -125,7 +125,8 @@ export default function AdminBrandingUploadPage() {
       <div>
         <h1 className="text-2xl font-bold">Branding 圖片暫時上傳工具</h1>
         <p className="text-sm text-muted-foreground mt-2">
-          這個頁面會以 admin 權限把圖片上傳到 Cloudinary，並「覆寫」既有 public_id（用來快速救回首頁 branding）。
+          此頁以 admin 上傳並覆寫既有固定 path：若環境已設定 Supabase Storage，會寫入該公開 bucket；否則會走
+          Cloudinary（舊行為）。
         </p>
       </div>
 

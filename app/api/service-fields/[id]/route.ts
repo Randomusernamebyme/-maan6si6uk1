@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cloudinaryImageDeliveryUrl } from "@/lib/cloudinary/delivery";
 import { serviceFieldPublicId } from "@/lib/cloudinary/public-ids";
+import { imageAssetDeliveryUrl } from "@/lib/storage/image-delivery";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -16,10 +16,13 @@ export async function GET(
     return NextResponse.json({ error: "圖片不存在" }, { status: 404 });
   }
 
-  const url = cloudinaryImageDeliveryUrl(serviceFieldPublicId(id));
+  const url = imageAssetDeliveryUrl(serviceFieldPublicId(id));
   if (!url) {
     return NextResponse.json(
-      { error: "Cloudinary 未設定：請設定 CLOUDINARY_CLOUD_NAME 或 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME" },
+      {
+        error:
+          "圖片託管未設定：請設定 Supabase（NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET）或 Cloudinary（CLOUDINARY_CLOUD_NAME 等）",
+      },
       { status: 500 }
     );
   }

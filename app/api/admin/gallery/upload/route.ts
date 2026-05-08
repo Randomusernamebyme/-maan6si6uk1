@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
-import { uploadGalleryBuffer, uploadGalleryBufferToFolder } from "@/lib/cloudinary/upload";
+import { uploadGalleryBufferToFolderUnified, uploadGalleryBufferUnified } from "@/lib/storage/uploads";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -46,8 +46,12 @@ export async function POST(request: NextRequest) {
     const contentType = file.type || "image/jpeg";
 
     const { secureUrl } = requestId
-      ? await uploadGalleryBuffer(buffer, contentType, requestId)
-      : await uploadGalleryBufferToFolder(buffer, contentType, `gallery-posts/${postId}/photos`);
+      ? await uploadGalleryBufferUnified(buffer, contentType, requestId)
+      : await uploadGalleryBufferToFolderUnified(
+          buffer,
+          contentType,
+          `gallery-posts/${postId}/photos`
+        );
 
     return NextResponse.json({
       url: secureUrl,
