@@ -28,9 +28,6 @@ async function toReadableUrl(url: string): Promise<string> {
   try {
     const parsed = new URL(url);
     const host = parsed.hostname;
-    if (host === "res.cloudinary.com" || host.endsWith(".cloudinary.com")) {
-      return url;
-    }
     if (host.endsWith(".supabase.co") && parsed.pathname.includes("/storage/v1/object/public/")) {
       return url;
     }

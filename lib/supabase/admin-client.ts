@@ -1,19 +1,19 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-let client: SupabaseClient | null = null;
+let serviceClient: SupabaseClient | null = null;
 
-export function getSupabaseServiceRoleClient(): SupabaseClient {
+/** 僅供伺服器端使用（需 SUPABASE_SERVICE_ROLE_KEY） */
+export function getSupabaseServiceRole(): SupabaseClient {
+  if (serviceClient) return serviceClient;
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!url || !key) {
-    throw new Error(
-      "Supabase 設定不完整：需要 NEXT_PUBLIC_SUPABASE_URL 與 SUPABASE_SERVICE_ROLE_KEY"
-    );
+    throw new Error("Supabase 伺服器設定不完整：需要 NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY");
   }
-  if (!client) {
-    client = createClient(url, key, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-  }
-  return client;
+
+  serviceClient = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  return serviceClient;
 }

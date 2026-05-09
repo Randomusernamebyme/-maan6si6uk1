@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
-import { brandingHeroPublicId, brandingLogoPublicId, serviceFieldPublicId } from "@/lib/cloudinary/public-ids";
-import { uploadBrandingByAssetPathUnified } from "@/lib/storage/uploads";
+import { brandingHeroPublicId, brandingLogoPublicId, serviceFieldPublicId } from "@/lib/storage/asset-keys";
+import { uploadBrandingBufferToObjectKey } from "@/lib/storage/uploads";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     const contentType = file.type || "image/png";
 
     const publicId = resolvePublicId(asset);
-    const { secureUrl, publicId: uploadedPublicId } = await uploadBrandingByAssetPathUnified(
+    const { secureUrl, publicId: uploadedPublicId } = await uploadBrandingBufferToObjectKey(
       buffer,
       contentType,
       publicId
