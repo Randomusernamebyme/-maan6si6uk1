@@ -249,8 +249,8 @@ export function RequestSubmissionForm() {
                     key={field}
                     className={`relative border-2 rounded-lg p-4 cursor-pointer transition-all ${
                       isSelected
-                        ? "border-primary ring-2 ring-primary/30"
-                        : "border-border hover:border-primary/50"
+                        ? "border-sky-600 ring-2 ring-sky-500/45 shadow-md"
+                        : "border-border/80 hover:border-sky-500/50"
                     }`}
                     style={{ backgroundColor: SERVICE_FIELD_BACKGROUNDS[field] }}
                     onClick={() => toggleField(field)}
@@ -261,7 +261,7 @@ export function RequestSubmissionForm() {
                           id={`field-${field}`}
                           checked={isSelected}
                           onCheckedChange={() => toggleField(field)}
-                          className="mt-1"
+                          className="mt-1 border-sky-800/80 bg-white/90 text-sky-900 data-[state=checked]:border-sky-700 data-[state=checked]:bg-sky-600 data-[state=checked]:text-white"
                         />
                       </div>
                       <div className="flex-1 space-y-2">

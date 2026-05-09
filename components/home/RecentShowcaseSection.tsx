@@ -105,7 +105,7 @@ export function RecentShowcaseSection() {
       try {
         const [galleryRes, requestsRes] = await Promise.all([
           fetch("/api/gallery", { cache: "no-store" }),
-          fetch("/api/public/requests?limit=6", { cache: "no-store" }),
+          fetch("/api/public/requests?limit=3", { cache: "no-store" }),
         ]);
         const galleryData = galleryRes.ok ? await galleryRes.json() : { items: [] };
         const requestData = requestsRes.ok ? await requestsRes.json() : { items: [] };
@@ -137,8 +137,8 @@ export function RecentShowcaseSection() {
           ) : galleryItems.length === 0 ? (
             <p className="text-sm text-muted-foreground mt-4">暫時未有公開成果。</p>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-4">
-              {galleryItems.slice(0, 8).map((item) => {
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-4 max-w-5xl">
+              {galleryItems.slice(0, 4).map((item) => {
                 const cover = item.galleryPhotos?.[0]?.url;
                 return (
                   <button
@@ -185,23 +185,23 @@ export function RecentShowcaseSection() {
           ) : requestItems.length === 0 ? (
             <p className="text-sm text-muted-foreground mt-4">暫時未有開放申請委托。</p>
           ) : (
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 mt-4">
-              {requestItems.map((item) => (
+            <div className="grid gap-4 md:grid-cols-3 mt-4 items-stretch max-w-5xl">
+              {requestItems.slice(0, 3).map((item) => (
                 <button
                   key={item.id}
                   type="button"
-                  className="text-left"
+                  className="text-left h-full min-h-0 flex rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   onClick={() => {
                     setActiveRequest(item);
                     setIsRequestOpen(true);
                   }}
                 >
-                  <Card className="hover:shadow-md transition-shadow">
-                    <CardHeader className="space-y-2">
-                      <CardTitle className="text-lg truncate">
+                  <Card className="hover:shadow-md transition-shadow h-full w-full flex flex-col">
+                    <CardHeader className="space-y-2 pb-2 shrink-0">
+                      <CardTitle className="text-base leading-snug line-clamp-2 min-h-[2.75rem]">
                         {item.name || item.fields.join("、") || "公開委托"}
                       </CardTitle>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 min-h-[1.75rem] items-center">
                         {item.fields.slice(0, 3).map((field) => (
                           <Badge key={`${item.id}-${field}`} variant="secondary">
                             {field}
@@ -210,8 +210,10 @@ export function RecentShowcaseSection() {
                         {item.urgency === "urgent" && <Badge variant="destructive">緊急</Badge>}
                       </div>
                     </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground line-clamp-3">{item.description}</p>
+                    <CardContent className="pt-0 flex-1 flex flex-col">
+                      <div className="min-h-[4.5rem] flex-1">
+                        <p className="text-sm text-muted-foreground line-clamp-3">{item.description}</p>
+                      </div>
                     </CardContent>
                   </Card>
                 </button>
