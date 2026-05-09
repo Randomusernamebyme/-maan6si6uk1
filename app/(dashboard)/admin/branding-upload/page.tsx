@@ -63,6 +63,8 @@ export default function AdminBrandingUploadPage() {
   const [files, setFiles] = useState<Partial<Record<BrandingAssetKey, File | null>>>({});
   const [uploadedUrl, setUploadedUrl] = useState<Partial<Record<BrandingAssetKey, string>>>({});
   const [uploadedAt, setUploadedAt] = useState<Partial<Record<BrandingAssetKey, string>>>({});
+  /** 每次上傳成功後更新，強制預覽略過 /api 與 CDN 快取 */
+  const [previewBust, setPreviewBust] = useState<Partial<Record<BrandingAssetKey, string>>>({});
 
   const isAuthed = !!user;
 
@@ -97,13 +99,8 @@ export default function AdminBrandingUploadPage() {
 
       setUploadedUrl((prev) => ({ ...prev, [asset]: String(data.url || "") }));
       setUploadedAt((prev) => ({ ...prev, [asset]: String(data.uploadedAt || new Date().toISOString()) }));
-
-      // 讓 next/image 的 /api/* 302 重新抓到更新後的 Supabase 圖片
-      setTimeout(() => {
-        const bust = `?t=${Date.now()}`;
-        const img = new window.Image();
-        img.src = `${ASSETS.find((a) => a.key === asset)?.previewUrl}${bust}`;
-      }, 0);
+      const nextBust = String(Date.now());
+      setPreviewBust((prev) => ({ ...prev, [asset]: nextBust }));
     } catch (err: any) {
       setError(err.message || "上傳失敗");
     } finally {
@@ -146,6 +143,8 @@ export default function AdminBrandingUploadPage() {
           const file = files[asset.key] || null;
           const lastUrl = uploadedUrl[asset.key] || "";
           const lastAt = uploadedAt[asset.key] || "";
+          const bust = previewBust[asset.key];
+          const previewSrc = bust ? `${asset.previewUrl}?bust=${encodeURIComponent(bust)}` : asset.previewUrl;
           const isBusy = busyKey === asset.key;
 
           return (
@@ -158,9 +157,11 @@ export default function AdminBrandingUploadPage() {
               <CardContent className="space-y-4">
                 <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden border bg-background">
                   <Image
-                    src={asset.previewUrl}
+                    key={previewSrc}
+                    src={previewSrc}
                     alt={asset.title}
                     fill
+                    unoptimized
                     className="object-contain p-3"
                     sizes="(max-width: 768px) 100vw, 50vw"
                   />

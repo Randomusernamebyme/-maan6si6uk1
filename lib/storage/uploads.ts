@@ -80,11 +80,20 @@ export async function uploadGalleryBufferToFolderUnified(
   return uploadBufferToObjectKey(buffer, contentType, objectKey, { upsert: false });
 }
 
-/** 覆寫既有物件鍵（branding 等固定檔名） */
+/** 覆寫既有物件鍵（branding 等固定檔名）；先刪再寫以避免 upsert 快取仍回舊檔 */
 export async function uploadBrandingBufferToObjectKey(
   buffer: Buffer,
   contentType: string,
   objectKey: string
 ): Promise<{ secureUrl: string; publicId: string }> {
-  return uploadBufferToObjectKey(buffer, contentType, objectKey, { upsert: true });
+  const supabase = getSupabaseServiceRole();
+  const bucket = requireBucket();
+  const key = objectKey.replace(/^\/+/, "");
+
+  const { error: rmErr } = await supabase.storage.from(bucket).remove([key]);
+  if (rmErr) {
+    console.warn("[branding upload] remove existing object (可忽略若本來不存在):", rmErr.message);
+  }
+
+  return uploadBufferToObjectKey(buffer, contentType, key, { upsert: true });
 }

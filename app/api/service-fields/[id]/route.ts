@@ -16,7 +16,8 @@ export async function GET(
     return NextResponse.json({ error: "圖片不存在" }, { status: 404 });
   }
 
-  const url = imageAssetDeliveryUrl(serviceFieldPublicId(id));
+  const bust = _request.nextUrl.searchParams.get("bust");
+  const url = imageAssetDeliveryUrl(serviceFieldPublicId(id), bust);
   if (!url) {
     return NextResponse.json(
       { error: "圖片託管未設定：請設定 NEXT_PUBLIC_SUPABASE_URL 與 NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET" },
@@ -27,7 +28,8 @@ export async function GET(
   return NextResponse.redirect(url, {
     status: 302,
     headers: {
-      "Cache-Control": "public, max-age=3600, s-maxage=3600",
+      "Cache-Control": "private, no-store, must-revalidate",
+      Pragma: "no-cache",
     },
   });
 }

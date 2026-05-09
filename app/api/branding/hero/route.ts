@@ -1,12 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { brandingHeroPublicId } from "@/lib/storage/asset-keys";
 import { imageAssetDeliveryUrl } from "@/lib/storage/image-delivery";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function GET() {
-  const url = imageAssetDeliveryUrl(brandingHeroPublicId());
+export async function GET(request: NextRequest) {
+  const bust = request.nextUrl.searchParams.get("bust");
+  const url = imageAssetDeliveryUrl(brandingHeroPublicId(), bust);
   if (!url) {
     return NextResponse.json(
       {
@@ -19,7 +20,8 @@ export async function GET() {
   return NextResponse.redirect(url, {
     status: 302,
     headers: {
-      "Cache-Control": "public, max-age=3600, s-maxage=3600",
+      "Cache-Control": "private, no-store, must-revalidate",
+      Pragma: "no-cache",
     },
   });
 }
