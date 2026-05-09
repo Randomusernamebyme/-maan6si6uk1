@@ -32,6 +32,7 @@ export function Header() {
           <Button asChild variant="ghost" className="text-xl font-bold p-0 h-auto hover:bg-transparent">
             <Link href="/" className="flex items-center space-x-2">
               {HEADER_BRANDING.logoUrl ? (
+                // 略過 /_next/image 最佳化，避免 PNG 透明經 API 302 後被轉成白底
                 <Image
                   src={HEADER_BRANDING.logoUrl}
                   alt={HEADER_BRANDING.title}
@@ -39,6 +40,7 @@ export function Header() {
                   height={HEADER_BRANDING.height}
                   className="h-10 w-auto object-contain"
                   priority
+                  unoptimized
                 />
               ) : (
                 HEADER_BRANDING.title
