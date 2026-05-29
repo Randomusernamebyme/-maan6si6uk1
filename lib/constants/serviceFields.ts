@@ -3,11 +3,11 @@ import { ServiceField } from "@/types";
 // 服務領域圖片 URL
 export const SERVICE_FIELD_IMAGES: Record<ServiceField, string> = {
   "生活助手": "/api/service-fields/1",
-  "社區拍檔": "/api/service-fields/2",
-  "街坊樹窿": "/api/service-fields/3",
+  "街坊樹窿": "/api/service-fields/2",
+  "社區拍檔": "/api/service-fields/3",
 };
 
-// 三大服務範疇背景色（按指定順序）
+// 三大服務範疇背景色（按指定順序）s
 export const SERVICE_FIELD_BACKGROUNDS: Record<ServiceField, string> = {
   "生活助手": "#aa4515",
   "社區拍檔": "#fbb657",
