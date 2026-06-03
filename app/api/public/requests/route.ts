@@ -6,9 +6,11 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
+    // Change the 50 in const limit to up the maximum allowed request count allowed by this backend api
+    // - Tsuyu
     const { searchParams } = new URL(request.url);
     const limitParam = Number(searchParams.get("limit") || 6);
-    const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 20) : 6;
+    const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 50) : 6;
 
     const adminDb = getAdminDb();
     const snapshot = await adminDb

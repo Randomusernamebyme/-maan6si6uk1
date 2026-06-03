@@ -103,9 +103,11 @@ export function RecentShowcaseSection() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Increased limit to 50, can change in future if needed
+        // - Tsuyu
         const [galleryRes, requestsRes] = await Promise.all([
           fetch("/api/gallery", { cache: "no-store" }),
-          fetch("/api/public/requests?limit=3", { cache: "no-store" }),
+          fetch("/api/public/requests?limit=50", { cache: "no-store" }),
         ]);
         const galleryData = galleryRes.ok ? await galleryRes.json() : { items: [] };
         const requestData = requestsRes.ok ? await requestsRes.json() : { items: [] };
