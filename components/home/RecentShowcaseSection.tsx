@@ -177,7 +177,7 @@ export function RecentShowcaseSection() {
 
         <div>
           <h2 className="text-2xl md:text-3xl font-bold">最近開放申請委托</h2>
-          <p className="text-muted-foreground mt-2">點擊委托查看詳情，申請前請先登入或註冊。</p>
+          <p className="text-muted-foreground mt-2">點擊委托查看詳情，申請前請先登入或註冊成爲義工。</p>
           {loading ? (
             <div className="py-8">
               <Loading size="sm" />

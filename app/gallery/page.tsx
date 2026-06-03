@@ -100,7 +100,7 @@ export default function GalleryPage() {
       <div>
         <h1 className="text-3xl font-bold">展覽</h1>
         <p className="text-muted-foreground mt-2">
-          以相片牆方式展示公開的成果與花絮貼文，點擊可查看完整貼文。
+        一齊睇睇之前萬事屋義工完成嘅委托啦！點擊可查看完整貼文。
         </p>
       </div>
 
