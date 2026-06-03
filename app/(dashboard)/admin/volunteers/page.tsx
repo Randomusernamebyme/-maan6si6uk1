@@ -307,7 +307,7 @@ export default function AdminVolunteersPage() {
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4">
             <Input
-              placeholder="搜尋姓名/Email/用戶ID/技能..."
+              placeholder="搜尋姓名/Email/用戶ID/電話/技能..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1"
