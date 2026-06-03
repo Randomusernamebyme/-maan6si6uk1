@@ -41,6 +41,8 @@ const STATUS_LABELS: Record<UserStatus | "all", string> = {
   approved: "已批准",
   rejected: "已拒絕",
   suspended: "已暫停",
+  willinterview: "約見面中",
+  haveinterviewed: "已約見面",
 };
 
 export default function AdminVolunteersPage() {
@@ -571,6 +573,8 @@ export default function AdminVolunteersPage() {
                   <SelectItem value="approved">已批准</SelectItem>
                   <SelectItem value="rejected">已拒絕</SelectItem>
                   <SelectItem value="suspended">已暫停</SelectItem>
+                  <SelectItem value="willinterview">約見面中</SelectItem>
+                  <SelectItem value="haveinterviewed">已約見面</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">

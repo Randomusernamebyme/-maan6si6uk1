@@ -5,7 +5,7 @@ export type UserRole = 'volunteer' | 'admin';
 export type ServiceField = '生活助手' | '社區拍檔' | '街坊樹窿';
 
 // 用戶狀態類型
-export type UserStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
+export type UserStatus = 'pending' | 'approved' | 'rejected' | 'suspended' | 'willinterview' | 'haveinterviewed';
 
 // 委托狀態類型
 export type RequestStatus = 'pending' | 'open' | 'published' | 'matched' | 'in-progress' | 'completed' | 'cancelled';

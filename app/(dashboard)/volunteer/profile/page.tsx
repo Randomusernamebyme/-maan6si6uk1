@@ -576,6 +576,10 @@ export default function ProfilePage() {
                 ? "已拒絕"
                 : user.status === "suspended"
                 ? "已暫停"
+                : user.status === "willinterview"
+                ? "待審核"
+                : user.status === "haveinterviewed"
+                ? "待審核"
                 : user.status}
             </span>
           </div>
