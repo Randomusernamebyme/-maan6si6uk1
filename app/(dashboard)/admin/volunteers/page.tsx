@@ -142,6 +142,7 @@ export default function AdminVolunteersPage() {
           (volunteer.displayName || "").toLowerCase().includes(query) ||
           (volunteer.email || "").toLowerCase().includes(query) ||
           (volunteer.uid || "").toLowerCase().includes(query) ||
+          (volunteer.phone || "").toLowerCase().includes(query) ||
           (Array.isArray(volunteer.skills) && volunteer.skills.some((s) => String(s).toLowerCase().includes(query)));
         if (!matchesSearch) return false;
       }
