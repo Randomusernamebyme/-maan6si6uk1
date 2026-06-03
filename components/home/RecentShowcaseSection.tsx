@@ -188,7 +188,7 @@ export function RecentShowcaseSection() {
             <p className="text-sm text-muted-foreground mt-4">暫時未有開放申請委托。</p>
           ) : (
             <div className="grid gap-4 md:grid-cols-3 mt-4 items-stretch max-w-5xl">
-              {requestItems.slice(0, 3).map((item) => (
+              {requestItems.slice(0).map((item) => (
                 <button
                   key={item.id}
                   type="button"
