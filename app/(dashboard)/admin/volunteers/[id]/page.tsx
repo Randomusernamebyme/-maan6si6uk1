@@ -273,6 +273,10 @@ export default function AdminVolunteerDetailPage() {
               ? "default"
               : volunteer.status === "rejected"
               ? "destructive"
+              : volunteer.status === "willinterview"
+              ? "outline"
+              : volunteer.status === "haveinterviewed"
+              ? "outline"
               : "secondary"
           }
         >
