@@ -57,6 +57,14 @@ export interface User {
   phone: string; // 電話號碼(WhatsApp)
   age: string; // 年齡
 
+  // Follow-ups
+  followUps?: Array<{
+    date: Date;
+    method: string; // 聯絡方式
+    content: string; // 記錄內容
+    adminId: string; // 操作的管理員ID
+  }>;
+
   // 義工專屬
   fields?: ServiceField[]; // 服務範疇
   skills?: string[]; // 你想提供的技能

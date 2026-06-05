@@ -129,6 +129,8 @@ export async function PATCH(
           approved: "已批准",
           rejected: "已拒絕",
           suspended: "已暫停",
+          willinterview: "約見面中",
+          haveinterviewed: "已約見面",
         };
 
         await adminDb.collection("activity_logs").add({
