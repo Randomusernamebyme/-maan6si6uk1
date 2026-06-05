@@ -258,7 +258,7 @@ export default function AdminVolunteerDetailPage() {
     }
 
     try {
-      setError(new Error("")); // 清除之前的錯誤
+      // setError(new Error("")); // 清除之前的錯誤
       const token = await getAuthToken();
       if (!token) {
         throw new Error("請先登入");
