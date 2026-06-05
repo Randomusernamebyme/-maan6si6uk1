@@ -184,7 +184,7 @@ export default function AdminVolunteersPage() {
       }
 
       const newStatus = batchStatus as UserStatus;
-      if (!["pending", "approved", "rejected", "suspended"].includes(newStatus)) {
+      if (!["pending", "approved", "rejected", "suspended", "willinterview", "haveinterviewed"].includes(newStatus)) {
         throw new Error("無效的狀態");
       }
 
