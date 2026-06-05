@@ -619,7 +619,7 @@ export default function AdminVolunteerDetailPage() {
                 </>
               )}
 
-              {(volunteer.status === "approved" || volunteer.status === "haveinterviewed") && (
+              {(volunteer.status === "pending" || volunteer.status === "haveinterviewed") && (
                 <Button
                   className="w-full"
                   onClick={() => {
@@ -632,7 +632,7 @@ export default function AdminVolunteerDetailPage() {
                 </Button>
               )}
 
-              {(volunteer.status === "willinterview" || volunteer.status === "approved") && (
+              {(volunteer.status === "willinterview" || volunteer.status === "pending") && (
                 <Button
                   className="w-full"
                   onClick={() => {
@@ -650,7 +650,7 @@ export default function AdminVolunteerDetailPage() {
                   className="w-full"
                   onClick={() => {
                     if (confirm("確定要義工更變狀態為 待審核 嗎？")) {
-                      handleStatusChange("approved");
+                      handleStatusChange("pending");
                     }
                   }}
                 >
