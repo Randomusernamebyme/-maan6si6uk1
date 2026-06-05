@@ -619,6 +619,45 @@ export default function AdminVolunteerDetailPage() {
                 </>
               )}
 
+              {(volunteer.status === "approved" || volunteer.status === "haveinterviewed") && (
+                <Button
+                  className="w-full"
+                  onClick={() => {
+                    if (confirm("確定要義工更變狀態為 約見面中 嗎？")) {
+                      handleStatusChange("willinterview");
+                    }
+                  }}
+                >
+                  更變狀態為 約見面中
+                </Button>
+              )}
+
+              {(volunteer.status === "willinterview" || volunteer.status === "approved") && (
+                <Button
+                  className="w-full"
+                  onClick={() => {
+                    if (confirm("確定要義工更變狀態為 已約見面 嗎？")) {
+                      handleStatusChange("haveinterviewed");
+                    }
+                  }}
+                >
+                  更變狀態為 已約見面
+                </Button>
+              )}
+
+              {(volunteer.status === "willinterview" || volunteer.status === "haveinterviewed") && (
+                <Button
+                  className="w-full"
+                  onClick={() => {
+                    if (confirm("確定要義工更變狀態為 待審核 嗎？")) {
+                      handleStatusChange("approved");
+                    }
+                  }}
+                >
+                  更變狀態為 待審核
+                </Button>
+              )}
+
               {/* approved 狀態：暫停 */}
               {volunteer.status === "approved" && (
                 <>
