@@ -542,7 +542,7 @@ export default function AdminVolunteerDetailPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               {/* pending 狀態：批准/拒絕 */}
-              {volunteer.status === "pending" && (
+              {(volunteer.status === "pending" || volunteer.status === "willinterview" || volunteer.status === "haveinterviewed") && (
                 <>
                   <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
                     <DialogTrigger asChild>
