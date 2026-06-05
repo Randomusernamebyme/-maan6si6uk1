@@ -90,6 +90,18 @@ export async function PATCH(
 
     const oldData = userDoc.data();
     const oldStatus = oldData?.status;
+    const volunteerId = params.id;
+    const volunteerName = oldData?.displayName || oldData?.email || "未知義工";
+
+    const pendingActivityLogs: Array<{
+      action: string;
+      targetType: "request";
+      targetId: string;
+      description: string;
+      changes: Record<string, any>;
+      createdAt: Date;
+      userId: string;
+    }> = [];
 
     // 僅允許更新狀態相關欄位，避免修改個人資料
     const allowedUpdates: any = {};
@@ -114,6 +126,36 @@ export async function PATCH(
       );
     }
 
+    var update_followUps = null;
+    // 處理跟進記錄更新
+    if (body.followUps && Array.isArray(body.followUps)) {
+      const oldFollowUpsCount = Array.isArray(oldData?.followUps) ? oldData?.followUps.length : 0;
+      // 轉換日期為 Firestore Timestamp
+      const followUpsWithTimestamps = body.followUps.map((followUp: any) => ({
+        ...followUp,
+        date: followUp.date instanceof Date ? followUp.date : new Date(followUp.date),
+        adminId: decodedToken.uid, // 使用當前管理員 ID
+      }));
+      update_followUps = followUpsWithTimestamps;
+
+      if (followUpsWithTimestamps.length !== oldFollowUpsCount) {
+        pendingActivityLogs.push({
+          userId: decodedToken.uid,
+          action: "update_volunteer_followups",
+          targetType: "request",
+          targetId: volunteerId,
+          description: `更新義工「${volunteerName}」的跟進記錄（由 ${oldFollowUpsCount} 筆變更為 ${followUpsWithTimestamps.length} 筆）`,
+          changes: {
+            volunteerId,
+            volunteerName,
+            oldFollowUpsCount,
+            newFollowUpsCount: followUpsWithTimestamps.length,
+          },
+          createdAt: new Date(),
+        });
+      }
+    }
+
     await userRef.update({
       ...allowedUpdates,
       updatedAt: new Date(),
@@ -122,7 +164,6 @@ export async function PATCH(
     // 如果狀態有變化，創建活動日誌
     if (body.status && body.status !== oldStatus) {
       try {
-        const volunteerName = oldData?.displayName || oldData?.email || "未知義工";
         
         const statusLabels: Record<string, string> = {
           pending: "待審核",

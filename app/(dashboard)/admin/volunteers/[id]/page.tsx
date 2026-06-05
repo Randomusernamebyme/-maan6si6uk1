@@ -13,6 +13,7 @@ import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -57,6 +58,7 @@ export default function AdminVolunteerDetailPage() {
   const router = useRouter();
   const volunteerId = params.id as string;
 
+  const [request, setRequest] = useState<Request | null>(null);
   const [volunteer, setVolunteer] = useState<User | null>(null);
   const [applications, setApplications] = useState<(Application & { requestTitle?: string })[]>([]);
   const [logs, setLogs] = useState<(ActivityLog & { userName?: string })[]>([]);
@@ -66,6 +68,9 @@ export default function AdminVolunteerDetailPage() {
   // 對話框狀態
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [showFollowUpDialog, setShowFollowUpDialog] = useState(false);
+  const [followUpMethod, setFollowUpMethod] = useState("");
+  const [followUpContent, setFollowUpContent] = useState("");
   const [interviewNotes, setInterviewNotes] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
 
@@ -243,6 +248,83 @@ export default function AdminVolunteerDetailPage() {
   const handleReject = () => {
     setRejectDialogOpen(false);
     handleStatusChange("rejected", rejectionReason);
+  };
+
+
+  const handleAddFollowUp = async () => {
+    if (!followUpMethod.trim() || !followUpContent.trim()) {
+      setError(new Error("請填寫聯絡方式和記錄內容"));
+      return;
+    }
+
+    try {
+      setError(new Error("")); // 清除之前的錯誤
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error("請先登入");
+      }
+
+      const followUps = request?.followUps || [];
+      const newFollowUp = {
+        date: new Date(),
+        method: followUpMethod.trim(),
+        content: followUpContent.trim(),
+        adminId: "", // 將從 API 中獲取
+      };
+
+      const response = await fetch(`/api/admin/volunteers/${volunteerId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          followUps: [...followUps, newFollowUp],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "添加跟進記錄失敗");
+      }
+
+      // 重新獲取請求數據以更新 UI
+      const updatedResponse = await fetch(`/api/admin/volunteers/${volunteerId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (updatedResponse.ok) {
+        const data = await updatedResponse.json();
+        // 處理 followUps 中的日期
+        let followUps = data.followUps;
+        if (Array.isArray(followUps)) {
+          followUps = followUps.map((followUp: any) => ({
+            ...followUp,
+            date: followUp.date ? new Date(followUp.date) : new Date(),
+          }));
+        }
+        
+        setRequest({
+          ...data,
+          createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+          updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
+          matchedAt: data.matchedAt ? new Date(data.matchedAt) : undefined,
+          completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
+          openAt: data.openAt ? new Date(data.openAt) : undefined,
+          publishedAt: data.publishedAt ? new Date(data.publishedAt) : undefined,
+          inProgressAt: data.inProgressAt ? new Date(data.inProgressAt) : undefined,
+          followUps: followUps,
+        } as Request & { openAt?: Date; publishedAt?: Date; inProgressAt?: Date });
+      }
+
+      setShowFollowUpDialog(false);
+      setFollowUpMethod("");
+      setFollowUpContent("");
+    } catch (err: any) {
+      setError(err.message || "添加跟進記錄失敗");
+    }
   };
 
   if (loading) {
@@ -726,10 +808,57 @@ export default function AdminVolunteerDetailPage() {
                   </p>
                 </div>
               )}
+
+              <div className="pt-4 border-t">
+                <Button
+                  onClick={() => setShowFollowUpDialog(true)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  添加跟進記錄
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* 添加跟進記錄對話框 */}
+      <Dialog open={showFollowUpDialog} onOpenChange={setShowFollowUpDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>添加跟進記錄</DialogTitle>
+            <DialogDescription>記錄與委托者的聯絡情況</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="followUpMethod">聯絡方式</Label>
+              <Input
+                id="followUpMethod"
+                value={followUpMethod}
+                onChange={(e) => setFollowUpMethod(e.target.value)}
+                placeholder="例如：電話、WhatsApp、上門"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="followUpContent">記錄內容</Label>
+              <Textarea
+                id="followUpContent"
+                value={followUpContent}
+                onChange={(e) => setFollowUpContent(e.target.value)}
+                placeholder="請輸入跟進記錄..."
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowFollowUpDialog(false)}>
+              取消
+            </Button>
+            <Button onClick={handleAddFollowUp}>確認</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
