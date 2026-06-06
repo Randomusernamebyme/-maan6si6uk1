@@ -297,15 +297,15 @@ export default function AdminVolunteerDetailPage() {
       });
 
       if (updatedResponse.ok) {
-        // const data = await updatedResponse.json();
-        // // 處理 followUps 中的日期
-        // let followUps = data.followUps;
-        // if (Array.isArray(followUps)) {
-        //   followUps = followUps.map((followUp: any) => ({
-        //     ...followUp,
-        //     date: followUp.date ? new Date(followUp.date) : new Date(),
-        //   }));
-        // }
+        const data = await updatedResponse.json();
+        // 處理 followUps 中的日期
+        let followUps = data.followUps;
+        if (Array.isArray(followUps)) {
+          followUps = followUps.map((followUp: any) => ({
+            ...followUp,
+            date: followUp.date ? new Date(followUp.date) : new Date(),
+          }));
+        }
         
         // setRequest({
         //   ...data,
