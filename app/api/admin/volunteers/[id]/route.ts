@@ -118,6 +118,9 @@ export async function PATCH(
     if (typeof body.rejectionReason === "string") {
       allowedUpdates.rejectionReason = body.rejectionReason;
     }
+    if (body.followUps && Array.isArray(body.followUps)) {
+      allowedUpdates.followUps = body.followUps;
+    }
 
     if (Object.keys(allowedUpdates).length === 0) {
       return NextResponse.json(
@@ -126,6 +129,7 @@ export async function PATCH(
       );
     }
 
+    // TODO: Fix this tomorrow
     var update_followUps = null;
     // 處理跟進記錄更新
     if (body.followUps && Array.isArray(body.followUps)) {
@@ -155,6 +159,20 @@ export async function PATCH(
         });
       }
     }
+
+    // followUps: update_followUps == null ? (oldData?.followUps == null ? [] : oldData?.followUps) : (oldData?.followUps == null ? update_followUps : [...oldData?.followUps, ...update_followUps]),
+    if (update_followUps == null) {
+      if (oldData?.followUps == null) {
+        update_followUps = [];
+      } else {
+        update_followUps = oldData?.followUps;
+      }
+    } else {
+      if (!(oldData?.followUps == null)) {
+        update_followUps = [...oldData?.followUps, ...update_followUps];
+      }
+    }
+    allowedUpdates.followUps = update_followUps;
 
     await userRef.update({
       ...allowedUpdates,
