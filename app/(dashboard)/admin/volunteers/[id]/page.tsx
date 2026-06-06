@@ -614,6 +614,32 @@ export default function AdminVolunteerDetailPage() {
               )}
             </TabsContent>
           </Tabs>
+
+          {/* 跟進記錄 */}
+          <Card>
+            <CardHeader>
+              <CardTitle>跟進記錄</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {Array.isArray(volunteer.followUps) && volunteer.followUps.length > 0 ? (
+                <div className="space-y-4">
+                  {volunteer.followUps.map((followUp, index) => (
+                    <div key={index} className="border-l-2 border-gray-300 dark:border-gray-700 pl-4 py-2">
+                      <div className="text-sm text-muted-foreground">
+                        {formatDate(followUp.date instanceof Date ? followUp.date : new Date(followUp.date))}
+                      </div>
+                      <div className="text-sm font-semibold mt-1">{followUp.method}</div>
+                      <div className="text-sm mt-1">{followUp.content}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  目前沒有跟進記錄
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* 右側：操作面板 */}
