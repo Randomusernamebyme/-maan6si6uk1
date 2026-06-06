@@ -265,7 +265,7 @@ export default function AdminVolunteerDetailPage() {
         throw new Error("請先登入");
       }
 
-      const followUps = volunteer?.followUps || [];
+      const followUps = request?.followUps || [];
       const newFollowUp = {
         date: new Date(),
         method: followUpMethod.trim(),
