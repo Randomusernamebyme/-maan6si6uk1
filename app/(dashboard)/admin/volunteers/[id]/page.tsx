@@ -307,17 +307,17 @@ export default function AdminVolunteerDetailPage() {
           }));
         }
         
-        // setRequest({
-        //   ...data,
-        //   createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
-        //   updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
-        //   matchedAt: data.matchedAt ? new Date(data.matchedAt) : undefined,
-        //   completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
-        //   openAt: data.openAt ? new Date(data.openAt) : undefined,
-        //   publishedAt: data.publishedAt ? new Date(data.publishedAt) : undefined,
-        //   inProgressAt: data.inProgressAt ? new Date(data.inProgressAt) : undefined,
-        //   followUps: followUps,
-        // } as Request & { openAt?: Date; publishedAt?: Date; inProgressAt?: Date });
+        setRequest({
+          ...data,
+          createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+          updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
+          matchedAt: data.matchedAt ? new Date(data.matchedAt) : undefined,
+          completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
+          openAt: data.openAt ? new Date(data.openAt) : undefined,
+          publishedAt: data.publishedAt ? new Date(data.publishedAt) : undefined,
+          inProgressAt: data.inProgressAt ? new Date(data.inProgressAt) : undefined,
+          followUps: followUps,
+        } as Request & { openAt?: Date; publishedAt?: Date; inProgressAt?: Date });
         router.refresh();
         window.location.reload();
       }
