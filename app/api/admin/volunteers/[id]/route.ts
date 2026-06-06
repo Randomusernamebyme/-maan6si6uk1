@@ -140,7 +140,7 @@ export async function PATCH(
         date: followUp.date instanceof Date ? followUp.date : new Date(followUp.date),
         adminId: decodedToken.uid, // 使用當前管理員 ID
       }));
-      update_followUps = followUpsWithTimestamps;
+      update_followUps = [...followUpsWithTimestamps];
 
       if (followUpsWithTimestamps.length !== oldFollowUpsCount) {
         pendingActivityLogs.push({
