@@ -32,7 +32,8 @@ import Link from "next/link";
 // 安全的日期格式化函數
 const formatDate = (date: Date | undefined | null, formatStr: string = "yyyy年MM月dd日 HH:mm") => {
   if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
-    return "無效日期";
+    return (!date ? "date is null" : (!(date instanceof Date) ? "not an instance of date: " + date : (isNaN(date.getTime()) ? "Is nan" : "Generic error: " + date)));
+    // return "無效日期";
   }
   return format(date, formatStr, { locale: zhTW });
 };

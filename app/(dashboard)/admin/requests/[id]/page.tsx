@@ -326,8 +326,8 @@ export default function RequestDetailPage() {
 
   const formatDate = (date: Date | undefined | null) => {
     if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
-      return (!date ? "date is null" : (!(date instanceof Date) ? "not an instance of date: " + date : (isNaN(date.getTime()) ? "Is nan" : "Generic error: " + date)));
-      // return "無效日期";
+      // return (!date ? "date is null" : (!(date instanceof Date) ? "not an instance of date: " + date : (isNaN(date.getTime()) ? "Is nan" : "Generic error: " + date)));
+      return "無效日期";
     }
     return format(date, "yyyy年MM月dd日 HH:mm", { locale: zhTW });
   };
