@@ -129,7 +129,7 @@ export function RecentShowcaseSection() {
   return (
     <section className="py-16 bg-muted/20">
       <div className="container mx-auto px-4 space-y-10">
-        <div>
+        <div className="text-center">
           <h2 className="text-2xl md:text-3xl font-bold">最近成果</h2>
           <p className="text-muted-foreground mt-2">點擊卡片即可查看完整相片與內容。</p>
           {loading ? (
@@ -139,7 +139,7 @@ export function RecentShowcaseSection() {
           ) : galleryItems.length === 0 ? (
             <p className="text-sm text-muted-foreground mt-4">暫時未有公開成果。</p>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-4 max-w-5xl">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-4 max-w-5xl mx-auto">
               {galleryItems.slice(0, 4).map((item) => {
                 const cover = item.galleryPhotos?.[0]?.url;
                 return (
@@ -177,7 +177,7 @@ export function RecentShowcaseSection() {
           )}
         </div>
 
-        <div>
+        <div className="text-center">
           <h2 className="text-2xl md:text-3xl font-bold">最近開放申請委托</h2>
           <p className="text-muted-foreground mt-2">點擊委托查看詳情，申請前請先登入或註冊成為義工。</p>
           {loading ? (
@@ -187,7 +187,7 @@ export function RecentShowcaseSection() {
           ) : requestItems.length === 0 ? (
             <p className="text-sm text-muted-foreground mt-4">暫時未有開放申請委托。</p>
           ) : (
-            <div className="grid gap-4 md:grid-cols-3 mt-4 items-stretch max-w-5xl">
+            <div className="grid gap-4 md:grid-cols-3 mt-4 items-stretch max-w-5xl mx-auto">
               {requestItems.slice(0).map((item) => (
                 <button
                   key={item.id}
