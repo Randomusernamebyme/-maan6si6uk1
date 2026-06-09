@@ -17,7 +17,7 @@ export const SERVICE_FIELD_BACKGROUNDS: Record<ServiceField, string> = {
 // 服務領域信息
 export const SERVICE_FIELD_INFO: Record<ServiceField, { subtitle: string; description: string }> = {
   "生活助手": {
-    subtitle: "河狸 - 全能工具人",
+    subtitle: "全能工具小河狸",
     description: "幫助街坊解決生活難題：手機故障處理、修補舊衣舊鞋、執靚小窩、教用AI等",
   },
   "社區拍檔": {

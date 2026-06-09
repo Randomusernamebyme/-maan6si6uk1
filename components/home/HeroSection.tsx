@@ -31,10 +31,10 @@ export function HeroSection() {
           </div>
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto whitespace-pre-wrap">
-              堅城萬事屋希望收集各位街坊朋友嘅委託，然之後透過招募義工同同事嘅力量去解決生活上嘅難題，無論係感情上、技術上定係社區連結方面，我哋都會關注。
+              堅城萬事屋希望收集各位街坊朋友嘅委託，<br/>然之後透過招募義工同同事嘅力量去解決生活上嘅難題，<br/>無論係感情上、技術上定係社區連結方面，我哋都會關注。
             </p>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto whitespace-pre-wrap">
-              我哋堅城萬事屋齊集各方精英，有陪你科技進步嘅河狸助手👷🏻🦫🛠️，有同你吹水談心嘅樹窿松鼠🩷🐿️💬，仲有一班對堅尼地城社區有熱誠嘅拍檔小仙子🧚🏻‍♀️🧚🏻🧚🏻‍♂️，同大家多方向解難💯！
+              我哋堅城萬事屋齊集各方精英：<br/>有陪你科技進步嘅河狸助手👷🏻🦫🛠️，<br/>有同你吹水談心嘅樹窿松鼠🩷🐿️💬，<br/>仲有一班對堅尼地城社區有熱誠嘅拍檔小仙子🧚🏻‍♀️🧚🏻🧚🏻‍♂️<br/>同大家多方向解難💯！
             </p>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto whitespace-pre-wrap">
               無論你有難題想揾萬事屋，定係想發揮自己所長，堅城萬事屋都歡迎你成為我哋一份子！
