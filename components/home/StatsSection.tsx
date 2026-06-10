@@ -77,7 +77,7 @@ export function StatsSection() {
             感謝每一位義工和委托者的支持，讓我們一起為社區創造更多溫暖
           </p>
         </div>
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 max-w-5xl mx-auto">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2 max-w-5xl mx-auto">
           {statsData.map((stat, index) => (
             <div key={index} className="text-center">
               {loading ? (
