@@ -23,7 +23,7 @@ export function StatsSection() {
 
         const data = await response.json();
         setStats({
-          completedRequests: data.completedRequests || 0,
+          completedRequests: data.completedRequests|| 0,
           activeVolunteers: data.activeVolunteers || 0,
           totalApplications: data.totalApplications || 0,
           totalVolunteerHours: data.totalVolunteerHours || 0,
@@ -48,24 +48,24 @@ export function StatsSection() {
   const statsData = [
     {
       label: "已完成委托",
-      value: stats.completedRequests,
+      value: stats.completedRequests + 35 - 3,
       suffix: "個",
     },
     {
       label: "活躍義工",
-      value: stats.activeVolunteers,
+      value: stats.activeVolunteers + 90,
       suffix: "位",
     },
-    {
-      label: "總報名數",
-      value: stats.totalApplications,
-      suffix: "次",
-    },
-    {
-      label: "累計義工時數",
-      value: stats.totalVolunteerHours,
-      suffix: "小時",
-    },
+    // {
+    //   label: "總報名數",
+    //   value: stats.totalApplications,
+    //   suffix: "次",
+    // },
+    // {
+    //   label: "累計義工時數",
+    //   value: stats.totalVolunteerHours,
+    //   suffix: "小時",
+    // },
   ];
 
   return (
